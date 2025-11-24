@@ -23,6 +23,8 @@ services:
       - "8080:80"       # host:container
     depends_on:
       - backend
+    networks:
+      - rabbitctf_network
 
   backend:
     build:
@@ -31,12 +33,14 @@ services:
     container_name: rabbitctf_backend
     environment:
       DATABASE_URL: postgresql+psycopg2://rabbitctf:rabbitctf@db:5432/rabbitctf
-    ports:
-      - "8000:8000"
+    # ports:
+    #   - "8000:8000"
     depends_on:
       - db
     volumes:
       - backend_uploads:/app/uploads  # persistent uploads
+    networks:
+      - rabbitctf_network
 
   db:
     image: postgres:18-alpine
@@ -45,11 +49,17 @@ services:
       POSTGRES_DB: rabbitctf
       POSTGRES_USER: rabbitctf
       POSTGRES_PASSWORD: rabbitctf
-    ports:
-      - "5432:5432"
+    # ports:
+    #   - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data  # persistent database data
+    networks:
+      - rabbitctf_network
 
 volumes:
   postgres_data:
   backend_uploads:
+
+networks:
+  rabbitctf_network:
+    driver: bridge
