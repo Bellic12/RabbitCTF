@@ -53,6 +53,7 @@ services:
     #   - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data  # persistent database data
+      - ./backend/db/init:/docker-entrypoint-initdb.d:ro  # initialization scripts - read-only
     networks:
       - rabbitctf_network
 
