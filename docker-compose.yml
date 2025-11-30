@@ -49,8 +49,8 @@ services:
       POSTGRES_DB: rabbitctf
       POSTGRES_USER: rabbitctf
       POSTGRES_PASSWORD: rabbitctf
-    # ports:
-    #   - "5432:5432"
+    ports:
+      - "5432:5432"  # Exponer puerto para acceso local
     volumes:
       - postgres_data:/var/lib/postgresql/data  # persistent database data
       - ./backend/db/init:/docker-entrypoint-initdb.d:ro  # initialization scripts - read-only
