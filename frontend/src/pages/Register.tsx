@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Navigation from '../components/Navigation';
+import Footer from '../components/Footer';
 
 export default function RegisterPage() {
   const [username, setUsername] = useState('');
@@ -141,6 +142,7 @@ export default function RegisterPage() {
         </div>
       </div>
     </div>
+      <Footer />
     </div>
   );
 }
