@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Link, NavLink } from 'react-router-dom';
+import Navigation from '../components/Navigation';
 
 type ChallengeDifficulty = 'Easy' | 'Medium' | 'Hard';
 type ChallengeCategory = 'Web' | 'Binary' | 'Crypto' | 'Forensics';
@@ -433,53 +433,6 @@ function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
         )}
       </div>
     </div>
-  );
-}
-
-function Navigation() {
-  const links = [
-    { label: 'Home', to: '/' },
-    { label: 'Challenges', to: '/challenges' },
-    { label: 'Leaderboard', to: '/leaderboard' },
-    { label: 'Rules', to: '/rules' },
-    { label: 'Admin', to: '/admin' },
-  ];
-
-  return (
-    <header className="border-b border-white/5 bg-[#03070d]/95 backdrop-blur">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
-        <div className="flex items-center gap-2 text-lg font-semibold text-white">
-          <FlagIcon />
-          RabbitCTF
-        </div>
-
-        <nav className="hidden items-center gap-6 md:flex">
-          {links.map((link) => (
-            <NavLink
-              className={({ isActive }) =>
-                `text-sm font-medium transition-colors ${
-                  isActive ? 'text-[#0edbc5]' : 'text-white/60 hover:text-white'
-                }`
-              }
-              end={link.to === '/'}
-              key={link.to}
-              to={link.to}
-            >
-              {link.label}
-            </NavLink>
-          ))}
-        </nav>
-
-        <div className="flex items-center gap-3">
-          <Link className="btn btn-sm rounded-full border border-white/20 bg-transparent text-white hover:bg-white/5" to="/login">
-            Login
-          </Link>
-          <Link className="btn btn-sm rounded-full border-none bg-[#0edbc5] text-black hover:bg-[#10f0d6]" to="/register">
-            Register
-          </Link>
-        </div>
-      </div>
-    </header>
   );
 }
 
