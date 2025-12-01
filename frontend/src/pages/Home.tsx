@@ -1,4 +1,5 @@
 import { Link, NavLink } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 // Example stats, later to be fetched from the backend and database
 
@@ -73,6 +74,7 @@ export default function HomePage() {
 }
 
 function Navigation() {
+  const { user, logout, isAuthenticated } = useAuth();
   const links = [
     { label: 'Home', to: '/' },
     { label: 'Challenges', to: '/challenges' },
@@ -107,12 +109,61 @@ function Navigation() {
         </nav>
 
         <div className="flex items-center gap-3">
-          <Link className="btn btn-sm rounded-full border border-white/20 bg-transparent text-white hover:bg-white/5" to="/login">
-            Login
-          </Link>
-          <Link className="btn btn-sm rounded-full border-none bg-[#0edbc5] text-black hover:bg-[#10f0d6]" to="/register">
-            Register
-          </Link>
+          {isAuthenticated && user ? (
+            <div className="dropdown dropdown-end">
+              <div
+                tabIndex={0}
+                role="button"
+                className="btn btn-ghost btn-sm gap-2 rounded-full border border-white/10 font-normal text-white hover:bg-white/5"
+              >
+                {user.username}
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="h-4 w-4 opacity-50"
+                >
+                  <path d="m6 9 6 6 6-6" />
+                </svg>
+              </div>
+              <ul
+                tabIndex={0}
+                className="menu dropdown-content z-[1] mt-3 w-52 rounded-box bg-[#061120] p-2 shadow-lg ring-1 ring-white/10"
+              >
+                <li>
+                  <Link to="/profile" className="text-white hover:text-[#0edbc5]">
+                    Profile
+                  </Link>
+                </li>
+                <li>
+                  <button onClick={logout} className="text-error hover:bg-error/10">
+                    Logout
+                  </button>
+                </li>
+              </ul>
+            </div>
+          ) : (
+            <>
+              <Link
+                className="btn btn-sm rounded-full border border-white/20 bg-transparent text-white hover:bg-white/5"
+                to="/login"
+              >
+                Login
+              </Link>
+              <Link
+                className="btn btn-sm rounded-full border-none bg-[#0edbc5] text-black hover:bg-[#10f0d6]"
+                to="/register"
+              >
+                Register
+              </Link>
+            </>
+          )}
         </div>
       </div>
     </header>
