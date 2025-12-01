@@ -2,7 +2,7 @@
 Main API router that includes all endpoint routers.
 """
 from fastapi import APIRouter
-from app.api.v1 import auth
+from app.api.v1 import auth, admin
 
 # Create main API router
 api_router = APIRouter()
@@ -12,6 +12,13 @@ api_router.include_router(
     auth.router,
     prefix="/auth",
     tags=["Authentication"]
+)
+
+# Include admin router
+api_router.include_router(
+    admin.router,
+    prefix="/admin",
+    tags=["Admin"]
 )
 
 # TODO: Add more routers as they are implemented
