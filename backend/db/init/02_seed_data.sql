@@ -53,13 +53,20 @@ INSERT INTO "user" (username, email, role_id) VALUES
 ('frank', 'frank@example.com', (SELECT id FROM role WHERE name = 'user'))
 ON CONFLICT (username) DO NOTHING;
 
--- Insert user credentials (password: "admin123" for admin, "password123" for others)
--- Note: These are placeholder hashes - replace with actual bcrypt hashes in production
+-- Insert user credentials
+-- Password hashes generated with bcrypt 4.2.1
+-- admin: admin123, others: password123
 INSERT INTO user_credential (user_id, password_hash, is_temp_password, must_change_password)
 SELECT id, 
     CASE 
-        WHEN username = 'admin' THEN '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyYzpLaEg3F6'
-        ELSE '$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW'
+        WHEN username = 'admin' THEN '$2b$12$hGgbPXqMSqhlHEGr6.Qobu9i0195UgBFZJlJp4zzgRu9Y81nNJv2q'
+        WHEN username = 'moderator' THEN '$2b$12$oX6/w5bJj9QYl7M4qoyeFelLRGF8vRgcJqw8xB8/4I5o29N4ImY0y'
+        WHEN username = 'alice' THEN '$2b$12$.6W.XaE8GOJ4h4Whqt1rGOhwMcfqckJVuL0fcB5s/oguaovy35yKu'
+        WHEN username = 'bob' THEN '$2b$12$lB7IQDvHkc5hYghPQ4jxQuUDCPZBvsVdhrxz4XihuaiPSRWOdztfm'
+        WHEN username = 'charlie' THEN '$2b$12$1LuNamB/V2VMfijr4QLf6OOtSubSQah5pM8Pv3YSYRL7Z0jdclLDG'
+        WHEN username = 'diana' THEN '$2b$12$MmnP2tiM604qFbP0ZBDSb.5ZSNAqRohreR7eCjKcS3T0zk6eP/4oC'
+        WHEN username = 'eve' THEN '$2b$12$YB1.JBhiT2JkFsgfOdOrH.GGf6RWxA248KXNfku1bsvoyXdsqSkIO'
+        WHEN username = 'frank' THEN '$2b$12$LCnfyZxq6yr6R.i8LEnR0.qkFcorYveipqEdH2yxeidCXaxkvZnA.'
     END,
     CASE WHEN username IN ('admin', 'moderator') THEN TRUE ELSE FALSE END,
     CASE WHEN username IN ('admin', 'moderator') THEN TRUE ELSE FALSE END
