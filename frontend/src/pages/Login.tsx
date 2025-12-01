@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 export default function LoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -15,7 +17,7 @@ export default function LoginPage() {
     // # Authentication example
 
     try {
-      const response = await fetch('http://localhost:8000/auth/login', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/v1/auth/login`, {
         body: JSON.stringify({ password, username }),
         headers: { 'Content-Type': 'application/json' },
         method: 'POST',
@@ -26,6 +28,9 @@ export default function LoginPage() {
         setError(payload.detail ?? 'Invalid username or password');
         return;
       }
+
+      const data = await response.json();
+      login(data.access_token);
 
       navigate('/');
     } catch (caught) {
