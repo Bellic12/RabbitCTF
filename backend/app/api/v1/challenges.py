@@ -2,10 +2,24 @@ from typing import List, Any
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session, joinedload
 from app.api import deps
-from app.schemas.challenges import ChallengeResponse
+from app.schemas.challenges import ChallengeResponse, ChallengeCategoryResponse
 from app.models.challenge import Challenge
+from app.models.challenge_category import ChallengeCategory
 
 router = APIRouter()
+
+@router.get("/categories", response_model=List[ChallengeCategoryResponse])
+def read_categories(
+    db: Session = Depends(deps.get_db),
+    skip: int = 0,
+    limit: int = 100,
+    current_user = Depends(deps.get_current_active_user),
+) -> Any:
+    """
+    Retrieve challenge categories.
+    """
+    categories = db.query(ChallengeCategory).filter(ChallengeCategory.is_active == True).offset(skip).limit(limit).all()
+    return categories
 
 @router.get("/", response_model=List[ChallengeResponse])
 def read_challenges(
