@@ -1,8 +1,9 @@
-import { useMemo, useState } from 'react';
-import { Link, NavLink } from 'react-router-dom';
+import { useMemo, useState, useEffect } from 'react';
+import Navigation from '../components/Navigation';
+import { useAuth } from '../context/AuthContext';
 
-type ChallengeDifficulty = 'Easy' | 'Medium' | 'Hard';
-type ChallengeCategory = 'Web' | 'Binary' | 'Crypto' | 'Forensics';
+type ChallengeDifficulty = 'Easy' | 'Medium' | 'Hard' | 'Insane';
+type ChallengeCategory = 'Web' | 'Binary' | 'Crypto' | 'Forensics' | 'Reverse' | 'Pwn' | 'Misc' | 'OSINT' | 'Steganography';
 type ChallengeStatus = 'solved' | 'open';
 
 interface ChallengeFile {
@@ -32,93 +33,54 @@ interface Challenge {
   solveHistory?: ChallengeSolve[];
 }
 
-const challenges: Challenge[] = [
-  {
-    id: 'sql-injection-basics',
-    title: 'SQL Injection Basics',
-    category: 'Web',
-    difficulty: 'Easy',
-    points: 100,
-    solves: 145,
-    status: 'solved',
-    description: 'Bypass authentication and extract information through SQL injection flaws.',
-    tags: ['sql', 'injection', 'database'],
-    connectionInfo: 'nc challenge.ctf 9001',
-    files: [{ name: 'login_portal.zip', size: '412 KB', url: '#' }],
-    solveHistory: [
-      { team: '0xBunnies', submittedAt: '2025-06-21 18:42 UTC', points: 100 },
-      { team: 'CyberWarrens', submittedAt: '2025-06-21 18:20 UTC', points: 100 },
-    ],
-  },
-  {
-    id: 'buffer-overflow',
-    title: 'Buffer Overflow',
-    category: 'Binary',
-    difficulty: 'Hard',
-    points: 500,
-    solves: 23,
-    status: 'open',
-    description: 'Exploit a buffer overflow vulnerability to gain shell access.',
-    tags: ['pwn', 'buffer', 'exploitation'],
-    connectionInfo: 'nc challenge.ctf 9001',
-    files: [{ name: 'vulnerable_binary', size: '847 KB', url: '#' }],
-    solveHistory: [
-      { team: 'StackSmashers', submittedAt: '2025-06-22 02:11 UTC', points: 500 },
-      { team: 'NullPointers', submittedAt: '2025-06-22 01:58 UTC', points: 500 },
-    ],
-  },
-  {
-    id: 'rsa-weak-keys',
-    title: 'RSA Weak Keys',
-    category: 'Crypto',
-    difficulty: 'Medium',
-    points: 250,
-    solves: 67,
-    status: 'open',
-    description: 'Factor weak RSA parameters to recover the private key.',
-    tags: ['rsa', 'crypto', 'math'],
-    files: [{ name: 'keys.tar.gz', size: '1.2 MB', url: '#' }],
-  },
-  {
-    id: 'network-traffic-analysis',
-    title: 'Network Traffic Analysis',
-    category: 'Forensics',
-    difficulty: 'Medium',
-    points: 300,
-    solves: 89,
-    status: 'solved',
-    description: 'Inspect captured packets to uncover malicious activity.',
-    tags: ['pcap', 'wireshark', 'network'],
-    files: [{ name: 'capture.zip', size: '22 MB', url: '#' }],
-  },
-  {
-    id: 'xss-to-rce',
-    title: 'XSS to RCE',
-    category: 'Web',
-    difficulty: 'Hard',
-    points: 450,
-    solves: 34,
-    status: 'open',
-    description: 'Chain a stored XSS into remote code execution on the admin portal.',
-    tags: ['xss', 'web', 'rce'],
-    files: [{ name: 'admin_portal.zip', size: '2.4 MB', url: '#' }],
-  },
-  {
-    id: 'basic-steganography',
-    title: 'Basic Steganography',
-    category: 'Forensics',
-    difficulty: 'Easy',
-    points: 100,
-    solves: 156,
-    status: 'solved',
-    description: 'Extract the hidden message embedded inside the provided image.',
-    tags: ['stego', 'image', 'forensics'],
-    files: [{ name: 'mystery_image.png', size: '3.8 MB', url: '#' }],
-  },
-];
-
 export default function ChallengesPage() {
+  const { token } = useAuth();
+  const [challenges, setChallenges] = useState<Challenge[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+
+  useEffect(() => {
+    const fetchChallenges = async () => {
+      if (!token) {
+        setIsLoading(false);
+        return;
+      }
+      
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/challenges/`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          // Map backend data to frontend interface
+          const mappedChallenges: Challenge[] = data.map((c: any) => ({
+            id: String(c.id),
+            title: c.title,
+            category: c.category_name || 'Web', // Fallback
+            difficulty: c.difficulty_name || 'Easy', // Fallback
+            points: c.base_score,
+            solves: c.solve_count || 0,
+            status: c.is_solved ? 'solved' : 'open',
+            description: c.description,
+            tags: [], // Backend doesn't return tags yet
+            connectionInfo: c.operational_data,
+            files: [], // Backend doesn't return files yet
+            solveHistory: [], // Backend doesn't return history yet
+          }));
+          setChallenges(mappedChallenges);
+        }
+      } catch (error) {
+        console.error('Failed to fetch challenges', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchChallenges();
+  }, [token]);
   const [categoryFilter, setCategoryFilter] = useState<'All' | ChallengeCategory>('All');
   const [difficultyFilter, setDifficultyFilter] = useState<'All' | ChallengeDifficulty>('All');
   const [statusFilter, setStatusFilter] = useState<'All' | ChallengeStatus>('All');
@@ -132,7 +94,7 @@ export default function ChallengesPage() {
       const matchStatus = statusFilter === 'All' || challenge.status === statusFilter;
       return matchTerm && matchCategory && matchDifficulty && matchStatus;
     });
-  }, [searchTerm, categoryFilter, difficultyFilter, statusFilter]);
+  }, [challenges, searchTerm, categoryFilter, difficultyFilter, statusFilter]);
 
   return (
     <div className="flex min-h-screen flex-col bg-[#04090f] text-white">
@@ -169,6 +131,11 @@ export default function ChallengesPage() {
                 <option value="Binary">Binary</option>
                 <option value="Crypto">Crypto</option>
                 <option value="Forensics">Forensics</option>
+                <option value="Reverse">Reverse</option>
+                <option value="Pwn">Pwn</option>
+                <option value="Misc">Misc</option>
+                <option value="OSINT">OSINT</option>
+                <option value="Steganography">Steganography</option>
               </select>
 
               <select
@@ -180,6 +147,7 @@ export default function ChallengesPage() {
                 <option value="Easy">Easy</option>
                 <option value="Medium">Medium</option>
                 <option value="Hard">Hard</option>
+                <option value="Insane">Insane</option>
               </select>
 
               <select
@@ -194,7 +162,12 @@ export default function ChallengesPage() {
             </div>
           </section>
 
-          <section className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+          {isLoading ? (
+            <div className="flex h-64 items-center justify-center text-white/60">
+              <span className="loading loading-spinner loading-lg text-[#0edbc5]"></span>
+            </div>
+          ) : (
+            <section className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
             {filteredChallenges.map((challenge) => (
               <button
                 className="flex h-full flex-col rounded-[28px] border border-white/10 bg-[#061120] p-6 text-left transition hover:border-[#0edbc5]/40 hover:shadow-[0_25px_65px_-45px_rgba(0,0,0,0.9)]"
@@ -253,6 +226,7 @@ export default function ChallengesPage() {
               </div>
             )}
           </section>
+          )}
         </div>
       </main>
 
@@ -433,53 +407,6 @@ function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
         )}
       </div>
     </div>
-  );
-}
-
-function Navigation() {
-  const links = [
-    { label: 'Home', to: '/' },
-    { label: 'Challenges', to: '/challenges' },
-    { label: 'Leaderboard', to: '/leaderboard' },
-    { label: 'Rules', to: '/rules' },
-    { label: 'Admin', to: '/admin' },
-  ];
-
-  return (
-    <header className="border-b border-white/5 bg-[#03070d]/95 backdrop-blur">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
-        <div className="flex items-center gap-2 text-lg font-semibold text-white">
-          <FlagIcon />
-          RabbitCTF
-        </div>
-
-        <nav className="hidden items-center gap-6 md:flex">
-          {links.map((link) => (
-            <NavLink
-              className={({ isActive }) =>
-                `text-sm font-medium transition-colors ${
-                  isActive ? 'text-[#0edbc5]' : 'text-white/60 hover:text-white'
-                }`
-              }
-              end={link.to === '/'}
-              key={link.to}
-              to={link.to}
-            >
-              {link.label}
-            </NavLink>
-          ))}
-        </nav>
-
-        <div className="flex items-center gap-3">
-          <Link className="btn btn-sm rounded-full border border-white/20 bg-transparent text-white hover:bg-white/5" to="/login">
-            Login
-          </Link>
-          <Link className="btn btn-sm rounded-full border-none bg-[#0edbc5] text-black hover:bg-[#10f0d6]" to="/register">
-            Register
-          </Link>
-        </div>
-      </div>
-    </header>
   );
 }
 

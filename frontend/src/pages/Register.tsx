@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import Navigation from '../components/Navigation';
 
 export default function RegisterPage() {
   const [username, setUsername] = useState('');
@@ -42,19 +43,21 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#04090f] px-6 py-16 md:px-10">
-      <div className="w-full max-w-xl rounded-[32px] border border-white/10 bg-[#061120] px-8 py-12 text-white shadow-[0_35px_80px_-45px_rgba(0,0,0,0.9)] md:px-12">
-        <div className="text-center">
-          <div className="mb-8 flex items-center justify-center gap-4 text-3xl font-semibold text-white">
-            <FlagIcon />
-            RabbitCTF
+    <div className="flex min-h-screen flex-col bg-[#04090f]">
+      <Navigation />
+      <div className="flex flex-1 items-center justify-center px-6 py-16 md:px-10">
+        <div className="w-full max-w-xl rounded-[32px] border border-white/10 bg-[#061120] px-8 py-12 text-white shadow-[0_35px_80px_-45px_rgba(0,0,0,0.9)] md:px-12">
+          <div className="text-center">
+            <div className="mb-8 flex items-center justify-center gap-4 text-3xl font-semibold text-white">
+              <FlagIcon />
+              RabbitCTF
+            </div>
+
+            <h1 className="text-4xl font-bold">Register</h1>
+            <p className="mt-2 text-sm text-white/60">Create an account to join the competition</p>
           </div>
 
-          <h1 className="text-4xl font-bold">Register</h1>
-          <p className="mt-2 text-sm text-white/60">Create an account to join the competition</p>
-        </div>
-
-        <form className="mt-10 space-y-6" onSubmit={handleSubmit}>
+          <form className="mt-10 space-y-6" onSubmit={handleSubmit}>
           <div className="text-left">
             <label className="text-sm font-semibold text-white/70" htmlFor="username">
               Username
@@ -137,6 +140,7 @@ export default function RegisterPage() {
           </Link>
         </div>
       </div>
+    </div>
     </div>
   );
 }
