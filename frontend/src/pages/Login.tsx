@@ -3,6 +3,7 @@ import type { FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Navigation from '../components/Navigation';
+import Footer from '../components/Footer';
 
 export default function LoginPage() {
   const [username, setUsername] = useState('');
@@ -109,6 +110,7 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+      <Footer />
     </div>
   );
 }

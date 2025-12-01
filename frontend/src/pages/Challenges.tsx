@@ -1,5 +1,6 @@
 import { useMemo, useState, useEffect } from 'react';
 import Navigation from '../components/Navigation';
+import Footer from '../components/Footer';
 import { useAuth } from '../context/AuthContext';
 
 type ChallengeDifficulty = 'Easy' | 'Medium' | 'Hard' | 'Insane';
@@ -230,9 +231,7 @@ export default function ChallengesPage() {
         </div>
       </main>
 
-      <footer className="border-t border-white/5 bg-[#03070d] py-6 text-center text-xs text-white/50">
-        RabbitCTF 2025 – Powered by Equipo Alfa Buena Maravilla Onda Dinamita Escuadrón Lobo
-      </footer>
+      <Footer />
 
       {selected && (
         <ChallengeModal challenge={selected} onClose={() => setSelected(null)} />
