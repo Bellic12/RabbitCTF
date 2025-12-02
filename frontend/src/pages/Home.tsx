@@ -1,4 +1,6 @@
-import { Link, NavLink } from 'react-router-dom';
+import { Link } from 'react-router-dom';
+import Navigation from '../components/Navigation';
+import Footer from '../components/Footer';
 
 // Example stats, later to be fetched from the backend and database
 
@@ -65,71 +67,8 @@ export default function HomePage() {
         </div>
       </main>
 
-      <footer className="border-t border-white/5 bg-[#03070d] py-6 text-center text-xs text-white/50">
-        RabbitCTF 2025 – Powered by Equipo Alfa Buena Maravilla Onda Dinamita Escuadrón Lobo
-      </footer>
+      <Footer />
     </div>
-  );
-}
-
-function Navigation() {
-  const links = [
-    { label: 'Home', to: '/' },
-    { label: 'Challenges', to: '/challenges' },
-    { label: 'Leaderboard', to: '/leaderboard' },
-    { label: 'Rules', to: '/rules' },
-    { label: 'Admin', to: '/admin' },
-  ];
-
-  return (
-    <header className="border-b border-white/5 bg-[#03070d]/95 backdrop-blur">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
-        <div className="flex items-center gap-2 text-lg font-semibold text-white">
-          <FlagIcon />
-          RabbitCTF
-        </div>
-
-        <nav className="hidden items-center gap-6 md:flex">
-          {links.map((link) => (
-            <NavLink
-              className={({ isActive }) =>
-                `text-sm font-medium transition-colors ${
-                  isActive ? 'text-[#0edbc5]' : 'text-white/60 hover:text-white'
-                }`
-              }
-              end={link.to === '/'}
-              key={link.to}
-              to={link.to}
-            >
-              {link.label}
-            </NavLink>
-          ))}
-        </nav>
-
-        <div className="flex items-center gap-3">
-          <Link className="btn btn-sm rounded-full border border-white/20 bg-transparent text-white hover:bg-white/5" to="/login">
-            Login
-          </Link>
-          <Link className="btn btn-sm rounded-full border-none bg-[#0edbc5] text-black hover:bg-[#10f0d6]" to="/register">
-            Register
-          </Link>
-        </div>
-      </div>
-    </header>
-  );
-}
-
-function FlagIcon() {
-  return (
-    <svg aria-hidden="true" className="h-5 w-5 text-[#0edbc5]" fill="none" viewBox="0 0 24 24">
-      <path
-        className="stroke-current"
-        d="M6 4v16M6 4h11.2a1 1 0 01.8 1.6L16 9l2 2.4a1 1 0 01-.8 1.6H6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={1.6}
-      />
-    </svg>
   );
 }
 

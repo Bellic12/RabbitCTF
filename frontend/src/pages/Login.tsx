@@ -1,12 +1,16 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import Navigation from '../components/Navigation';
+import Footer from '../components/Footer';
 
 export default function LoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -15,7 +19,7 @@ export default function LoginPage() {
     // # Authentication example
 
     try {
-      const response = await fetch('http://localhost:8000/auth/login', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/v1/auth/login`, {
         body: JSON.stringify({ password, username }),
         headers: { 'Content-Type': 'application/json' },
         method: 'POST',
@@ -27,6 +31,9 @@ export default function LoginPage() {
         return;
       }
 
+      const data = await response.json();
+      login(data.access_token);
+
       navigate('/');
     } catch (caught) {
       setError('Unable to reach the authentication service');
@@ -35,19 +42,21 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#04090f] px-6 py-16 md:px-10">
-      <div className="w-full max-w-xl rounded-[32px] border border-white/10 bg-[#061120] px-8 py-12 text-white shadow-[0_35px_80px_-45px_rgba(0,0,0,0.9)] md:px-12">
-        <div className="text-center">
-          <div className="mb-8 flex items-center justify-center gap-4 text-3xl font-semibold text-white">
-            <FlagIcon />
-            RabbitCTF
+    <div className="flex min-h-screen flex-col bg-[#04090f]">
+      <Navigation />
+      <div className="flex flex-1 items-center justify-center px-6 py-16 md:px-10">
+        <div className="w-full max-w-xl rounded-[32px] border border-white/10 bg-[#061120] px-8 py-12 text-white shadow-[0_35px_80px_-45px_rgba(0,0,0,0.9)] md:px-12">
+          <div className="text-center">
+            <div className="mb-8 flex items-center justify-center gap-4 text-3xl font-semibold text-white">
+              <FlagIcon />
+              RabbitCTF
+            </div>
+
+            <h1 className="text-4xl font-bold">Login</h1>
+            <p className="mt-2 text-sm text-white/60">Sign in to participate in the competition</p>
           </div>
 
-          <h1 className="text-4xl font-bold">Login</h1>
-          <p className="mt-2 text-sm text-white/60">Sign in to participate in the competition</p>
-        </div>
-
-        <form className="mt-10 space-y-6" onSubmit={handleSubmit}>
+          <form className="mt-10 space-y-6" onSubmit={handleSubmit}>
           <div className="text-left">
             <label className="text-sm font-semibold text-white/70" htmlFor="username">
               Username
@@ -100,6 +109,8 @@ export default function LoginPage() {
           </Link>
         </div>
       </div>
+    </div>
+      <Footer />
     </div>
   );
 }

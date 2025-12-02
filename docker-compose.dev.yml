@@ -1,0 +1,60 @@
+services:
+  db:
+    image: postgres:18-alpine
+    container_name: rabbitctf_db_dev
+    environment:
+      POSTGRES_DB: rabbitctf
+      POSTGRES_USER: rabbitctf
+      POSTGRES_PASSWORD: rabbitctf
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data_dev:/var/lib/postgresql/data
+      - ./backend/db/init:/docker-entrypoint-initdb.d:ro
+    networks:
+      - rabbitctf_network_dev
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: rabbitctf_backend_dev
+    volumes:
+      - ./backend:/app
+      - backend_uploads_dev:/app/uploads
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql+psycopg2://rabbitctf:rabbitctf@db:5432/rabbitctf
+    depends_on:
+      - db
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    networks:
+      - rabbitctf_network_dev
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: build
+    container_name: rabbitctf_frontend_dev
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "8080:5173"
+    environment:
+      - VITE_API_TARGET=http://backend:8000
+    depends_on:
+      - backend
+    command: pnpm dev
+    networks:
+      - rabbitctf_network_dev
+
+volumes:
+  postgres_data_dev:
+  backend_uploads_dev:
+
+networks:
+  rabbitctf_network_dev:
+    driver: bridge
