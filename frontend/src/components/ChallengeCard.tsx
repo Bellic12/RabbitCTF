@@ -8,7 +8,7 @@ interface ChallengeCardProps {
 export default function ChallengeCard({ challenge, onClick }: ChallengeCardProps) {
   return (
     <button
-      className="flex h-full flex-col rounded-[28px] border border-white/10 bg-[#061120] p-6 text-left transition hover:border-[#0edbc5]/40 hover:shadow-[0_25px_65px_-45px_rgba(0,0,0,0.9)]"
+      className="flex h-full flex-col rounded-box border border-white/10 bg-base-200 p-6 text-left transition hover:border-primary/40 hover:shadow-[0_25px_65px_-45px_rgba(0,0,0,0.9)]"
       onClick={() => onClick(challenge)}
       type="button"
     >
@@ -36,7 +36,7 @@ export default function ChallengeCard({ challenge, onClick }: ChallengeCardProps
           </div>
         </div>
 
-        <div className="text-right text-2xl font-bold text-[#0edbc5]">
+        <div className="text-right text-2xl font-bold text-primary">
           {challenge.points}
           <p className="mt-1 text-xs font-medium text-white/40">{challenge.solves} solves</p>
         </div>

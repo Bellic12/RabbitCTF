@@ -42,10 +42,10 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#04090f]">
+    <div className="flex min-h-screen flex-col bg-base-100">
       <Navigation />
       <div className="flex flex-1 items-center justify-center px-6 py-16 md:px-10">
-        <div className="w-full max-w-xl rounded-[32px] border border-white/10 bg-[#061120] px-8 py-12 text-white shadow-[0_35px_80px_-45px_rgba(0,0,0,0.9)] md:px-12">
+        <div className="w-full max-w-xl rounded-[32px] border border-white/10 bg-base-200 px-8 py-12 text-white shadow-[0_35px_80px_-45px_rgba(0,0,0,0.9)] md:px-12">
           <div className="text-center">
             <div className="mb-8 flex items-center justify-center gap-4 text-3xl font-semibold text-white">
               <FlagIcon />
@@ -63,7 +63,7 @@ export default function LoginPage() {
               </label>
               <input
                 id="username"
-                className="mt-2 h-12 w-full rounded-2xl border border-white/15 bg-[#040d1a] px-4 text-white transition focus:border-[#0edbc5] focus:outline-none"
+                className="mt-2 h-12 w-full rounded-2xl border border-white/15 bg-base-300 px-4 text-white transition focus:border-primary focus:outline-none"
                 onChange={event => setUsername(event.target.value)}
                 placeholder="Enter your username"
                 required
@@ -78,7 +78,7 @@ export default function LoginPage() {
               </label>
               <input
                 id="password"
-                className="mt-2 h-12 w-full rounded-2xl border border-white/15 bg-[#040d1a] px-4 text-white transition focus:border-[#0edbc5] focus:outline-none"
+                className="mt-2 h-12 w-full rounded-2xl border border-white/15 bg-base-300 px-4 text-white transition focus:border-primary focus:outline-none"
                 onChange={event => setPassword(event.target.value)}
                 placeholder="Enter your password"
                 required
@@ -88,14 +88,14 @@ export default function LoginPage() {
             </div>
 
             {error.length > 0 && (
-              <div className="flex items-center gap-3 rounded-2xl border border-error/20 bg-[#2b1010] px-4 py-3 text-sm text-error">
+              <div className="flex items-center gap-3 rounded-2xl border border-error-content bg-error px-4 py-3 text-sm text-error-content">
                 <AlertIcon />
                 <span>{error}</span>
               </div>
             )}
 
             <button
-              className="btn h-12 w-full rounded-full border-none bg-[#0edbc5] text-base font-semibold text-black hover:bg-[#10f0d6]"
+              className="btn h-12 w-full rounded-full border-none bg-primary text-base font-semibold text-black hover:bg-secondary"
               type="submit"
             >
               Login
@@ -104,7 +104,7 @@ export default function LoginPage() {
 
           <div className="mt-10 text-center text-sm text-white/60">
             Don&apos;t have an account?{' '}
-            <Link className="text-[#0edbc5] hover:underline" to="/register">
+            <Link className="text-primary hover:underline" to="/register">
               Register here
             </Link>
           </div>
@@ -117,7 +117,7 @@ export default function LoginPage() {
 
 function FlagIcon() {
   return (
-    <svg aria-hidden="true" className="h-11 w-11 text-[#0edbc5]" fill="none" viewBox="0 0 24 24">
+    <svg aria-hidden="true" className="h-11 w-11 text-primary" fill="none" viewBox="0 0 24 24">
       <path
         className="stroke-current"
         d="M6 4v16M6 4h11.2a1 1 0 01.8 1.6L16 9l2 2.4a1 1 0 01-.8 1.6H6"

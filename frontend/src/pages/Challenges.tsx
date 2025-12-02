@@ -85,10 +85,10 @@ export default function ChallengesPage() {
   }, [challenges, searchTerm, categoryFilter, difficultyFilter, statusFilter])
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#04090f] text-white">
+    <div className="flex min-h-screen flex-col bg-base-100 text-base-content">
       <Navigation />
 
-      <main className="flex-1 bg-[#04090f]">
+      <main className="flex-1 bg-base-100">
         <div className="mx-auto flex max-w-6xl flex-col gap-8 px-6 py-14">
           <header className="space-y-3">
             <h1 className="text-4xl font-bold">Challenges</h1>
@@ -97,11 +97,11 @@ export default function ChallengesPage() {
             </p>
           </header>
 
-          <section className="flex flex-col gap-4 rounded-[28px] border border-white/10 bg-[#061120] p-6 shadow-[0_25px_65px_-50px_rgba(0,0,0,0.9)] md:flex-row md:items-center md:justify-between">
+          <section className="flex flex-col gap-4 rounded-box border border-white/10 bg-base-200 p-6 shadow-[0_25px_65px_-50px_rgba(0,0,0,0.9)] md:flex-row md:items-center md:justify-between">
             <div className="flex w-full items-center gap-3 md:max-w-xl">
               <SearchIcon className="hidden h-5 w-5 text-white/30 md:block" />
               <input
-                className="h-12 w-full rounded-2xl border border-white/15 bg-[#040d1a] px-4 text-sm text-white transition focus:border-[#0edbc5] focus:outline-none"
+                className="h-12 w-full rounded-2xl border border-white/15 bg-base-300 px-4 text-sm text-white transition focus:border-primary focus:outline-none"
                 onChange={event => setSearchTerm(event.target.value)}
                 placeholder="Search challenges..."
                 value={searchTerm}
@@ -110,7 +110,7 @@ export default function ChallengesPage() {
 
             <div className="flex flex-wrap items-center gap-3 md:flex-nowrap md:gap-4">
               <select
-                className="select select-bordered h-12 min-w-[7.5rem] rounded-2xl border-white/15 bg-[#040d1a] text-sm text-white focus:border-[#0edbc5]"
+                className="select select-bordered h-12 min-w-[7.5rem] rounded-2xl border-white/15 bg-base-300 text-sm text-white focus:border-primary"
                 onChange={event => setCategoryFilter(event.target.value as typeof categoryFilter)}
                 value={categoryFilter}
               >
@@ -123,7 +123,7 @@ export default function ChallengesPage() {
               </select>
 
               <select
-                className="select select-bordered h-12 min-w-[7.5rem] rounded-2xl border-white/15 bg-[#040d1a] text-sm text-white focus:border-[#0edbc5]"
+                className="select select-bordered h-12 min-w-[7.5rem] rounded-2xl border-white/15 bg-base-300 text-sm text-white focus:border-primary"
                 onChange={event =>
                   setDifficultyFilter(event.target.value as typeof difficultyFilter)
                 }
@@ -137,7 +137,7 @@ export default function ChallengesPage() {
               </select>
 
               <select
-                className="select select-bordered h-12 min-w-[7.5rem] rounded-2xl border-white/15 bg-[#040d1a] text-sm text-white focus:border-[#0edbc5]"
+                className="select select-bordered h-12 min-w-[7.5rem] rounded-2xl border-white/15 bg-base-300 text-sm text-white focus:border-primary"
                 onChange={event => setStatusFilter(event.target.value as typeof statusFilter)}
                 value={statusFilter}
               >
@@ -150,7 +150,7 @@ export default function ChallengesPage() {
 
           {isLoading ? (
             <div className="flex h-64 items-center justify-center text-white/60">
-              <span className="loading loading-spinner loading-lg text-[#0edbc5]"></span>
+              <span className="loading loading-spinner loading-lg text-primary"></span>
             </div>
           ) : (
             <section className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
@@ -159,7 +159,7 @@ export default function ChallengesPage() {
               ))}
 
               {filteredChallenges.length === 0 && (
-                <div className="col-span-full rounded-[28px] border border-white/10 bg-[#061120] p-10 text-center text-white/60">
+                <div className="col-span-full rounded-box border border-white/10 bg-base-200 p-10 text-center text-white/60">
                   No challenges match the selected filters.
                 </div>
               )}

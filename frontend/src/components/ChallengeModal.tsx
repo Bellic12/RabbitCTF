@@ -11,12 +11,12 @@ export default function ChallengeModal({ challenge, onClose }: ChallengeModalPro
 
   return (
     <dialog className="modal modal-open">
-      <div className="modal-box w-11/12 max-w-2xl border border-white/10 bg-[#061120] text-white p-0 overflow-hidden">
+      <div className="modal-box w-11/12 max-w-2xl border border-white/10 bg-base-200 text-base-content p-0 overflow-hidden">
         {/* Header / Close Button */}
         <div className="relative p-8 pb-0">
           <button
             aria-label="Close"
-            className="btn btn-sm btn-circle absolute right-6 top-6 border border-white/10 bg-[#040d1a] text-white hover:border-[#0edbc5] hover:text-[#0edbc5]"
+            className="btn btn-sm btn-circle absolute right-6 top-6 border border-white/10 bg-base-300 text-white hover:border-primary hover:text-primary"
             onClick={onClose}
             type="button"
           >
@@ -39,7 +39,7 @@ export default function ChallengeModal({ challenge, onClose }: ChallengeModalPro
               <span className="rounded-full border border-white/10 bg-black/30 px-3 py-1 text-xs uppercase tracking-wide text-white/60">
                 {challenge.category}
               </span>
-              <span className="text-[#0edbc5]">{challenge.points} points</span>
+              <span className="text-primary">{challenge.points} points</span>
               <span className="text-white/40">{challenge.solves} solves</span>
             </div>
 
@@ -48,14 +48,14 @@ export default function ChallengeModal({ challenge, onClose }: ChallengeModalPro
 
           <div className="mt-6 flex gap-6 border-b border-white/10 text-sm font-medium text-white/60">
             <button
-              className={`pb-3 transition ${tab === 'details' ? 'border-b-2 border-[#0edbc5] text-white' : 'hover:text-white'}`}
+              className={`pb-3 transition ${tab === 'details' ? 'border-b-2 border-primary text-white' : 'hover:text-white'}`}
               onClick={() => setTab('details')}
               type="button"
             >
               Challenge Details
             </button>
             <button
-              className={`pb-3 transition ${tab === 'history' ? 'border-b-2 border-[#0edbc5] text-white' : 'hover:text-white'}`}
+              className={`pb-3 transition ${tab === 'history' ? 'border-b-2 border-primary text-white' : 'hover:text-white'}`}
               onClick={() => setTab('history')}
               type="button"
             >
@@ -109,7 +109,7 @@ export default function ChallengeModal({ challenge, onClose }: ChallengeModalPro
                           <p className="text-xs text-white/40">{file.size}</p>
                         </div>
                         <a
-                          className="btn btn-sm rounded-full border-none bg-[#0edbc5] text-black hover:bg-[#10f0d6]"
+                          className="btn btn-sm rounded-full border-none bg-primary text-black hover:bg-secondary"
                           href={file.url}
                         >
                           Download
@@ -144,12 +144,12 @@ export default function ChallengeModal({ challenge, onClose }: ChallengeModalPro
                 </h3>
                 <form className="flex flex-col gap-3 md:flex-row">
                   <input
-                    className="h-12 flex-1 rounded-2xl border border-white/15 bg-[#040d1a] px-4 text-sm text-white focus:border-[#0edbc5] focus:outline-none"
+                    className="h-12 flex-1 rounded-2xl border border-white/15 bg-base-300 px-4 text-sm text-white focus:border-primary focus:outline-none"
                     placeholder="flag{...}"
                     type="text"
                   />
                   <button
-                    className="btn h-12 rounded-full border-none bg-[#0edbc5] px-6 text-sm font-semibold text-black hover:bg-[#10f0d6]"
+                    className="btn h-12 rounded-full border-none bg-primary px-6 text-sm font-semibold text-black hover:bg-secondary"
                     type="submit"
                   >
                     Submit
@@ -170,7 +170,7 @@ export default function ChallengeModal({ challenge, onClose }: ChallengeModalPro
                         <p className="text-sm font-semibold text-white">{entry.team}</p>
                         <p className="text-xs text-white/40">{entry.submittedAt}</p>
                       </div>
-                      <span className="text-[#0edbc5]">{entry.points} pts</span>
+                      <span className="text-primary">{entry.points} pts</span>
                     </div>
                   ))}
                 </div>
