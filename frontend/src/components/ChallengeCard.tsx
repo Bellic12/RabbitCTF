@@ -1,8 +1,8 @@
-import type { Challenge } from '../types/challenge';
+import type { Challenge } from '../types/challenge'
 
 interface ChallengeCardProps {
-  challenge: Challenge;
-  onClick: (challenge: Challenge) => void;
+  challenge: Challenge
+  onClick: (challenge: Challenge) => void
 }
 
 export default function ChallengeCard({ challenge, onClick }: ChallengeCardProps) {
@@ -38,14 +38,12 @@ export default function ChallengeCard({ challenge, onClick }: ChallengeCardProps
 
         <div className="text-right text-2xl font-bold text-[#0edbc5]">
           {challenge.points}
-          <p className="mt-1 text-xs font-medium text-white/40">
-            {challenge.solves} solves
-          </p>
+          <p className="mt-1 text-xs font-medium text-white/40">{challenge.solves} solves</p>
         </div>
       </div>
 
       <div className="mt-6 flex flex-wrap gap-2">
-        {challenge.tags.map((tag) => (
+        {challenge.tags.map(tag => (
           <span
             className="rounded-full border border-white/10 bg-black/30 px-3 py-1 text-xs text-white/60"
             key={tag}
@@ -55,7 +53,7 @@ export default function ChallengeCard({ challenge, onClick }: ChallengeCardProps
         ))}
       </div>
     </button>
-  );
+  )
 }
 
 function SolvedIcon() {
@@ -71,7 +69,7 @@ function SolvedIcon() {
         />
       </svg>
     </span>
-  );
+  )
 }
 
 function UnsolvedIcon() {
@@ -81,5 +79,5 @@ function UnsolvedIcon() {
         <circle className="stroke-current" cx="12" cy="12" r="8" strokeWidth={1.6} />
       </svg>
     </span>
-  );
+  )
 }

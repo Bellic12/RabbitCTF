@@ -1,37 +1,42 @@
-import { useMemo, useState, useEffect } from 'react';
-import Navigation from '../components/Navigation';
-import Footer from '../components/Footer';
-import ChallengeCard from '../components/ChallengeCard';
-import ChallengeModal from '../components/ChallengeModal';
-import { useAuth } from '../context/AuthContext';
-import type { Challenge, ChallengeCategory, ChallengeDifficulty, ChallengeStatus } from '../types/challenge';
+import { useMemo, useState, useEffect } from 'react'
+import Navigation from '../components/Navigation'
+import Footer from '../components/Footer'
+import ChallengeCard from '../components/ChallengeCard'
+import ChallengeModal from '../components/ChallengeModal'
+import { useAuth } from '../context/AuthContext'
+import type {
+  Challenge,
+  ChallengeCategory,
+  ChallengeDifficulty,
+  ChallengeStatus,
+} from '../types/challenge'
 
 export default function ChallengesPage() {
-  const { token } = useAuth();
-  const [challenges, setChallenges] = useState<Challenge[]>([]);
-  const [categories, setCategories] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
+  const { token } = useAuth()
+  const [challenges, setChallenges] = useState<Challenge[]>([])
+  const [categories, setCategories] = useState<string[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [searchTerm, setSearchTerm] = useState('')
 
   useEffect(() => {
     const fetchData = async () => {
       if (!token) {
-        setIsLoading(false);
-        return;
+        setIsLoading(false)
+        return
       }
-      
+
       try {
         const [challengesRes, categoriesRes] = await Promise.all([
           fetch(`${import.meta.env.VITE_API_URL}/api/v1/challenges/`, {
-            headers: { 'Authorization': `Bearer ${token}` },
+            headers: { Authorization: `Bearer ${token}` },
           }),
           fetch(`${import.meta.env.VITE_API_URL}/api/v1/challenges/categories`, {
-            headers: { 'Authorization': `Bearer ${token}` },
-          })
-        ]);
-        
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+        ])
+
         if (challengesRes.ok) {
-          const data = await challengesRes.json();
+          const data = await challengesRes.json()
           // Map backend data to frontend interface
           const mappedChallenges: Challenge[] = data.map((c: any) => ({
             id: String(c.id),
@@ -46,37 +51,38 @@ export default function ChallengesPage() {
             connectionInfo: c.operational_data,
             files: [], // Backend doesn't return files yet
             solveHistory: [], // Backend doesn't return history yet
-          }));
-          setChallenges(mappedChallenges);
+          }))
+          setChallenges(mappedChallenges)
         }
 
         if (categoriesRes.ok) {
-          const data = await categoriesRes.json();
-          setCategories(data.map((c: any) => c.name));
+          const data = await categoriesRes.json()
+          setCategories(data.map((c: any) => c.name))
         }
       } catch (error) {
-        console.error('Failed to fetch data', error);
+        console.error('Failed to fetch data', error)
       } finally {
-        setIsLoading(false);
+        setIsLoading(false)
       }
-    };
+    }
 
-    fetchData();
-  }, [token]);
-  const [categoryFilter, setCategoryFilter] = useState<'All' | ChallengeCategory>('All');
-  const [difficultyFilter, setDifficultyFilter] = useState<'All' | ChallengeDifficulty>('All');
-  const [statusFilter, setStatusFilter] = useState<'All' | ChallengeStatus>('All');
-  const [selected, setSelected] = useState<Challenge | null>(null);
+    fetchData()
+  }, [token])
+  const [categoryFilter, setCategoryFilter] = useState<'All' | ChallengeCategory>('All')
+  const [difficultyFilter, setDifficultyFilter] = useState<'All' | ChallengeDifficulty>('All')
+  const [statusFilter, setStatusFilter] = useState<'All' | ChallengeStatus>('All')
+  const [selected, setSelected] = useState<Challenge | null>(null)
 
   const filteredChallenges = useMemo(() => {
-    return challenges.filter((challenge) => {
-      const matchTerm = challenge.title.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchCategory = categoryFilter === 'All' || challenge.category === categoryFilter;
-      const matchDifficulty = difficultyFilter === 'All' || challenge.difficulty === difficultyFilter;
-      const matchStatus = statusFilter === 'All' || challenge.status === statusFilter;
-      return matchTerm && matchCategory && matchDifficulty && matchStatus;
-    });
-  }, [challenges, searchTerm, categoryFilter, difficultyFilter, statusFilter]);
+    return challenges.filter(challenge => {
+      const matchTerm = challenge.title.toLowerCase().includes(searchTerm.toLowerCase())
+      const matchCategory = categoryFilter === 'All' || challenge.category === categoryFilter
+      const matchDifficulty =
+        difficultyFilter === 'All' || challenge.difficulty === difficultyFilter
+      const matchStatus = statusFilter === 'All' || challenge.status === statusFilter
+      return matchTerm && matchCategory && matchDifficulty && matchStatus
+    })
+  }, [challenges, searchTerm, categoryFilter, difficultyFilter, statusFilter])
 
   return (
     <div className="flex min-h-screen flex-col bg-[#04090f] text-white">
@@ -96,7 +102,7 @@ export default function ChallengesPage() {
               <SearchIcon className="hidden h-5 w-5 text-white/30 md:block" />
               <input
                 className="h-12 w-full rounded-2xl border border-white/15 bg-[#040d1a] px-4 text-sm text-white transition focus:border-[#0edbc5] focus:outline-none"
-                onChange={(event) => setSearchTerm(event.target.value)}
+                onChange={event => setSearchTerm(event.target.value)}
                 placeholder="Search challenges..."
                 value={searchTerm}
               />
@@ -105,11 +111,11 @@ export default function ChallengesPage() {
             <div className="flex flex-wrap items-center gap-3 md:flex-nowrap md:gap-4">
               <select
                 className="select select-bordered h-12 min-w-[7.5rem] rounded-2xl border-white/15 bg-[#040d1a] text-sm text-white focus:border-[#0edbc5]"
-                onChange={(event) => setCategoryFilter(event.target.value as typeof categoryFilter)}
+                onChange={event => setCategoryFilter(event.target.value as typeof categoryFilter)}
                 value={categoryFilter}
               >
                 <option value="All">All</option>
-                {categories.map((category) => (
+                {categories.map(category => (
                   <option key={category} value={category}>
                     {category}
                   </option>
@@ -118,7 +124,9 @@ export default function ChallengesPage() {
 
               <select
                 className="select select-bordered h-12 min-w-[7.5rem] rounded-2xl border-white/15 bg-[#040d1a] text-sm text-white focus:border-[#0edbc5]"
-                onChange={(event) => setDifficultyFilter(event.target.value as typeof difficultyFilter)}
+                onChange={event =>
+                  setDifficultyFilter(event.target.value as typeof difficultyFilter)
+                }
                 value={difficultyFilter}
               >
                 <option value="All">All</option>
@@ -130,7 +138,7 @@ export default function ChallengesPage() {
 
               <select
                 className="select select-bordered h-12 min-w-[7.5rem] rounded-2xl border-white/15 bg-[#040d1a] text-sm text-white focus:border-[#0edbc5]"
-                onChange={(event) => setStatusFilter(event.target.value as typeof statusFilter)}
+                onChange={event => setStatusFilter(event.target.value as typeof statusFilter)}
                 value={statusFilter}
               >
                 <option value="All">All</option>
@@ -146,40 +154,30 @@ export default function ChallengesPage() {
             </div>
           ) : (
             <section className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-            {filteredChallenges.map((challenge) => (
-              <ChallengeCard
-                key={challenge.id}
-                challenge={challenge}
-                onClick={setSelected}
-              />
-            ))}
+              {filteredChallenges.map(challenge => (
+                <ChallengeCard key={challenge.id} challenge={challenge} onClick={setSelected} />
+              ))}
 
-            {filteredChallenges.length === 0 && (
-              <div className="col-span-full rounded-[28px] border border-white/10 bg-[#061120] p-10 text-center text-white/60">
-                No challenges match the selected filters.
-              </div>
-            )}
-          </section>
+              {filteredChallenges.length === 0 && (
+                <div className="col-span-full rounded-[28px] border border-white/10 bg-[#061120] p-10 text-center text-white/60">
+                  No challenges match the selected filters.
+                </div>
+              )}
+            </section>
           )}
         </div>
       </main>
 
       <Footer />
 
-      {selected && (
-        <ChallengeModal challenge={selected} onClose={() => setSelected(null)} />
-      )}
+      {selected && <ChallengeModal challenge={selected} onClose={() => setSelected(null)} />}
     </div>
-  );
+  )
 }
-
-
 
 interface IconProps {
-  className?: string;
+  className?: string
 }
-
-
 
 function SearchIcon({ className }: IconProps) {
   return (
@@ -192,5 +190,5 @@ function SearchIcon({ className }: IconProps) {
         strokeWidth={1.4}
       />
     </svg>
-  );
+  )
 }

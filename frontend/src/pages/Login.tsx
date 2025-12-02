@@ -1,20 +1,20 @@
-import { useState } from 'react';
-import type { FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import Navigation from '../components/Navigation';
-import Footer from '../components/Footer';
+import { useState } from 'react'
+import type { FormEvent } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
+import Navigation from '../components/Navigation'
+import Footer from '../components/Footer'
 
 export default function LoginPage() {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const navigate = useNavigate();
-  const { login } = useAuth();
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const navigate = useNavigate()
+  const { login } = useAuth()
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setError('');
+    event.preventDefault()
+    setError('')
 
     // # Authentication example
 
@@ -23,23 +23,23 @@ export default function LoginPage() {
         body: JSON.stringify({ password, username }),
         headers: { 'Content-Type': 'application/json' },
         method: 'POST',
-      });
+      })
 
       if (!response.ok) {
-        const payload = await response.json().catch(() => ({}));
-        setError(payload.detail ?? 'Invalid username or password');
-        return;
+        const payload = await response.json().catch(() => ({}))
+        setError(payload.detail ?? 'Invalid username or password')
+        return
       }
 
-      const data = await response.json();
-      login(data.access_token);
+      const data = await response.json()
+      login(data.access_token)
 
-      navigate('/');
+      navigate('/')
     } catch (caught) {
-      setError('Unable to reach the authentication service');
-      console.error('Login request failed', caught);
+      setError('Unable to reach the authentication service')
+      console.error('Login request failed', caught)
     }
-  };
+  }
 
   return (
     <div className="flex min-h-screen flex-col bg-[#04090f]">
@@ -57,62 +57,62 @@ export default function LoginPage() {
           </div>
 
           <form className="mt-10 space-y-6" onSubmit={handleSubmit}>
-          <div className="text-left">
-            <label className="text-sm font-semibold text-white/70" htmlFor="username">
-              Username
-            </label>
-            <input
-              id="username"
-              className="mt-2 h-12 w-full rounded-2xl border border-white/15 bg-[#040d1a] px-4 text-white transition focus:border-[#0edbc5] focus:outline-none"
-              onChange={(event) => setUsername(event.target.value)}
-              placeholder="Enter your username"
-              required
-              type="text"
-              value={username}
-            />
-          </div>
-
-          <div className="text-left">
-            <label className="text-sm font-semibold text-white/70" htmlFor="password">
-              Password
-            </label>
-            <input
-              id="password"
-              className="mt-2 h-12 w-full rounded-2xl border border-white/15 bg-[#040d1a] px-4 text-white transition focus:border-[#0edbc5] focus:outline-none"
-              onChange={(event) => setPassword(event.target.value)}
-              placeholder="Enter your password"
-              required
-              type="password"
-              value={password}
-            />
-          </div>
-
-          {error.length > 0 && (
-            <div className="flex items-center gap-3 rounded-2xl border border-error/20 bg-[#2b1010] px-4 py-3 text-sm text-error">
-              <AlertIcon />
-              <span>{error}</span>
+            <div className="text-left">
+              <label className="text-sm font-semibold text-white/70" htmlFor="username">
+                Username
+              </label>
+              <input
+                id="username"
+                className="mt-2 h-12 w-full rounded-2xl border border-white/15 bg-[#040d1a] px-4 text-white transition focus:border-[#0edbc5] focus:outline-none"
+                onChange={event => setUsername(event.target.value)}
+                placeholder="Enter your username"
+                required
+                type="text"
+                value={username}
+              />
             </div>
-          )}
 
-          <button
-            className="btn h-12 w-full rounded-full border-none bg-[#0edbc5] text-base font-semibold text-black hover:bg-[#10f0d6]"
-            type="submit"
-          >
-            Login
-          </button>
-        </form>
+            <div className="text-left">
+              <label className="text-sm font-semibold text-white/70" htmlFor="password">
+                Password
+              </label>
+              <input
+                id="password"
+                className="mt-2 h-12 w-full rounded-2xl border border-white/15 bg-[#040d1a] px-4 text-white transition focus:border-[#0edbc5] focus:outline-none"
+                onChange={event => setPassword(event.target.value)}
+                placeholder="Enter your password"
+                required
+                type="password"
+                value={password}
+              />
+            </div>
 
-        <div className="mt-10 text-center text-sm text-white/60">
-          Don&apos;t have an account?{' '}
-          <Link className="text-[#0edbc5] hover:underline" to="/register">
-            Register here
-          </Link>
+            {error.length > 0 && (
+              <div className="flex items-center gap-3 rounded-2xl border border-error/20 bg-[#2b1010] px-4 py-3 text-sm text-error">
+                <AlertIcon />
+                <span>{error}</span>
+              </div>
+            )}
+
+            <button
+              className="btn h-12 w-full rounded-full border-none bg-[#0edbc5] text-base font-semibold text-black hover:bg-[#10f0d6]"
+              type="submit"
+            >
+              Login
+            </button>
+          </form>
+
+          <div className="mt-10 text-center text-sm text-white/60">
+            Don&apos;t have an account?{' '}
+            <Link className="text-[#0edbc5] hover:underline" to="/register">
+              Register here
+            </Link>
+          </div>
         </div>
       </div>
-    </div>
       <Footer />
     </div>
-  );
+  )
 }
 
 function FlagIcon() {
@@ -126,7 +126,7 @@ function FlagIcon() {
         strokeWidth={1.6}
       />
     </svg>
-  );
+  )
 }
 
 function AlertIcon() {
@@ -146,5 +146,5 @@ function AlertIcon() {
         strokeWidth={1.6}
       />
     </svg>
-  );
+  )
 }

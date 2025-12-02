@@ -1,6 +1,6 @@
-import { Link } from 'react-router-dom';
-import Navigation from '../components/Navigation';
-import Footer from '../components/Footer';
+import { Link } from 'react-router-dom'
+import Navigation from '../components/Navigation'
+import Footer from '../components/Footer'
 
 // Example stats, later to be fetched from the backend and database
 
@@ -8,7 +8,7 @@ const stats = [
   { icon: TrophyIcon, label: 'Total Points', value: '250' },
   { icon: ShieldIcon, label: 'Challenges', value: '42' },
   { icon: TeamIcon, label: 'Teams Registered', value: '128' },
-];
+]
 
 export default function HomePage() {
   return (
@@ -49,7 +49,7 @@ export default function HomePage() {
           </section>
 
           <section className="grid w-full gap-6 md:grid-cols-3">
-            {stats.map((item) => (
+            {stats.map(item => (
               <div
                 className="rounded-[28px] border border-white/10 bg-[#061120] px-8 py-10 text-left shadow-[0_25px_60px_-45px_rgba(0,0,0,0.9)]"
                 key={item.label}
@@ -69,7 +69,7 @@ export default function HomePage() {
 
       <Footer />
     </div>
-  );
+  )
 }
 
 function TrophyIcon() {
@@ -83,7 +83,7 @@ function TrophyIcon() {
         strokeWidth={1.4}
       />
     </svg>
-  );
+  )
 }
 
 function ShieldIcon() {
@@ -97,7 +97,7 @@ function ShieldIcon() {
         strokeWidth={1.4}
       />
     </svg>
-  );
+  )
 }
 
 function TeamIcon() {
@@ -111,5 +111,5 @@ function TeamIcon() {
         strokeWidth={1.4}
       />
     </svg>
-  );
+  )
 }

@@ -1,15 +1,15 @@
-import { Link, NavLink } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { Link, NavLink } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 
 export default function Navigation() {
-  const { user, logout, isAuthenticated, isLoading } = useAuth();
+  const { user, logout, isAuthenticated, isLoading } = useAuth()
   const links = [
     { label: 'Home', to: '/' },
     { label: 'Challenges', to: '/challenges' },
     { label: 'Leaderboard', to: '/leaderboard' },
     { label: 'Rules', to: '/rules' },
     { label: 'Admin', to: '/admin' },
-  ];
+  ]
 
   return (
     <header className="border-b border-white/5 bg-[#03070d]/95 backdrop-blur">
@@ -20,7 +20,7 @@ export default function Navigation() {
         </div>
 
         <nav className="hidden items-center gap-6 md:flex">
-          {links.map((link) => (
+          {links.map(link => (
             <NavLink
               className={({ isActive }) =>
                 `text-sm font-medium transition-colors ${
@@ -97,7 +97,7 @@ export default function Navigation() {
         </div>
       </div>
     </header>
-  );
+  )
 }
 
 function FlagIcon() {
@@ -111,5 +111,5 @@ function FlagIcon() {
         strokeWidth={1.6}
       />
     </svg>
-  );
+  )
 }

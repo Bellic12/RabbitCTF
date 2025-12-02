@@ -1,24 +1,24 @@
-import { useState } from 'react';
-import type { FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import Navigation from '../components/Navigation';
-import Footer from '../components/Footer';
+import { useState } from 'react'
+import type { FormEvent } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import Navigation from '../components/Navigation'
+import Footer from '../components/Footer'
 
 export default function RegisterPage() {
-  const [username, setUsername] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState('');
-  const navigate = useNavigate();
+  const [username, setUsername] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [error, setError] = useState('')
+  const navigate = useNavigate()
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setError('');
+    event.preventDefault()
+    setError('')
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match');
-      return;
+      setError('Passwords do not match')
+      return
     }
 
     // # Registration example
@@ -28,20 +28,20 @@ export default function RegisterPage() {
         body: JSON.stringify({ email, password, password_confirm: confirmPassword, username }),
         headers: { 'Content-Type': 'application/json' },
         method: 'POST',
-      });
+      })
 
       if (!response.ok) {
-        const payload = await response.json().catch(() => ({}));
-        setError(payload.detail ?? 'Unable to create the account');
-        return;
+        const payload = await response.json().catch(() => ({}))
+        setError(payload.detail ?? 'Unable to create the account')
+        return
       }
 
-      navigate('/login');
+      navigate('/login')
     } catch (caught) {
-      setError('Unable to reach the registration service');
-      console.error('Register request failed', caught);
+      setError('Unable to reach the registration service')
+      console.error('Register request failed', caught)
     }
-  };
+  }
 
   return (
     <div className="flex min-h-screen flex-col bg-[#04090f]">
@@ -59,92 +59,92 @@ export default function RegisterPage() {
           </div>
 
           <form className="mt-10 space-y-6" onSubmit={handleSubmit}>
-          <div className="text-left">
-            <label className="text-sm font-semibold text-white/70" htmlFor="username">
-              Username
-            </label>
-            <input
-              id="username"
-              className="mt-2 h-12 w-full rounded-2xl border border-white/15 bg-[#040d1a] px-4 text-white transition focus:border-[#0edbc5] focus:outline-none"
-              onChange={(event) => setUsername(event.target.value)}
-              placeholder="Choose a username"
-              required
-              type="text"
-              value={username}
-            />
-          </div>
-
-          <div className="text-left">
-            <label className="text-sm font-semibold text-white/70" htmlFor="email">
-              Email
-            </label>
-            <input
-              id="email"
-              className="mt-2 h-12 w-full rounded-2xl border border-white/15 bg-[#040d1a] px-4 text-white transition focus:border-[#0edbc5] focus:outline-none"
-              onChange={(event) => setEmail(event.target.value)}
-              placeholder="your.email@example.com"
-              required
-              type="email"
-              value={email}
-            />
-          </div>
-
-          <div className="text-left">
-            <label className="text-sm font-semibold text-white/70" htmlFor="password">
-              Password
-            </label>
-            <input
-              id="password"
-              className="mt-2 h-12 w-full rounded-2xl border border-white/15 bg-[#040d1a] px-4 text-white transition focus:border-[#0edbc5] focus:outline-none"
-              onChange={(event) => setPassword(event.target.value)}
-              placeholder="Create a password"
-              required
-              type="password"
-              value={password}
-            />
-          </div>
-
-          <div className="text-left">
-            <label className="text-sm font-semibold text-white/70" htmlFor="confirmPassword">
-              Confirm Password
-            </label>
-            <input
-              id="confirmPassword"
-              className="mt-2 h-12 w-full rounded-2xl border border-white/15 bg-[#040d1a] px-4 text-white transition focus:border-[#0edbc5] focus:outline-none"
-              onChange={(event) => setConfirmPassword(event.target.value)}
-              placeholder="Confirm your password"
-              required
-              type="password"
-              value={confirmPassword}
-            />
-          </div>
-
-          {error.length > 0 && (
-            <div className="flex items-center gap-3 rounded-2xl border border-error/20 bg-[#2b1010] px-4 py-3 text-sm text-error">
-              <AlertIcon />
-              <span>{error}</span>
+            <div className="text-left">
+              <label className="text-sm font-semibold text-white/70" htmlFor="username">
+                Username
+              </label>
+              <input
+                id="username"
+                className="mt-2 h-12 w-full rounded-2xl border border-white/15 bg-[#040d1a] px-4 text-white transition focus:border-[#0edbc5] focus:outline-none"
+                onChange={event => setUsername(event.target.value)}
+                placeholder="Choose a username"
+                required
+                type="text"
+                value={username}
+              />
             </div>
-          )}
 
-          <button
-            className="btn h-12 w-full rounded-full border-none bg-[#0edbc5] text-base font-semibold text-black hover:bg-[#10f0d6]"
-            type="submit"
-          >
-            Register
-          </button>
-        </form>
+            <div className="text-left">
+              <label className="text-sm font-semibold text-white/70" htmlFor="email">
+                Email
+              </label>
+              <input
+                id="email"
+                className="mt-2 h-12 w-full rounded-2xl border border-white/15 bg-[#040d1a] px-4 text-white transition focus:border-[#0edbc5] focus:outline-none"
+                onChange={event => setEmail(event.target.value)}
+                placeholder="your.email@example.com"
+                required
+                type="email"
+                value={email}
+              />
+            </div>
 
-        <div className="mt-10 text-center text-sm text-white/60">
-          Already have an account?{' '}
-          <Link className="text-[#0edbc5] hover:underline" to="/login">
-            Login here
-          </Link>
+            <div className="text-left">
+              <label className="text-sm font-semibold text-white/70" htmlFor="password">
+                Password
+              </label>
+              <input
+                id="password"
+                className="mt-2 h-12 w-full rounded-2xl border border-white/15 bg-[#040d1a] px-4 text-white transition focus:border-[#0edbc5] focus:outline-none"
+                onChange={event => setPassword(event.target.value)}
+                placeholder="Create a password"
+                required
+                type="password"
+                value={password}
+              />
+            </div>
+
+            <div className="text-left">
+              <label className="text-sm font-semibold text-white/70" htmlFor="confirmPassword">
+                Confirm Password
+              </label>
+              <input
+                id="confirmPassword"
+                className="mt-2 h-12 w-full rounded-2xl border border-white/15 bg-[#040d1a] px-4 text-white transition focus:border-[#0edbc5] focus:outline-none"
+                onChange={event => setConfirmPassword(event.target.value)}
+                placeholder="Confirm your password"
+                required
+                type="password"
+                value={confirmPassword}
+              />
+            </div>
+
+            {error.length > 0 && (
+              <div className="flex items-center gap-3 rounded-2xl border border-error/20 bg-[#2b1010] px-4 py-3 text-sm text-error">
+                <AlertIcon />
+                <span>{error}</span>
+              </div>
+            )}
+
+            <button
+              className="btn h-12 w-full rounded-full border-none bg-[#0edbc5] text-base font-semibold text-black hover:bg-[#10f0d6]"
+              type="submit"
+            >
+              Register
+            </button>
+          </form>
+
+          <div className="mt-10 text-center text-sm text-white/60">
+            Already have an account?{' '}
+            <Link className="text-[#0edbc5] hover:underline" to="/login">
+              Login here
+            </Link>
+          </div>
         </div>
       </div>
-    </div>
       <Footer />
     </div>
-  );
+  )
 }
 
 function FlagIcon() {
@@ -158,7 +158,7 @@ function FlagIcon() {
         strokeWidth={1.6}
       />
     </svg>
-  );
+  )
 }
 
 function AlertIcon() {
@@ -178,5 +178,5 @@ function AlertIcon() {
         strokeWidth={1.6}
       />
     </svg>
-  );
+  )
 }

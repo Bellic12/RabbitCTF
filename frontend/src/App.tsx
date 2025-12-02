@@ -1,12 +1,11 @@
-import { Navigate, Route, Routes } from 'react-router-dom';
-import ChallengesPage from './pages/Challenges';
-import HomePage from './pages/Home';
-import LoginPage from './pages/Login';
-import RegisterPage from './pages/Register';
+import { Navigate, Route, Routes } from 'react-router-dom'
+import ChallengesPage from './pages/Challenges'
+import HomePage from './pages/Home'
+import LoginPage from './pages/Login'
+import RegisterPage from './pages/Register'
 
 export default function App() {
   return (
-
     // Define application routes
 
     <Routes>
@@ -16,5 +15,5 @@ export default function App() {
       <Route path="/" element={<HomePage />} />
       <Route path="*" element={<Navigate replace to="/" />} />
     </Routes>
-  );
+  )
 }
