@@ -98,19 +98,20 @@ export default function ChallengesPage() {
           </header>
 
           <section className="flex flex-col gap-4 rounded-box border border-white/10 bg-base-200 p-6 shadow-[0_25px_65px_-50px_rgba(0,0,0,0.9)] md:flex-row md:items-center md:justify-between">
-            <div className="flex w-full items-center gap-3 md:max-w-xl">
-              <SearchIcon className="hidden h-5 w-5 text-white/30 md:block" />
+            <label className="input input-bordered flex w-full items-center gap-2 bg-base-300 md:max-w-xl">
+              <SearchIcon className="hidden h-5 w-5 opacity-50 md:block" />
               <input
-                className="h-12 w-full rounded-2xl border border-white/15 bg-base-300 px-4 text-sm text-white transition focus:border-primary focus:outline-none"
+                className="grow"
                 onChange={event => setSearchTerm(event.target.value)}
                 placeholder="Search challenges..."
+                type="text"
                 value={searchTerm}
               />
-            </div>
+            </label>
 
             <div className="flex flex-wrap items-center gap-3 md:flex-nowrap md:gap-4">
               <select
-                className="select select-bordered h-12 min-w-[7.5rem] rounded-2xl border-white/15 bg-base-300 text-sm text-white focus:border-primary"
+                className="select select-bordered w-full bg-base-300 md:w-auto"
                 onChange={event => setCategoryFilter(event.target.value as typeof categoryFilter)}
                 value={categoryFilter}
               >
@@ -123,7 +124,7 @@ export default function ChallengesPage() {
               </select>
 
               <select
-                className="select select-bordered h-12 min-w-[7.5rem] rounded-2xl border-white/15 bg-base-300 text-sm text-white focus:border-primary"
+                className="select select-bordered w-full bg-base-300 md:w-auto"
                 onChange={event =>
                   setDifficultyFilter(event.target.value as typeof difficultyFilter)
                 }
@@ -137,7 +138,7 @@ export default function ChallengesPage() {
               </select>
 
               <select
-                className="select select-bordered h-12 min-w-[7.5rem] rounded-2xl border-white/15 bg-base-300 text-sm text-white focus:border-primary"
+                className="select select-bordered w-full bg-base-300 md:w-auto"
                 onChange={event => setStatusFilter(event.target.value as typeof statusFilter)}
                 value={statusFilter}
               >
