@@ -53,7 +53,9 @@ services:
 
 volumes:
   postgres_data_dev:
+    name: rabbitctf_postgres_data_dev
   backend_uploads_dev:
+    name: rabbitctf_backend_uploads_dev
 
 networks:
   rabbitctf_network_dev:
