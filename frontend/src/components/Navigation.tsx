@@ -1,18 +1,18 @@
-import { Link, NavLink } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { Link, NavLink } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 
 export default function Navigation() {
-  const { user, logout, isAuthenticated, isLoading } = useAuth();
+  const { user, logout, isAuthenticated, isLoading } = useAuth()
   const links = [
     { label: 'Home', to: '/' },
     { label: 'Challenges', to: '/challenges' },
     { label: 'Leaderboard', to: '/leaderboard' },
     { label: 'Rules', to: '/rules' },
     { label: 'Admin', to: '/admin' },
-  ];
+  ]
 
   return (
-    <header className="border-b border-white/5 bg-[#03070d]/95 backdrop-blur">
+    <header className="border-b border-white/5 bg-base-100/95 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
         <div className="flex items-center gap-2 text-lg font-semibold text-white">
           <FlagIcon />
@@ -20,11 +20,11 @@ export default function Navigation() {
         </div>
 
         <nav className="hidden items-center gap-6 md:flex">
-          {links.map((link) => (
+          {links.map(link => (
             <NavLink
               className={({ isActive }) =>
                 `text-sm font-medium transition-colors ${
-                  isActive ? 'text-[#0edbc5]' : 'text-white/60 hover:text-white'
+                  isActive ? 'text-primary' : 'text-white/60 hover:text-white'
                 }`
               }
               end={link.to === '/'}
@@ -64,10 +64,10 @@ export default function Navigation() {
               </div>
               <ul
                 tabIndex={0}
-                className="menu dropdown-content z-[1] mt-3 w-52 rounded-box bg-[#061120] p-2 shadow-lg ring-1 ring-white/10"
+                className="menu dropdown-content z-[1] mt-3 w-52 rounded-box bg-base-200 p-2 shadow-lg ring-1 ring-white/10"
               >
                 <li>
-                  <Link to="/profile" className="text-white hover:text-[#0edbc5]">
+                  <Link to="/profile" className="text-white hover:text-primary">
                     Profile
                   </Link>
                 </li>
@@ -87,7 +87,7 @@ export default function Navigation() {
                 Login
               </Link>
               <Link
-                className="btn btn-sm rounded-full border-none bg-[#0edbc5] text-black hover:bg-[#10f0d6]"
+                className="btn btn-sm rounded-full border-none bg-primary text-black hover:bg-secondary"
                 to="/register"
               >
                 Register
@@ -97,12 +97,12 @@ export default function Navigation() {
         </div>
       </div>
     </header>
-  );
+  )
 }
 
 function FlagIcon() {
   return (
-    <svg aria-hidden="true" className="h-5 w-5 text-[#0edbc5]" fill="none" viewBox="0 0 24 24">
+    <svg aria-hidden="true" className="h-5 w-5 text-primary" fill="none" viewBox="0 0 24 24">
       <path
         className="stroke-current"
         d="M6 4v16M6 4h11.2a1 1 0 01.8 1.6L16 9l2 2.4a1 1 0 01-.8 1.6H6"
@@ -111,5 +111,5 @@ function FlagIcon() {
         strokeWidth={1.6}
       />
     </svg>
-  );
+  )
 }

@@ -21,7 +21,7 @@ export default defineConfig([
   globalIgnores(['dist']),
   {
     files: ['**/*.{ts,tsx}'],
-    
+
     extends: [
       js.configs.recommended,
       tseslint.configs.recommendedTypeChecked,
@@ -29,7 +29,7 @@ export default defineConfig([
       reactRefresh.configs.vite,
       prettierConfig,
     ],
-    
+
     languageOptions: {
       parserOptions: {
         project: ['./tsconfig.node.json', './tsconfig.app.json'],
@@ -38,7 +38,7 @@ export default defineConfig([
       ecmaVersion: 2020,
       globals: globals.browser,
     },
-    
+
     plugins: {
       prettier: prettierPlugin,
       import: importPlugin,
@@ -50,7 +50,7 @@ export default defineConfig([
       unicorn,
       perfectionist,
     },
-    
+
     rules: {
       // ===========================
       // React & Refresh

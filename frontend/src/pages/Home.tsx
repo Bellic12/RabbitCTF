@@ -1,6 +1,6 @@
-import { Link } from 'react-router-dom';
-import Navigation from '../components/Navigation';
-import Footer from '../components/Footer';
+import { Link } from 'react-router-dom'
+import Navigation from '../components/Navigation'
+import Footer from '../components/Footer'
 
 // Example stats, later to be fetched from the backend and database
 
@@ -8,24 +8,24 @@ const stats = [
   { icon: TrophyIcon, label: 'Total Points', value: '250' },
   { icon: ShieldIcon, label: 'Challenges', value: '42' },
   { icon: TeamIcon, label: 'Teams Registered', value: '128' },
-];
+]
 
 export default function HomePage() {
   return (
-    <div className="flex min-h-screen flex-col bg-[#04090f] text-white">
+    <div className="flex min-h-screen flex-col bg-base-100 text-white">
       <Navigation />
 
-      <main className="flex-1 bg-[#04090f]">
+      <main className="flex-1 bg-base-100">
         <div className="mx-auto flex max-w-6xl flex-col gap-16 px-6 py-20 text-center">
           <section className="space-y-6">
             <h1 className="text-5xl font-bold">
-              RabbitCTF <span className="text-[#0edbc5]">2025</span>
+              RabbitCTF <span className="text-primary">2025</span>
             </h1>
             <p className="text-lg text-white/60">
               Test your cybersecurity skills in our competitive capture the flag challenge platform
             </p>
 
-            <div className="w-full rounded-[34px] border border-white/10 bg-[#061120] px-6 py-12 shadow-[0_35px_80px_-45px_rgba(0,0,0,0.9)] md:px-12">
+            <div className="w-full rounded-[34px] border border-white/10 bg-base-200 px-6 py-12 shadow-[0_35px_80px_-45px_rgba(0,0,0,0.9)] md:px-12">
               <div className="flex justify-center">
                 <span className="rounded-full border border-white/10 bg-black/30 px-6 py-1 text-sm font-semibold text-white/70">
                   • Event Finished
@@ -33,7 +33,7 @@ export default function HomePage() {
               </div>
               <div className="mt-8 flex flex-wrap justify-center gap-4">
                 <Link
-                  className="btn h-12 w-48 rounded-full border-none bg-[#0edbc5] text-base font-semibold text-black hover:bg-[#10f0d6]"
+                  className="btn h-12 w-48 rounded-full border-none bg-primary text-base font-semibold text-black hover:bg-secondary"
                   to="/challenges"
                 >
                   View Challenges
@@ -49,12 +49,12 @@ export default function HomePage() {
           </section>
 
           <section className="grid w-full gap-6 md:grid-cols-3">
-            {stats.map((item) => (
+            {stats.map(item => (
               <div
-                className="rounded-[28px] border border-white/10 bg-[#061120] px-8 py-10 text-left shadow-[0_25px_60px_-45px_rgba(0,0,0,0.9)]"
+                className="rounded-[28px] border border-white/10 bg-base-200 px-8 py-10 text-left shadow-[0_25px_60px_-45px_rgba(0,0,0,0.9)]"
                 key={item.label}
               >
-                <div className="flex items-center gap-3 text-[#0edbc5]">
+                <div className="flex items-center gap-3 text-primary">
                   <item.icon />
                   <span className="text-xs uppercase tracking-widest text-white/40">
                     {item.label}
@@ -69,7 +69,7 @@ export default function HomePage() {
 
       <Footer />
     </div>
-  );
+  )
 }
 
 function TrophyIcon() {
@@ -83,7 +83,7 @@ function TrophyIcon() {
         strokeWidth={1.4}
       />
     </svg>
-  );
+  )
 }
 
 function ShieldIcon() {
@@ -97,7 +97,7 @@ function ShieldIcon() {
         strokeWidth={1.4}
       />
     </svg>
-  );
+  )
 }
 
 function TeamIcon() {
@@ -111,5 +111,5 @@ function TeamIcon() {
         strokeWidth={1.4}
       />
     </svg>
-  );
+  )
 }
