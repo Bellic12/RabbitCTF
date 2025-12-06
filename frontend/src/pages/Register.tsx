@@ -26,6 +26,16 @@ export default function RegisterPage() {
       return;
     }
 
+    if (!/[A-Z]/.test(password)) {
+      setError('Password must contain at least one uppercase letter');
+      return;
+    }
+
+    if (!/[0-9]/.test(password)) {
+      setError('Password must contain at least one digit');
+      return;
+    }
+
     if (password !== confirmPassword) {
       setError('Passwords do not match')
       return
@@ -34,7 +44,7 @@ export default function RegisterPage() {
     // # Registration example
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/auth/register`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}api/v1/auth/register`, {
         body: JSON.stringify({ email, password, password_confirm: confirmPassword, username }),
         headers: { 'Content-Type': 'application/json' },
         method: 'POST',
