@@ -16,6 +16,16 @@ export default function RegisterPage() {
     event.preventDefault()
     setError('')
 
+    if (username.length < 3) {
+      setError('Username must be at least 3 characters long');
+      return;
+    }
+
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters long');
+      return;
+    }
+
     if (password !== confirmPassword) {
       setError('Passwords do not match')
       return
