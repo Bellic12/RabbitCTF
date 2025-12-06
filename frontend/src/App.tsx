@@ -4,6 +4,7 @@ import HomePage from './pages/Home'
 import LeaderboardPage from './pages/Leaderboard'
 import LoginPage from './pages/Login'
 import RegisterPage from './pages/Register'
+import RulesPage from './pages/Rules'
 
 export default function App() {
   return (
@@ -14,6 +15,7 @@ export default function App() {
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/challenges" element={<ChallengesPage />} />
       <Route path="/leaderboard" element={<LeaderboardPage />} />
+      <Route path="/rules" element={<RulesPage />} />
       <Route path="/" element={<HomePage />} />
       <Route path="*" element={<Navigate replace to="/" />} />
     </Routes>

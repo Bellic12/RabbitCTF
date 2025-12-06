@@ -35,7 +35,7 @@ const TeamFilters: React.FC<TeamFiltersProps> = ({ teams, visibleTeams, toggleTe
               className={`
                 btn btn-sm rounded-full border transition-all duration-200
                 ${isVisible 
-                  ? 'border-transparent text-black hover:brightness-110' 
+                  ? 'border-transparent text-base-100 hover:brightness-110' 
                   : 'border-white/20 bg-transparent text-white/50 hover:bg-white/5 hover:text-white'
                 }
               `}

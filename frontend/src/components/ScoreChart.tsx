@@ -90,29 +90,29 @@ const ScoreChart: React.FC<ScoreChartProps> = ({ teams, visibleTeams }) => {
               bottom: 0,
             }}
           >
-            <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" vertical={false} />
             <XAxis 
               dataKey="time" 
-              stroke="#666" 
-              tick={{ fill: '#888', fontSize: 12 }}
-              tickLine={{ stroke: '#444' }}
+              stroke="rgba(255,255,255,0.2)" 
+              tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 12 }}
+              tickLine={{ stroke: 'rgba(255,255,255,0.2)' }}
               minTickGap={30}
             />
             <YAxis 
-              stroke="#666" 
-              tick={{ fill: '#888', fontSize: 12 }}
-              tickLine={{ stroke: '#444' }}
+              stroke="rgba(255,255,255,0.2)" 
+              tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 12 }}
+              tickLine={{ stroke: 'rgba(255,255,255,0.2)' }}
             />
             <Tooltip 
               contentStyle={{ 
-                backgroundColor: '#1a1a1a', 
-                borderColor: '#333',
-                color: '#fff',
+                backgroundColor: '#040d1a', // base-300
+                borderColor: 'rgba(255,255,255,0.1)',
+                color: '#ffffff', // base-content
                 borderRadius: '12px',
                 boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.5)'
               }}
               itemStyle={{ fontSize: '12px' }}
-              labelStyle={{ color: '#888', marginBottom: '0.5rem' }}
+              labelStyle={{ color: '#9ca3af', marginBottom: '0.5rem' }}
             />
             <Legend wrapperStyle={{ paddingTop: '20px' }} />
             {teams.map((team, index) => (
