@@ -1,11 +1,13 @@
 """
 Enumerations for RabbitCTF domain.
 """
+
 from enum import Enum
 
 
 class UserRole(str, Enum):
     """User roles in the system."""
+
     ADMIN = "admin"
     MODERATOR = "moderator"
     PARTICIPANT = "user"  # En tu DB se llama "user"
@@ -13,6 +15,7 @@ class UserRole(str, Enum):
 
 class DifficultyLevel(str, Enum):
     """Challenge difficulty levels."""
+
     EASY = "easy"
     MEDIUM = "medium"
     HARD = "hard"
@@ -21,6 +24,7 @@ class DifficultyLevel(str, Enum):
 
 class EventStatus(str, Enum):
     """Event lifecycle status."""
+
     NOT_STARTED = "not_started"
     ACTIVE = "active"
     FINISHED = "finished"
@@ -29,6 +33,7 @@ class EventStatus(str, Enum):
 
 class NotificationType(str, Enum):
     """Types of notifications."""
+
     CHALLENGE_PUBLISHED = "challenge_published"
     ANNOUNCEMENT = "announcement"
     FIRST_BLOOD = "first_blood"
@@ -38,12 +43,14 @@ class NotificationType(str, Enum):
 
 class ScoringType(str, Enum):
     """Scoring strategies."""
+
     STATIC = "static"
     DYNAMIC = "dynamic"
 
 
 class SubmissionStatus(str, Enum):
     """Submission validation status."""
+
     CORRECT = "correct"
     INCORRECT = "incorrect"
     RATE_LIMITED = "rate_limited"

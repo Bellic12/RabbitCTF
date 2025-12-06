@@ -2,10 +2,6 @@
 
 FROM python:3.14-slim
 
-# Avoid Python writing .pyc files and enable unbuffered output.
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
-
 WORKDIR /app
 
 # Install system dependencies. (if python packages need compilation)
@@ -26,5 +22,4 @@ COPY . /app
 EXPOSE 8000
 
 # Start the API server.
-# CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
