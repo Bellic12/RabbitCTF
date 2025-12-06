@@ -1,6 +1,7 @@
 """
 Audit log model for system activity tracking.
 """
+
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, JSON, Index
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
@@ -11,6 +12,7 @@ class AuditLog(Base):
     """
     System audit log for tracking user actions.
     """
+
     __tablename__ = "audit_log"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -26,9 +28,9 @@ class AuditLog(Base):
     user = relationship("User", back_populates="audit_logs")
 
     # Composite index
-    __table_args__ = (
-        Index('idx_audit_log_resource', 'resource_type', 'resource_id'),
-    )
+    __table_args__ = (Index("idx_audit_log_resource", "resource_type", "resource_id"),)
 
     def __repr__(self):
-        return f"<AuditLog(id={self.id}, action='{self.action}', user_id={self.user_id})>"
+        return (
+            f"<AuditLog(id={self.id}, action='{self.action}', user_id={self.user_id})>"
+        )

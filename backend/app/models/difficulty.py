@@ -1,6 +1,7 @@
 """
 Difficulty model for challenge difficulty levels.
 """
+
 from sqlalchemy import Column, Integer, String, Text, DateTime
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
@@ -11,6 +12,7 @@ class Difficulty(Base):
     """
     Challenge difficulty level model (Easy, Medium, Hard, Insane).
     """
+
     __tablename__ = "difficulty"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -23,4 +25,6 @@ class Difficulty(Base):
     challenges = relationship("Challenge", back_populates="difficulty")
 
     def __repr__(self):
-        return f"<Difficulty(id={self.id}, name='{self.name}', order={self.sort_order})>"
+        return (
+            f"<Difficulty(id={self.id}, name='{self.name}', order={self.sort_order})>"
+        )

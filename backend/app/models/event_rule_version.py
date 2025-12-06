@@ -1,6 +1,7 @@
 """
 Event rule version model.
 """
+
 from sqlalchemy import Column, Integer, Text, DateTime, ForeignKey
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
@@ -11,6 +12,7 @@ class EventRuleVersion(Base):
     """
     Event rules version history.
     """
+
     __tablename__ = "event_rule_version"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -21,7 +23,9 @@ class EventRuleVersion(Base):
 
     # Relationships
     creator = relationship("User", back_populates="created_event_rules")
-    current_rule = relationship("EventRuleCurrent", back_populates="active_version", uselist=False)
+    current_rule = relationship(
+        "EventRuleCurrent", back_populates="active_version", uselist=False
+    )
 
     def __repr__(self):
         return f"<EventRuleVersion(id={self.id}, version={self.version_number})>"

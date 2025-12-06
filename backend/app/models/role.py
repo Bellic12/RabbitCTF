@@ -1,6 +1,7 @@
 """
 Role model for user role management.
 """
+
 from sqlalchemy import Column, Integer, String, Text, DateTime
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
@@ -11,6 +12,7 @@ class Role(Base):
     """
     User role model (admin, moderator, user).
     """
+
     __tablename__ = "role"
 
     id = Column(Integer, primary_key=True, index=True)

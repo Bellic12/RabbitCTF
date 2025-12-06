@@ -1,6 +1,7 @@
 """
 User model for authentication and user management.
 """
+
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
@@ -11,6 +12,7 @@ class User(Base):
     """
     User model for competitors and administrators.
     """
+
     __tablename__ = "user"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -22,10 +24,19 @@ class User(Base):
 
     # Relationships
     role = relationship("Role", back_populates="users")
-    credential = relationship("UserCredential", back_populates="user", uselist=False, cascade="all, delete-orphan")
-    password_reset_requests = relationship("PasswordResetRequest", back_populates="user")
+    credential = relationship(
+        "UserCredential",
+        back_populates="user",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
+    password_reset_requests = relationship(
+        "PasswordResetRequest", back_populates="user"
+    )
     team_membership = relationship("TeamMember", back_populates="user", uselist=False)
-    captained_team = relationship("Team", back_populates="captain", foreign_keys="Team.captain_id")
+    captained_team = relationship(
+        "Team", back_populates="captain", foreign_keys="Team.captain_id"
+    )
     created_challenges = relationship("Challenge", back_populates="creator")
     submissions = relationship("Submission", back_populates="user")
     submission_blocks = relationship("SubmissionBlock", back_populates="user")
