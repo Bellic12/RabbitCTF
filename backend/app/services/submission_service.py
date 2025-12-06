@@ -16,7 +16,7 @@ from app.models.team import Team
 from app.models.team_member import TeamMember
 from app.core.security import verify_password
 from app.services.challenge_service import ChallengeService
-from app.core.enums import SubmissionStatus
+from app.core.enum import SubmissionStatus
 
 
 @dataclass

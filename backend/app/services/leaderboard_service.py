@@ -5,7 +5,6 @@ Leaderboard service for rankings and statistics.
 from sqlalchemy.orm import Session
 from sqlalchemy import func, desc
 from typing import List, Dict, Any
-from datetime import datetime
 
 from app.models.team import Team
 from app.models.user import User

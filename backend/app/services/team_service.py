@@ -10,7 +10,7 @@ from app.models.team import Team
 from app.models.team_member import TeamMember
 from app.models.team_credential import TeamCredential
 from app.models.user import User
-from app.schemas.teams import TeamCreate, TeamJoin, TeamResponse
+from app.schemas.teams import TeamCreate, TeamJoin
 from app.core.security import get_password_hash, verify_password
 
 

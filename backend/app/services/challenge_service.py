@@ -11,7 +11,7 @@ from app.models.challenge_flag import ChallengeFlag
 from app.models.submission import Submission
 from app.models.user import User
 from app.schemas.challenges import ChallengeCreate, ChallengeUpdate
-from app.strategies.scoring import get_scoring_strategy
+from app.core.scoring import get_scoring_strategy
 from app.core.security import get_password_hash
 
 
