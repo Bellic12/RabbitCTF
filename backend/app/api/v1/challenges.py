@@ -46,7 +46,7 @@ def read_challenges(
             joinedload(Challenge.difficulty),
             joinedload(Challenge.score_config),
         )
-        .filter(Challenge.is_draft)
+        .filter(~Challenge.is_draft)
         .offset(skip)
         .limit(limit)
         .all()
