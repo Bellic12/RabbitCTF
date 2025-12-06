@@ -21,7 +21,7 @@ def read_categories(
     """
     categories = (
         db.query(ChallengeCategory)
-        .filter(ChallengeCategory.is_active == True)
+        .filter(ChallengeCategory.is_active)
         .offset(skip)
         .limit(limit)
         .all()
@@ -46,7 +46,7 @@ def read_challenges(
             joinedload(Challenge.difficulty),
             joinedload(Challenge.score_config),
         )
-        .filter(Challenge.is_draft == False)
+        .filter(Challenge.is_draft)
         .offset(skip)
         .limit(limit)
         .all()
