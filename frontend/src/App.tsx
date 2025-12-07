@@ -1,4 +1,5 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
+import AdminPage from './pages/Admin'
 import ChallengesPage from './pages/Challenges'
 import HomePage from './pages/Home'
 import LeaderboardPage from './pages/Leaderboard'
@@ -15,6 +16,7 @@ export default function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/challenges" element={<ChallengesPage />} />
+      <Route path="/admin" element={<AdminPage />} />
       <Route path="/team" element={<TeamPage />} />
       <Route path="/leaderboard" element={<LeaderboardPage />} />
       <Route path="/rules" element={<RulesPage />} />
