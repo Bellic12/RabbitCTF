@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends
-from typing import List, Dict, Optional
+from typing import List
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from sqlalchemy import func

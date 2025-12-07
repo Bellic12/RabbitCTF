@@ -113,7 +113,7 @@ class ChallengeService:
         """Get all visible (non-draft) challenges."""
         return (
             self.db.query(Challenge)
-            .filter(Challenge.is_visible == True, Challenge.is_draft == False)
+            .filter(Challenge.is_visible is True, Challenge.is_draft is False)
             .offset(skip)
             .limit(limit)
             .all()
@@ -135,8 +135,8 @@ class ChallengeService:
             self.db.query(Challenge)
             .filter(
                 Challenge.category_id == category_id,
-                Challenge.is_visible == True,
-                Challenge.is_draft == False,
+                Challenge.is_visible is True,
+                Challenge.is_draft is False,
             )
             .offset(skip)
             .limit(limit)
@@ -157,7 +157,7 @@ class ChallengeService:
         solve_count = (
             self.db.query(Submission)
             .filter(
-                Submission.challenge_id == challenge.id, Submission.is_correct == True
+                Submission.challenge_id == challenge.id, Submission.is_correct is True
             )
             .distinct(Submission.team_id)
             .count()
@@ -243,7 +243,7 @@ class ChallengeService:
         return (
             self.db.query(Submission)
             .filter(
-                Submission.challenge_id == challenge_id, Submission.is_correct == True
+                Submission.challenge_id == challenge_id, Submission.is_correct is True
             )
             .distinct(Submission.team_id)
             .count()
@@ -254,7 +254,7 @@ class ChallengeService:
         return (
             self.db.query(Submission)
             .filter(
-                Submission.challenge_id == challenge_id, Submission.is_correct == True
+                Submission.challenge_id == challenge_id, Submission.is_correct is True
             )
             .order_by(Submission.submitted_at.asc())
             .first()

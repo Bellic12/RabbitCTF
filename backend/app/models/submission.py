@@ -49,7 +49,7 @@ class Submission(Base):
             "team_id",
             "challenge_id",
             unique=True,
-            postgresql_where=(Column("is_correct") == True),
+            postgresql_where=(Column("is_correct") is True),
         ),
     )
 
