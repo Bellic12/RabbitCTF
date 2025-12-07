@@ -1,9 +1,19 @@
-import { Link, NavLink } from 'react-router-dom'
+import { Link, NavLink, useNavigate } from 'react-router-dom'
 
 import { useAuth } from '../context/AuthContext'
+import { useToast } from '../context/ToastContext'
 
 export default function Navigation() {
   const { user, logout, isAuthenticated, isLoading } = useAuth()
+  const navigate = useNavigate()
+  const { showToast } = useToast()
+
+  const handleLogout = () => {
+    logout()
+    showToast('Logged out successfully', 'success')
+    navigate('/')
+  }
+
   const links = [
     { label: 'Home', to: '/' },
     { label: 'Challenges', to: '/challenges' },
@@ -110,7 +120,7 @@ export default function Navigation() {
                   </Link>
                 </li>
                 <li>
-                  <button onClick={logout} className="text-error hover:bg-error/10">
+                  <button onClick={handleLogout} className="text-error hover:bg-error/10">
                     Logout
                   </button>
                 </li>
