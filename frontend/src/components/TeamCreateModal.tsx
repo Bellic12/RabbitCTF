@@ -1,9 +1,34 @@
+import { useState } from 'react'
+import { useAuth } from '../context/AuthContext'
+import { api } from '../services/api'
+
 interface TeamCreateModalProps {
   isOpen: boolean
   onClose: () => void
 }
 
 export default function TeamCreateModal({ isOpen, onClose }: TeamCreateModalProps) {
+  const { token } = useAuth()
+  const [name, setName] = useState('')
+  const [description, setDescription] = useState('')
+  const [password, setPassword] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState('')
+
+  const handleSubmit = async () => {
+    if (!token) return
+    setIsLoading(true)
+    setError('')
+    try {
+      await api.teams.create(token, { name, description, password })
+      onClose()
+    } catch (err) {
+      setError('Failed to create team')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   if (!isOpen) return null
 
   return (
@@ -21,6 +46,8 @@ export default function TeamCreateModal({ isOpen, onClose }: TeamCreateModalProp
           Fill in the details below to create your team. You'll be set as the team captain.
         </p>
 
+        {error && <div className="mt-4 text-error text-sm">{error}</div>}
+
         <div className="mt-6 space-y-4">
           <div className="form-control w-full">
             <label className="label pb-2">
@@ -30,6 +57,8 @@ export default function TeamCreateModal({ isOpen, onClose }: TeamCreateModalProp
               type="text"
               placeholder="Enter your team name"
               className="input input-bordered w-full border-white/10 bg-base-300 text-white focus:border-primary focus:outline-none"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
             />
             <label className="label">
               <span className="label-text-alt text-xs text-white/40">3-50 characters</span>
@@ -43,6 +72,8 @@ export default function TeamCreateModal({ isOpen, onClose }: TeamCreateModalProp
             <textarea
               className="textarea textarea-bordered h-24 w-full border-white/10 bg-base-300 text-white focus:border-primary focus:outline-none"
               placeholder="Brief description of your team's focus area"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
             ></textarea>
             <label className="label">
               <span className="label-text-alt text-xs text-white/40">Optional</span>
@@ -57,6 +88,8 @@ export default function TeamCreateModal({ isOpen, onClose }: TeamCreateModalProp
               type="password"
               placeholder="Create a secure team password"
               className="input input-bordered w-full border-white/10 bg-base-300 text-white focus:border-primary focus:outline-none"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
             />
             <label className="label">
               <span className="label-text-alt text-xs text-white/40">Required - Share this with team members to join</span>
@@ -68,11 +101,19 @@ export default function TeamCreateModal({ isOpen, onClose }: TeamCreateModalProp
           <button className="btn btn-outline flex-1 border-white/10 text-white hover:bg-white/5 hover:border-white/20" onClick={onClose}>
             Cancel
           </button>
-          <button className="btn btn-primary flex-1 text-black">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 mr-1">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-            </svg>
-            Create Team
+          <button 
+            className="btn btn-primary flex-1 text-black"
+            onClick={handleSubmit}
+            disabled={isLoading}
+          >
+            {isLoading ? <span className="loading loading-spinner"></span> : (
+              <>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 mr-1">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+                Create Team
+              </>
+            )}
           </button>
         </div>
       </div>

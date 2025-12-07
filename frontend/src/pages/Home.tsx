@@ -1,16 +1,17 @@
 import { Link } from 'react-router-dom'
 import Navigation from '../components/Navigation'
 import Footer from '../components/Footer'
-
-// Example stats, later to be fetched from the backend and database
-
-const stats = [
-  { icon: TrophyIcon, label: 'Total Points', value: '250' },
-  { icon: ShieldIcon, label: 'Challenges', value: '42' },
-  { icon: TeamIcon, label: 'Teams Registered', value: '128' },
-]
+import { useStats } from '../hooks/useStats'
 
 export default function HomePage() {
+  const { stats } = useStats()
+  
+  const statsDisplay = [
+    { icon: TrophyIcon, label: 'Total Points', value: stats.totalPoints.toString() },
+    { icon: ShieldIcon, label: 'Challenges', value: stats.challengesCount.toString() },
+    { icon: TeamIcon, label: 'Teams Registered', value: stats.teamsCount.toString() },
+  ]
+
   return (
     <div className="flex min-h-screen flex-col bg-base-100 text-white">
       <Navigation />
@@ -49,7 +50,7 @@ export default function HomePage() {
           </section>
 
           <section className="grid w-full gap-6 md:grid-cols-3">
-            {stats.map(item => (
+            {statsDisplay.map(item => (
               <div
                 className="rounded-box border border-white/10 bg-base-200 px-8 py-10 text-left shadow-[0_25px_60px_-45px_rgba(0,0,0,0.9)]"
                 key={item.label}

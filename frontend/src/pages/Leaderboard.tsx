@@ -4,57 +4,20 @@ import Footer from '../components/Footer';
 import ScoreChart from '../components/ScoreChart';
 import TeamFilters from '../components/TeamFilters';
 import RankingTable from '../components/RankingTable';
-
-interface ScorePoint {
-  time: string;
-  score: number;
-}
-
-interface Team {
-  id: number;
-  name: string;
-  timeline: ScorePoint[];
-  totalScore: number;
-  solves: number;
-  lastSolve: string;
-}
-
-interface ScoreboardResponse {
-  teams: Team[];
-}
+import { useScoreboard } from '../hooks/useScoreboard';
 
 const Leaderboard: React.FC = () => {
-  const [teams, setTeams] = useState<Team[]>([]);
+  const { teams, isLoading: loading, error } = useScoreboard();
   const [visibleTeams, setVisibleTeams] = useState<Set<string>>(new Set());
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchScoreboard = async () => {
-      try {
-        const response = await fetch('/api/v1/scoreboard/');
-        if (!response.ok) {
-          throw new Error('Failed to fetch scoreboard data');
-        }
-        const data: ScoreboardResponse = await response.json();
-        setTeams(data.teams);
-        
-        // Only show top 10 initially and in filters
-        const top10 = data.teams.slice(0, 10);
-        const top10Names = new Set(top10.map(t => t.name));
-        setVisibleTeams(top10Names);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'An unknown error occurred');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchScoreboard();
-    
-    const interval = setInterval(fetchScoreboard, 30000);
-    return () => clearInterval(interval);
-  }, []);
+    if (teams.length > 0) {
+      // Only show top 10 initially and in filters
+      const top10 = teams.slice(0, 10);
+      const top10Names = new Set(top10.map(t => t.name));
+      setVisibleTeams(top10Names);
+    }
+  }, [teams]);
 
   const toggleTeam = (teamName: string) => {
     setVisibleTeams(prev => {

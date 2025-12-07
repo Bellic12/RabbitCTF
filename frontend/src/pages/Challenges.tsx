@@ -1,9 +1,9 @@
-import { useMemo, useState, useEffect } from 'react'
+import { useMemo, useState } from 'react'
 import Navigation from '../components/Navigation'
 import Footer from '../components/Footer'
 import ChallengeCard from '../components/ChallengeCard'
 import ChallengeModal from '../components/ChallengeModal'
-import { useAuth } from '../context/AuthContext'
+import { useChallenges } from '../hooks/useChallenges'
 import type {
   Challenge,
   ChallengeCategory,
@@ -12,62 +12,9 @@ import type {
 } from '../types/challenge'
 
 export default function ChallengesPage() {
-  const { token } = useAuth()
-  const [challenges, setChallenges] = useState<Challenge[]>([])
-  const [categories, setCategories] = useState<string[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const { challenges, categories, isLoading } = useChallenges()
   const [searchTerm, setSearchTerm] = useState('')
 
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!token) {
-        setIsLoading(false)
-        return
-      }
-
-      try {
-        const [challengesRes, categoriesRes] = await Promise.all([
-          fetch(`${import.meta.env.VITE_API_URL}/api/v1/challenges/`, {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-          fetch(`${import.meta.env.VITE_API_URL}/api/v1/challenges/categories`, {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-        ])
-
-        if (challengesRes.ok) {
-          const data = await challengesRes.json()
-          // Map backend data to frontend interface
-          const mappedChallenges: Challenge[] = data.map((c: any) => ({
-            id: String(c.id),
-            title: c.title,
-            category: c.category_name || 'Web', // Fallback
-            difficulty: c.difficulty_name || 'Easy', // Fallback
-            points: c.base_score,
-            solves: c.solve_count || 0,
-            status: c.is_solved ? 'solved' : 'open',
-            description: c.description,
-            tags: [], // Backend doesn't return tags yet
-            connectionInfo: c.operational_data,
-            files: [], // Backend doesn't return files yet
-            solveHistory: [], // Backend doesn't return history yet
-          }))
-          setChallenges(mappedChallenges)
-        }
-
-        if (categoriesRes.ok) {
-          const data = await categoriesRes.json()
-          setCategories(data.map((c: any) => c.name))
-        }
-      } catch (error) {
-        console.error('Failed to fetch data', error)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    fetchData()
-  }, [token])
   const [categoryFilter, setCategoryFilter] = useState<'All' | ChallengeCategory>('All')
   const [difficultyFilter, setDifficultyFilter] = useState<'All' | ChallengeDifficulty>('All')
   const [statusFilter, setStatusFilter] = useState<'All' | ChallengeStatus>('All')
