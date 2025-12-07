@@ -1,7 +1,63 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import ReactMarkdown from 'react-markdown'
+import { useAuth } from '../../context/AuthContext'
+
+const markdownComponents = {
+  h1: ({node, ...props}: any) => <h1 className="mb-4 mt-8 text-2xl font-bold text-white" {...props} />,
+  h2: ({node, ...props}: any) => <h2 className="mb-4 mt-8 text-xl font-bold text-white" {...props} />,
+  h3: ({node, ...props}: any) => <h3 className="mb-3 mt-6 text-lg font-bold text-white" {...props} />,
+  ul: ({node, ...props}: any) => <ul className="list-disc space-y-3 pl-5 text-white/70" {...props} />,
+  li: ({node, ...props}: any) => <li className="pl-1 leading-relaxed" {...props} />,
+  p: ({node, ...props}: any) => <p className="mb-4 text-white/70" {...props} />,
+  strong: ({node, ...props}: any) => <strong className="font-bold text-white" {...props} />,
+}
 
 export default function EventSettings() {
   const [rules, setRules] = useState('')
+  const { token } = useAuth()
+  const [loading, setLoading] = useState(false)
+  const [showPreview, setShowPreview] = useState(false)
+  const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
+
+  useEffect(() => {
+    const fetchRules = async () => {
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/v1/rules/`)
+        if (response.ok) {
+          const data = await response.json()
+          setRules(data.content_md)
+        }
+      } catch (error) {
+        console.error('Failed to fetch rules:', error)
+      }
+    }
+    fetchRules()
+  }, [])
+
+  const handleSaveRules = async () => {
+    setLoading(true)
+    setMessage(null)
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/v1/rules/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ content_md: rules })
+      })
+
+      if (response.ok) {
+        setMessage({ type: 'success', text: 'Rules updated successfully' })
+      } else {
+        setMessage({ type: 'error', text: 'Failed to update rules' })
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'An error occurred' })
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <div className="space-y-8">
@@ -46,7 +102,7 @@ export default function EventSettings() {
         <div className="form-control w-full">
           <div className="relative w-full">
             <textarea 
-              className="textarea textarea-bordered h-48 w-full font-mono text-sm pb-8" 
+              className="textarea textarea-bordered h-96 w-full font-mono text-sm pb-8" 
               placeholder="Enter competition rules in Markdown format..."
               value={rules}
               onChange={(e) => setRules(e.target.value)}
@@ -57,12 +113,49 @@ export default function EventSettings() {
             </span>
           </div>
         </div>
-        <div className="flex gap-2 mt-4">
-          <button className="btn btn-primary">Save Rules</button>
-          <button className="btn btn-outline">Preview</button>
-          <button className="btn btn-outline">View History</button>
+        <div className="flex gap-2 mt-4 items-center">
+          <button 
+            className="btn btn-primary" 
+            onClick={handleSaveRules}
+            disabled={loading}
+          >
+            {loading ? 'Saving...' : 'Save Rules'}
+          </button>
+          <button 
+            className="btn btn-outline"
+            onClick={() => setShowPreview(true)}
+          >
+            Preview
+          </button>
+          {message && (
+            <span className={`text-sm ${message.type === 'success' ? 'text-success' : 'text-error'}`}>
+              {message.text}
+            </span>
+          )}
         </div>
       </div>
+
+      {/* Preview Modal */}
+      {showPreview && (
+        <div className="modal modal-open">
+          <div className="modal-box w-11/12 max-w-5xl h-5/6 flex flex-col">
+            <h3 className="font-bold text-lg mb-4">Rules Preview</h3>
+            <div className="flex-1 overflow-y-auto rounded-box border border-base-300 bg-base-200 p-6">
+              <article className="max-w-none">
+                <ReactMarkdown components={markdownComponents}>
+                  {rules}
+                </ReactMarkdown>
+              </article>
+            </div>
+            <div className="modal-action">
+              <button className="btn" onClick={() => setShowPreview(false)}>
+                Back to Edit
+              </button>
+            </div>
+          </div>
+          <div className="modal-backdrop" onClick={() => setShowPreview(false)}></div>
+        </div>
+      )}
     </div>
   )
 }
