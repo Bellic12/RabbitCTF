@@ -9,7 +9,7 @@ interface ChallengeCardProps {
 export default function ChallengeCard({ challenge, onClick }: ChallengeCardProps) {
   return (
     <button
-      className="flex h-full flex-col rounded-box border border-white/10 bg-base-200 p-6 text-left transition hover:border-primary/40 hover:shadow-[0_25px_65px_-45px_rgba(0,0,0,0.9)]"
+      className="cursor-pointer flex h-full flex-col rounded-box border border-white/10 bg-base-200 p-6 text-left transition hover:border-primary/40 hover:shadow-[0_25px_65px_-45px_rgba(0,0,0,0.9)]"
       onClick={() => onClick(challenge)}
       type="button"
     >
