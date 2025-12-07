@@ -1,7 +1,17 @@
 """
 Notification model for system announcements.
 """
-from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, ForeignKey, Index
+
+from sqlalchemy import (
+    Column,
+    Integer,
+    String,
+    Text,
+    Boolean,
+    DateTime,
+    ForeignKey,
+    Index,
+)
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from app.core.database import Base
@@ -11,6 +21,7 @@ class Notification(Base):
     """
     System notifications and announcements.
     """
+
     __tablename__ = "notification"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -27,7 +38,7 @@ class Notification(Base):
 
     # Composite indexes
     __table_args__ = (
-        Index('idx_notification_published_created', 'is_published', 'created_at'),
+        Index("idx_notification_published_created", "is_published", "created_at"),
     )
 
     def __repr__(self):

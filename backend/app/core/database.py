@@ -1,6 +1,7 @@
 """
 Database configuration and session management for RabbitCTF.
 """
+
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
@@ -9,8 +10,7 @@ import os
 
 # Database URL from environment variable or default
 DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    "postgresql+psycopg2://rabbitctf:rabbitctf@localhost:5432/rabbitctf"
+    "DATABASE_URL", "postgresql+psycopg2://rabbitctf:rabbitctf@localhost:5432/rabbitctf"
 )
 
 # Create SQLAlchemy engine
@@ -23,11 +23,7 @@ engine = create_engine(
 )
 
 # Create SessionLocal class for database sessions
-SessionLocal = sessionmaker(
-    autocommit=False,
-    autoflush=False,
-    bind=engine
-)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # Create declarative base for models
 Base = declarative_base()
@@ -36,10 +32,10 @@ Base = declarative_base()
 def get_db() -> Generator:
     """
     FastAPI dependency that provides a database session.
-    
+
     Yields:
         Session: SQLAlchemy database session
-        
+
     Usage:
         @app.get("/users")
         def get_users(db: Session = Depends(get_db)):

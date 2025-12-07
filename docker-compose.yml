@@ -59,8 +59,9 @@ services:
 
 volumes:
   postgres_data:
+    name: rabbitctf_postgres_data
   backend_uploads:
-
+    name: rabbitctf_backend_uploads
 networks:
   rabbitctf_network:
     driver: bridge

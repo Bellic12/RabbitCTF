@@ -71,6 +71,27 @@ INSERT INTO "user" (username, email, role_id) VALUES
 ('xavier', 'xavier@example.com', (SELECT id FROM role WHERE name = 'user')),
 ('yara', 'yara@example.com', (SELECT id FROM role WHERE name = 'user')),
 ('zack', 'zack@example.com', (SELECT id FROM role WHERE name = 'user'))
+('frank', 'frank@example.com', (SELECT id FROM role WHERE name = 'user')),
+('grace', 'grace@example.com', (SELECT id FROM role WHERE name = 'user')),
+('hank', 'hank@example.com', (SELECT id FROM role WHERE name = 'user')),
+('ivy', 'ivy@example.com', (SELECT id FROM role WHERE name = 'user')),
+('jack', 'jack@example.com', (SELECT id FROM role WHERE name = 'user')),
+('kate', 'kate@example.com', (SELECT id FROM role WHERE name = 'user')),
+('leo', 'leo@example.com', (SELECT id FROM role WHERE name = 'user')),
+('maya', 'maya@example.com', (SELECT id FROM role WHERE name = 'user')),
+('noah', 'noah@example.com', (SELECT id FROM role WHERE name = 'user')),
+('olivia', 'olivia@example.com', (SELECT id FROM role WHERE name = 'user')),
+('peter', 'peter@example.com', (SELECT id FROM role WHERE name = 'user')),
+('quinn', 'quinn@example.com', (SELECT id FROM role WHERE name = 'user')),
+('ryan', 'ryan@example.com', (SELECT id FROM role WHERE name = 'user')),
+('sarah', 'sarah@example.com', (SELECT id FROM role WHERE name = 'user')),
+('tom', 'tom@example.com', (SELECT id FROM role WHERE name = 'user')),
+('uma', 'uma@example.com', (SELECT id FROM role WHERE name = 'user')),
+('victor', 'victor@example.com', (SELECT id FROM role WHERE name = 'user')),
+('wendy', 'wendy@example.com', (SELECT id FROM role WHERE name = 'user')),
+('xavier', 'xavier@example.com', (SELECT id FROM role WHERE name = 'user')),
+('yara', 'yara@example.com', (SELECT id FROM role WHERE name = 'user')),
+('zack', 'zack@example.com', (SELECT id FROM role WHERE name = 'user'))
 ON CONFLICT (username) DO NOTHING;
 
 -- Insert user credentials
@@ -81,6 +102,7 @@ SELECT id,
     CASE 
         WHEN username = 'admin' THEN '$2b$12$hGgbPXqMSqhlHEGr6.Qobu9i0195UgBFZJlJp4zzgRu9Y81nNJv2q'
         WHEN username = 'moderator' THEN '$2b$12$oX6/w5bJj9QYl7M4qoyeFelLRGF8vRgcJqw8xB8/4I5o29N4ImY0y'
+        ELSE '$2b$12$.6W.XaE8GOJ4h4Whqt1rGOhwMcfqckJVuL0fcB5s/oguaovy35yKu'
         ELSE '$2b$12$.6W.XaE8GOJ4h4Whqt1rGOhwMcfqckJVuL0fcB5s/oguaovy35yKu'
     END,
     CASE WHEN username IN ('admin', 'moderator') THEN TRUE ELSE FALSE END,
@@ -543,8 +565,23 @@ SELECT
         WHEN title = 'Network Traffic' THEN '4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce'
         WHEN title = 'Social Media Hunt' THEN '4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a'
         WHEN title = 'Hidden in Plain Sight' THEN '6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918'
+        WHEN title = 'Cookie Monster' THEN '3e23e8160039594a33894f6564e1b1348bbd7a0088d42c4acb73eeaed59c009d'
+        WHEN title = 'Base64 Basics' THEN '2e7d2c03a9507ae265ecf5b5356885a53393a2029d241394997265a1a25aefc6'
+        WHEN title = 'Image Metadata' THEN '18ac3e7343f016890c510e93f935261169d9e3f565436429830faf0934f4f8e4'
+        WHEN title = 'Simple Reverse' THEN '3f79bb7b435b05321651daefd374cdc681dc06faa65e374e38337b88ca046dea'
+        WHEN title = 'Network Traffic' THEN '4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce'
+        WHEN title = 'Social Media Hunt' THEN '4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a'
+        WHEN title = 'Hidden in Plain Sight' THEN '6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918'
         WHEN title = 'SQL Injection 101' THEN '3e23e8160039594a33894f6564e1b1348bbd7a0088d42c4acb73eeaed59c009d'
         WHEN title = 'Hidden Message' THEN '2e7d2c03a9507ae265ecf5b5356885a53393a2029d241394997265a1a25aefc6'
+        WHEN title = 'XOR Encryption' THEN '5267768822ee624d48fce15ec5ca79cbd602cb7f4c2157a516556991f22ef8c7'
+        WHEN title = 'JWT Manipulation' THEN '7902699be42c8a8e46fbbb4501726517e86b22c56a189f7625a6da49081b2451'
+        WHEN title = 'Memory Forensics' THEN '8f14e45fceea167a5a36dedd4bea2543fa38d84fe8be4c7e4c5e1d1e4fbe5c8c'
+        WHEN title = 'API Enumeration' THEN '9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08'
+        WHEN title = 'Binary Analysis' THEN 'a3b14d2f3c6e8b7a1d5c9f4e2b8a7c6d5f9e1a3b7c4d8e2f6a1b5c9d3e7f4a8b'
+        WHEN title = 'Wireless Attack' THEN 'b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2'
+        WHEN title = 'Digital Footprint' THEN 'c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4'
+        WHEN title = 'Audio Steganography' THEN 'd5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6'
         WHEN title = 'XOR Encryption' THEN '5267768822ee624d48fce15ec5ca79cbd602cb7f4c2157a516556991f22ef8c7'
         WHEN title = 'JWT Manipulation' THEN '7902699be42c8a8e46fbbb4501726517e86b22c56a189f7625a6da49081b2451'
         WHEN title = 'Memory Forensics' THEN '8f14e45fceea167a5a36dedd4bea2543fa38d84fe8be4c7e4c5e1d1e4fbe5c8c'

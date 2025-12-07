@@ -1,6 +1,7 @@
 """
 Submission block model for rate limiting.
 """
+
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
@@ -11,6 +12,7 @@ class SubmissionBlock(Base):
     """
     Submission blocking for rate limiting and anti-brute force.
     """
+
     __tablename__ = "submission_block"
 
     id = Column(Integer, primary_key=True, index=True)

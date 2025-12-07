@@ -1,6 +1,7 @@
 """
 Challenge file model for file attachments.
 """
+
 from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
@@ -11,10 +12,16 @@ class ChallengeFile(Base):
     """
     Challenge file attachments.
     """
+
     __tablename__ = "challenge_file"
 
     id = Column(Integer, primary_key=True, index=True)
-    challenge_id = Column(Integer, ForeignKey("challenge.id", ondelete="CASCADE"), nullable=False, index=True)
+    challenge_id = Column(
+        Integer,
+        ForeignKey("challenge.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
     file_path = Column(String(255), nullable=False)
     file_name = Column(String(255), nullable=False)
     file_type = Column(String(20))
