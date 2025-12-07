@@ -8,6 +8,7 @@ from typing import List, Optional
 
 from app.models.challenge import Challenge
 from app.models.challenge_flag import ChallengeFlag
+from app.models.challenge_rule_config import ChallengeRuleConfig
 from app.models.submission import Submission
 from app.models.user import User
 from app.schemas.challenges import ChallengeCreate, ChallengeUpdate
@@ -50,12 +51,24 @@ class ChallengeService:
         self.db.flush()  # Get challenge.id
 
         # Create flag
+        flag_to_hash = (
+            challenge_data.flag
+            if challenge_data.is_case_sensitive
+            else challenge_data.flag.lower()
+        )
         flag = ChallengeFlag(
             challenge_id=new_challenge.id,
-            flag_hash=get_password_hash(challenge_data.flag),
-            is_case_sensitive=challenge_data.is_case_sensitive,
+            flag_hash=get_password_hash(flag_to_hash),
         )
         self.db.add(flag)
+
+        # Create rule config
+        rule_config = ChallengeRuleConfig(
+            challenge_id=new_challenge.id,
+            attempt_limit=challenge_data.attempt_limit,
+            is_case_sensitive=challenge_data.is_case_sensitive,
+        )
+        self.db.add(rule_config)
 
         self.db.commit()
         self.db.refresh(new_challenge)
