@@ -3,7 +3,7 @@ Main API router that includes all endpoint routers.
 """
 
 from fastapi import APIRouter
-from app.api.v1 import auth, challenges, scoreboard, rules
+from app.api.v1 import auth, challenges, scoreboard, rules, admin
 
 # Create main API router
 api_router = APIRouter()
