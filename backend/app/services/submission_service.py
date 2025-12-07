@@ -59,12 +59,20 @@ class SubmissionService:
                 status_code=status.HTTP_404_NOT_FOUND, detail="Challenge not found"
             )
 
-        # Check if challenge is visible
-        if not challenge.is_visible or challenge.is_draft:
+        # Check if challenge is available (not a draft)
+        if challenge.is_draft:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Challenge is not available",
             )
+
+        # Check visibility config if it exists
+        if challenge.visibility_config:
+            if not challenge.visibility_config.is_visible:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Challenge is not available",
+                )
 
         # Get user's team
         team_membership = (

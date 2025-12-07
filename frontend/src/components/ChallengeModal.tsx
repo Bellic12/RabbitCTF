@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import type { FormEvent } from 'react'
 import type { Challenge } from '../types/challenge'
 
 interface ChallengeModalProps {
@@ -6,8 +7,77 @@ interface ChallengeModalProps {
   onClose: () => void
 }
 
+interface SubmissionResponse {
+  is_correct: boolean
+  score_awarded: number
+  message: string
+  status: string
+  is_first_blood: boolean
+}
+
 export default function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
   const [tab, setTab] = useState<'details' | 'history'>('details')
+  const [flagValue, setFlagValue] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submissionResult, setSubmissionResult] = useState<SubmissionResponse | null>(null)
+  const [error, setError] = useState('')
+
+  const handleSubmitFlag = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setError('')
+    setSubmissionResult(null)
+
+    if (!flagValue.trim()) {
+      setError('Please enter a flag')
+      return
+    }
+
+    setIsSubmitting(true)
+
+    try {
+      const token = localStorage.getItem('token')
+
+      if (!token) {
+        setError('You must be logged in to submit flags')
+        setIsSubmitting(false)
+        return
+      }
+
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL || ''}/api/v1/submissions/submit`,
+        {
+          body: JSON.stringify({
+            challenge_id: challenge.id,
+            submitted_flag_hash: flagValue,
+          }),
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          method: 'POST',
+        }
+      )
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}))
+        setError(payload.detail ?? 'Failed to submit flag')
+        setIsSubmitting(false)
+        return
+      }
+
+      const data = await response.json()
+      setSubmissionResult(data)
+
+      if (data.is_correct) {
+        setFlagValue('')
+      }
+    } catch (caught) {
+      setError('Unable to reach the submission service')
+      console.error('Flag submission failed', caught)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
 
   return (
     <dialog className="modal modal-open">
@@ -142,17 +212,51 @@ export default function ChallengeModal({ challenge, onClose }: ChallengeModalPro
                 <h3 className="text-sm font-semibold uppercase tracking-wide text-white/50">
                   Submit Flag
                 </h3>
-                <form className="flex flex-col gap-3 md:flex-row">
+
+                {/* Success Alert */}
+                {submissionResult?.is_correct && (
+                  <div className="flex items-center gap-3 rounded-2xl border border-emerald-500/50 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-400">
+                    <SuccessIcon />
+                    <div>
+                      <p className="font-semibold">{submissionResult.message}</p>
+                      {submissionResult.is_first_blood && (
+                        <p className="text-xs mt-1">🩸 First Blood!</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Incorrect Alert */}
+                {submissionResult && !submissionResult.is_correct && (
+                  <div className="flex items-center gap-3 rounded-2xl border border-rose-500/50 bg-rose-500/10 px-4 py-3 text-sm text-rose-400">
+                    <AlertIcon />
+                    <span>{submissionResult.message}</span>
+                  </div>
+                )}
+
+                {/* Error Alert */}
+                {error.length > 0 && (
+                  <div className="flex items-center gap-3 rounded-2xl border border-error-content bg-error px-4 py-3 text-sm text-error-content">
+                    <AlertIcon />
+                    <span>{error}</span>
+                  </div>
+                )}
+
+                <form className="flex flex-col gap-3 md:flex-row" onSubmit={handleSubmitFlag}>
                   <input
-                    className="h-12 flex-1 rounded-2xl border border-white/15 bg-base-300 px-4 text-sm text-white focus:border-primary focus:outline-none"
+                    className="h-12 flex-1 rounded-2xl border border-white/15 bg-base-300 px-4 text-sm text-white focus:border-primary focus:outline-none disabled:opacity-50"
+                    disabled={isSubmitting}
+                    onChange={event => setFlagValue(event.target.value)}
                     placeholder="flag{...}"
                     type="text"
+                    value={flagValue}
                   />
                   <button
-                    className="btn h-12 rounded-full border-none bg-primary px-6 text-sm font-semibold text-black hover:bg-secondary"
+                    className="btn h-12 rounded-full border-none bg-primary px-6 text-sm font-semibold text-black hover:bg-secondary disabled:opacity-50"
+                    disabled={isSubmitting}
                     type="submit"
                   >
-                    Submit
+                    {isSubmitting ? 'Submitting...' : 'Submit'}
                   </button>
                 </form>
               </section>
@@ -187,5 +291,45 @@ export default function ChallengeModal({ challenge, onClose }: ChallengeModalPro
         <button onClick={onClose}>close</button>
       </form>
     </dialog>
+  )
+}
+
+function AlertIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      className="h-5 w-5"
+      fill="none"
+      viewBox="0 0 24 24"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        className="stroke-current"
+        d="M12 8v5m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={1.6}
+      />
+    </svg>
+  )
+}
+
+function SuccessIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      className="h-5 w-5"
+      fill="none"
+      viewBox="0 0 24 24"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        className="stroke-current"
+        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={1.6}
+      />
+    </svg>
   )
 }
