@@ -25,7 +25,7 @@ export default function HomePage() {
               Test your cybersecurity skills in our competitive capture the flag challenge platform
             </p>
 
-            <div className="w-full rounded-[34px] border border-white/10 bg-base-200 px-6 py-12 shadow-[0_35px_80px_-45px_rgba(0,0,0,0.9)] md:px-12">
+            <div className="w-full rounded-box border border-white/10 bg-base-200 px-6 py-12 shadow-[0_35px_80px_-45px_rgba(0,0,0,0.9)] md:px-12">
               <div className="flex justify-center">
                 <span className="rounded-full border border-white/10 bg-black/30 px-6 py-1 text-sm font-semibold text-white/70">
                   • Event Finished
@@ -33,13 +33,13 @@ export default function HomePage() {
               </div>
               <div className="mt-8 flex flex-wrap justify-center gap-4">
                 <Link
-                  className="btn h-12 w-48 rounded-full border-none bg-primary text-base font-semibold text-black hover:bg-secondary"
+                  className="btn h-12 w-48 border-none bg-primary text-base font-semibold text-black hover:bg-secondary"
                   to="/challenges"
                 >
                   View Challenges
                 </Link>
                 <Link
-                  className="btn h-12 w-48 rounded-full border border-white/20 bg-transparent text-base font-semibold text-white hover:bg-white/5"
+                  className="btn h-12 w-48 border border-white/20 bg-transparent text-base font-semibold text-white hover:bg-white/5"
                   to="/leaderboard"
                 >
                   View Leaderboard
@@ -51,7 +51,7 @@ export default function HomePage() {
           <section className="grid w-full gap-6 md:grid-cols-3">
             {stats.map(item => (
               <div
-                className="rounded-[28px] border border-white/10 bg-base-200 px-8 py-10 text-left shadow-[0_25px_60px_-45px_rgba(0,0,0,0.9)]"
+                className="rounded-box border border-white/10 bg-base-200 px-8 py-10 text-left shadow-[0_25px_60px_-45px_rgba(0,0,0,0.9)]"
                 key={item.label}
               >
                 <div className="flex items-center gap-3 text-primary">

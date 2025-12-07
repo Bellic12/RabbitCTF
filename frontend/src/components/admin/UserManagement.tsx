@@ -14,7 +14,7 @@ export default function UserManagement() {
       
       <div className="space-y-4">
         {users.map(user => (
-          <div key={user.id} className="card bg-base-200 border border-white/5">
+          <div key={user.id} className="card bg-black/20 border border-white/5">
             <div className="card-body p-4 flex-row items-center justify-between">
               <div>
                 <h4 className="font-bold">{user.username}</h4>

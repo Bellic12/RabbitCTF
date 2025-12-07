@@ -3,12 +3,12 @@ export default function Configuration() {
     <div className="space-y-6">
       <div>
         <h3 className="text-lg font-bold mb-4">Team Configuration</h3>
-        <div className="form-control w-full">
-          <label className="label">
+        <label className="form-control w-full">
+          <div className="label">
             <span className="label-text">Maximum Team Size</span>
-          </label>
+          </div>
           <input type="number" className="input input-bordered w-full" defaultValue="5" />
-        </div>
+        </label>
       </div>
 
       <div className="divider"></div>
@@ -16,38 +16,25 @@ export default function Configuration() {
       <div>
         <h3 className="text-lg font-bold mb-4">Flag Submission Limits</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="form-control w-full">
-            <label className="label">
+          <label className="form-control w-full">
+            <div className="label">
               <span className="label-text">Max Attempts</span>
-            </label>
+            </div>
             <input type="number" className="input input-bordered w-full" defaultValue="5" />
-          </div>
-          <div className="form-control w-full">
-            <label className="label">
-              <span className="label-text">Time Window (seconds)</span>
-            </label>
-            <input type="number" className="input input-bordered w-full" defaultValue="60" />
-          </div>
-          <div className="form-control w-full">
-            <label className="label">
-              <span className="label-text">Block Duration (minutes)</span>
-            </label>
-            <input type="number" className="input input-bordered w-full" defaultValue="5" />
-          </div>
-        </div>
-      </div>
-
-      <div className="divider"></div>
-
-      <div>
-        <h3 className="text-lg font-bold mb-4">Discord Integration</h3>
-        <div className="form-control w-full mb-4">
-          <label className="label">
-            <span className="label-text">Webhook URL</span>
           </label>
-          <input type="text" className="input input-bordered w-full" placeholder="https://discord.com/api/webhooks/..." />
+          <label className="form-control w-full">
+            <div className="label">
+              <span className="label-text">Time Window (seconds)</span>
+            </div>
+            <input type="number" className="input input-bordered w-full" defaultValue="60" />
+          </label>
+          <label className="form-control w-full">
+            <div className="label">
+              <span className="label-text">Block Duration (minutes)</span>
+            </div>
+            <input type="number" className="input input-bordered w-full" defaultValue="5" />
+          </label>
         </div>
-        <button className="btn btn-primary">Test Connection</button>
       </div>
 
       <div className="divider"></div>

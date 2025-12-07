@@ -10,8 +10,36 @@ from app.core.database import get_db
 from app.api.deps import get_current_admin
 from app.schemas.auth import UserResponse
 from app.models.user import User
+from app.models.team import Team
+from app.models.challenge import Challenge
+from app.models.submission import Submission
+from app.schemas.admin import AdminStatsResponse
 
 router = APIRouter()
+
+
+@router.get("/stats", response_model=AdminStatsResponse)
+async def get_admin_stats(
+    current_user: User = Depends(get_current_admin), db: Session = Depends(get_db)
+):
+    """
+    Get admin dashboard statistics.
+    """
+    total_users = db.query(User).count()
+    total_teams = db.query(Team).count()
+    total_challenges = db.query(Challenge).count()
+    active_challenges = db.query(Challenge).filter(~Challenge.is_draft).count()
+    total_submissions = db.query(Submission).count()
+    correct_flags = db.query(Submission).filter(Submission.is_correct).count()
+
+    return AdminStatsResponse(
+        total_users=total_users,
+        total_teams=total_teams,
+        total_challenges=total_challenges,
+        active_challenges=active_challenges,
+        total_submissions=total_submissions,
+        correct_flags=correct_flags,
+    )
 
 
 @router.get("/users", response_model=List[UserResponse])

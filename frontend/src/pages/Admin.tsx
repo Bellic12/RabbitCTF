@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Navigation from '../components/Navigation'
 import Footer from '../components/Footer'
 import EventSettings from '../components/admin/EventSettings'
@@ -6,17 +6,43 @@ import ChallengeManagement from '../components/admin/ChallengeManagement'
 import UserManagement from '../components/admin/UserManagement'
 import ActivityLog from '../components/admin/ActivityLog'
 import Configuration from '../components/admin/Configuration'
+import { useAuth } from '../context/AuthContext'
+import type { AdminStats } from '../types/admin'
 
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState('event')
+  const { token } = useAuth()
+  const [statsData, setStatsData] = useState<AdminStats | null>(null)
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/v1/admin/stats`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+        if (response.ok) {
+          const data = await response.json()
+          setStatsData(data)
+        }
+      } catch (error) {
+        console.error('Failed to fetch admin stats:', error)
+      }
+    }
+
+    if (token) {
+      fetchStats()
+    }
+  }, [token])
 
   const stats = [
-    { label: 'Total Users', value: '384', color: 'text-info' },
-    { label: 'Total Teams', value: '128', color: 'text-info' },
-    { label: 'Total Challenges', value: '42', color: 'text-info' },
-    { label: 'Active Challenges', value: '38', color: 'text-info' },
-    { label: 'Total Submissions', value: '2847', color: 'text-info' },
-    { label: 'Correct Flags', value: '892', color: 'text-info' },
+    { label: 'Total Users', value: statsData?.total_users ?? '-', color: 'text-info' },
+    { label: 'Total Teams', value: statsData?.total_teams ?? '-', color: 'text-info' },
+    { label: 'Total Challenges', value: statsData?.total_challenges ?? '-', color: 'text-info' },
+    { label: 'Active Challenges', value: statsData?.active_challenges ?? '-', color: 'text-info' },
+    { label: 'Total Submissions', value: statsData?.total_submissions ?? '-', color: 'text-info' },
+    { label: 'Correct Flags', value: statsData?.correct_flags ?? '-', color: 'text-info' },
   ]
 
   return (
@@ -41,7 +67,7 @@ export default function AdminPage() {
         {/* Stats Cards */}
         <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-6">
           {stats.map((stat, index) => (
-            <div key={index} className="card bg-base-100 shadow-xl border border-white/5">
+            <div key={index} className="card bg-base-200 shadow-xl border border-white/5">
               <div className="card-body p-4">
                 <div className={`text-3xl font-bold ${stat.color}`}>{stat.value}</div>
                 <div className="text-xs text-white/60">{stat.label}</div>
@@ -51,7 +77,7 @@ export default function AdminPage() {
         </div>
 
         {/* Tabs */}
-        <div role="tablist" className="tabs tabs-boxed mb-6 bg-base-300 p-1">
+        <div role="tablist" className="tabs tabs-boxed mb-6 bg-base-300 p-1 grid grid-cols-5">
           {[
             { id: 'event', label: 'Event Settings' },
             { id: 'challenges', label: 'Challenges' },
@@ -71,7 +97,7 @@ export default function AdminPage() {
         </div>
 
         {/* Content */}
-        <div className="rounded-box border border-white/5 bg-base-100 p-6">
+        <div className="rounded-box border border-white/5 bg-base-200 p-6">
           {activeTab === 'event' && <EventSettings />}
           {activeTab === 'challenges' && <ChallengeManagement />}
           {activeTab === 'users' && <UserManagement />}

@@ -1,25 +1,27 @@
 @import 'tailwindcss';
 
 @plugin "daisyui" {
-  themes: 'rabbit-dark --default';
+  themes: 'rabbit-ocean --default';
 }
 
 @plugin "daisyui/theme" {
-  name: 'rabbit-dark';
-  default: true;
+  name: 'rabbit-ocean';
+  default: false;
   prefersdark: true;
   color-scheme: 'dark';
 
-  --color-base-100: #04090f;
-  --color-base-200: #061120;
-  --color-base-300: #040d1a;
+  --color-base-100: #0b1120; /* Azul muy profundo */
+  --color-base-200: #162032; /* Ligeramente más claro */
+  --color-base-300: #23304a; /* Distinción clara para tarjetas */
   --color-base-content: #ffffff;
 
-  --color-primary: #0edbc5;
+  /* Primario: Turquesa brillante */
+  --color-primary: #2dd4bf; 
   --color-primary-content: #000000;
 
-  --color-secondary: #10f0d6;
-  --color-secondary-content: #000000;
+  /* Secundario: Azul índigo para soporte visual */
+  --color-secondary: #6366f1;
+  --color-secondary-content: #ffffff;
 
   --color-neutral: #1f2937;
   --color-neutral-content: #ffffff;
@@ -27,11 +29,11 @@
   --color-info: #3abff8;
   --color-success: #36d399;
   --color-warning: #fbbd23;
-
   --color-error: #ff5861;
   --color-error-content: #000000;
 
-  --radius-selector: 1rem;
-  --radius-field: 1rem;
-  --radius-box: 1.75rem;
+  --radius-selector: 0.25rem;
+  --radius-field: 0.25rem;
+  --radius-box: 0.5rem;
+  --radius-btn: 0.25rem;
 }

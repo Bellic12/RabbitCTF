@@ -19,7 +19,7 @@ export default function ChallengeManagement() {
       
       <div className="space-y-4">
         {challenges.map(challenge => (
-          <div key={challenge.id} className="card bg-base-200 border border-white/5">
+          <div key={challenge.id} className="card bg-black/20 border border-white/5">
             <div className="card-body p-4 flex-row items-center justify-between">
               <div>
                 <div className="flex items-center gap-2 mb-1">
