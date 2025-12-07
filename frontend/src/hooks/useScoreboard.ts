@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 
+import { useAuth } from '../context/AuthContext'
 import { api } from '../services/api'
 
 type ScorePoint = {
@@ -17,13 +18,18 @@ type Team = {
 }
 
 export function useScoreboard(refreshInterval = 30000) {
+  const { token } = useAuth()
   const [teams, setTeams] = useState<Team[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   const fetchScoreboard = useCallback(async () => {
+    if (!token) {
+      setIsLoading(false)
+      return
+    }
     try {
-      const data = await api.scoreboard.get()
+      const data = await api.scoreboard.get(token)
       setTeams(data.teams)
       setError(null)
     } catch (err) {
@@ -31,16 +37,16 @@ export function useScoreboard(refreshInterval = 30000) {
     } finally {
       setIsLoading(false)
     }
-  }, [])
+  }, [token])
 
   useEffect(() => {
     fetchScoreboard()
 
-    if (refreshInterval > 0) {
+    if (refreshInterval > 0 && token) {
       const interval = setInterval(fetchScoreboard, refreshInterval)
       return () => clearInterval(interval)
     }
-  }, [fetchScoreboard, refreshInterval])
+  }, [fetchScoreboard, refreshInterval, token])
 
   return { teams, isLoading, error, refetch: fetchScoreboard }
 }

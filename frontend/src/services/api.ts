@@ -55,9 +55,9 @@ export const api = {
     },
   },
   scoreboard: {
-    get: async () => {
+    get: async (token?: string) => {
       const res = await fetch(`${API_URL}/scoreboard/`, {
-        headers: getHeaders(),
+        headers: getHeaders(token),
       })
       if (!res.ok) throw new Error('Failed to fetch scoreboard')
       return res.json()

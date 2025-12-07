@@ -16,16 +16,17 @@ export function useStats() {
     const fetchData = async () => {
       setIsLoading(true)
       try {
-        // Fetch scoreboard (public)
-        const scoreboardData = await api.scoreboard.get()
-        const teamsCount = scoreboardData.teams.length
-
+        let teamsCount = 0
         let challengesCount = 0
         let totalPoints = 0
 
-        // Fetch challenges (if authenticated)
         if (token) {
           try {
+            // Fetch scoreboard (authenticated)
+            const scoreboardData = await api.scoreboard.get(token)
+            teamsCount = scoreboardData.teams.length
+
+            // Fetch challenges (authenticated)
             const challengesData = await api.challenges.list(token)
             challengesCount = challengesData.length
             totalPoints = challengesData.reduce(
@@ -33,7 +34,7 @@ export function useStats() {
               0
             )
           } catch (e) {
-            console.error('Failed to fetch challenges', e)
+            console.error('Failed to fetch authenticated data', e)
           }
         }
 
