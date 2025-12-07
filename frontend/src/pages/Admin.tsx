@@ -77,7 +77,7 @@ export default function AdminPage() {
         </div>
 
         {/* Tabs */}
-        <div role="tablist" className="tabs tabs-boxed mb-6 bg-base-300 p-1">
+        <div role="tablist" className="tabs tabs-boxed mb-6 bg-base-300 p-1 grid grid-cols-5">
           {[
             { id: 'event', label: 'Event Settings' },
             { id: 'challenges', label: 'Challenges' },
