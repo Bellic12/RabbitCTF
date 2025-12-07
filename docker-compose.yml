@@ -32,7 +32,7 @@ services:
       dockerfile: Dockerfile
     container_name: rabbitctf_backend
     environment:
-      DATABASE_URL: postgresql+psycopg2://rabbitctf:rabbitctf@db:5432/rabbitctf
+      DATABASE_URL: postgresql+psycopg://rabbitctf:rabbitctf@db:5432/rabbitctf
     # ports:
     #   - "8000:8000"
     depends_on:

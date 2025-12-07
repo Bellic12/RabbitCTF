@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     DEBUG: bool = False
 
     # Database
-    DATABASE_URL: str = "postgresql+psycopg2://rabbitctf:rabbitctf@db:5432/rabbitctf"
+    DATABASE_URL: str = "postgresql+psycopg://rabbitctf:rabbitctf@db:5432/rabbitctf"
 
     # Security
     SECRET_KEY: str = "your-secret-key-change-this-in-production-min-32-chars-long"

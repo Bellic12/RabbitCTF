@@ -10,7 +10,7 @@ import os
 
 # Database URL from environment variable or default
 DATABASE_URL = os.getenv(
-    "DATABASE_URL", "postgresql+psycopg2://rabbitctf:rabbitctf@localhost:5432/rabbitctf"
+    "DATABASE_URL", "postgresql+psycopg://rabbitctf:rabbitctf@localhost:5432/rabbitctf"
 )
 
 # Create SQLAlchemy engine
