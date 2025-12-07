@@ -234,6 +234,7 @@ class ChallengeDetailResponse(ChallengeResponse):
     success_rate: Optional[float] = Field(
         default=0.0, description="Percentage of successful submissions"
     )
+    flag_content: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
 
