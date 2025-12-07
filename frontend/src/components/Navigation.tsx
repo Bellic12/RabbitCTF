@@ -2,6 +2,7 @@ import { Link, NavLink, useNavigate } from 'react-router-dom'
 
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
+import { ADMIN_ROLE_ID } from './ProtectedRoute'
 
 export default function Navigation() {
   const { user, logout, isAuthenticated, isLoading } = useAuth()
@@ -15,13 +16,20 @@ export default function Navigation() {
   }
 
   const links = [
-    { label: 'Home', to: '/' },
-    { label: 'Challenges', to: '/challenges' },
-    { label: 'Leaderboard', to: '/leaderboard' },
-    { label: 'Team', to: '/team' },
-    { label: 'Rules', to: '/rules' },
-    { label: 'Admin', to: '/admin' },
+    { label: 'Home', to: '/', public: true },
+    { label: 'Rules', to: '/rules', public: true },
+    { label: 'Challenges', to: '/challenges', public: false },
+    { label: 'Leaderboard', to: '/leaderboard', public: false },
+    { label: 'Team', to: '/team', public: false },
+    { label: 'Admin', to: '/admin', adminOnly: true },
   ]
+
+  const visibleLinks = links.filter(link => {
+    if (link.public) return true
+    if (!isAuthenticated) return false
+    if (link.adminOnly) return user?.role_id === ADMIN_ROLE_ID
+    return true
+  })
 
   return (
     <header className="border-b border-white/5 bg-base-100/95 backdrop-blur">
@@ -48,7 +56,7 @@ export default function Navigation() {
               tabIndex={0}
               className="menu menu-sm dropdown-content bg-base-100 rounded-box z-10 mt-3 w-52 p-2 shadow"
             >
-              {links.map(link => (
+              {visibleLinks.map(link => (
                 <li key={`mobile-${link.to}`}>
                   <NavLink
                     className={({ isActive }) =>
@@ -68,7 +76,7 @@ export default function Navigation() {
         </div>
 
         <nav className="hidden items-center gap-6 md:flex">
-          {links.map(link => (
+          {visibleLinks.map(link => (
             <NavLink
               className={({ isActive }) =>
                 `text-sm font-medium transition-colors ${

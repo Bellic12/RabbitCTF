@@ -7,6 +7,7 @@ from datetime import datetime, timezone, timedelta
 from collections import defaultdict
 
 from app.core.database import get_db
+from app.api import deps
 from app.models.team import Team
 from app.models.submission import Submission
 from app.models.challenge_score_config import ChallengeScoreConfig
@@ -30,7 +31,10 @@ class ScoreboardResponse(BaseModel):
     teams: List[TeamScoreboard]
 
 @router.get("/", response_model=ScoreboardResponse)
-def get_scoreboard(db: Session = Depends(get_db)) -> ScoreboardResponse:
+def get_scoreboard(
+    db: Session = Depends(get_db),
+    current_user=Depends(deps.get_current_user)
+) -> ScoreboardResponse:
     """Return scoreboard data sourced from real submissions."""
     
     # 1. Get all teams

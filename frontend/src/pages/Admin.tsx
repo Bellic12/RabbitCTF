@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 
-
 import ActivityLog from '../components/admin/ActivityLog'
 import ChallengeManagement from '../components/admin/ChallengeManagement'
 import Configuration from '../components/admin/Configuration'

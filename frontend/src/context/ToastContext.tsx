@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useState, useCallback } from 'react'
+
 import { Toast, ToastMessage, ToastType } from '../components/Toast'
 
-interface ToastContextType {
+type ToastContextType = {
   showToast: (message: string, type: ToastType, duration?: number) => void
 }
 
@@ -11,20 +12,23 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [toasts, setToasts] = useState<ToastMessage[]>([])
 
   const removeToast = useCallback((id: string) => {
-    setToasts((prev) => prev.filter((toast) => toast.id !== id))
+    setToasts(prev => prev.filter(toast => toast.id !== id))
   }, [])
 
-  const showToast = useCallback((message: string, type: ToastType, duration = 3000) => {
-    const id = Math.random().toString(36).substring(2, 9)
-    const newToast: ToastMessage = { id, message, type, duration }
-    setToasts((prev) => [...prev, newToast])
+  const showToast = useCallback(
+    (message: string, type: ToastType, duration = 3000) => {
+      const id = Math.random().toString(36).substring(2, 9)
+      const newToast: ToastMessage = { id, message, type, duration }
+      setToasts(prev => [...prev, newToast])
 
-    if (duration > 0) {
-      setTimeout(() => {
-        removeToast(id)
-      }, duration)
-    }
-  }, [removeToast])
+      if (duration > 0) {
+        setTimeout(() => {
+          removeToast(id)
+        }, duration)
+      }
+    },
+    [removeToast]
+  )
 
   return (
     <ToastContext.Provider value={{ showToast }}>

@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react'
 
-
 import ChallengeCard from '../components/ChallengeCard'
 import ChallengeModal from '../components/ChallengeModal'
 import Footer from '../components/Footer'
