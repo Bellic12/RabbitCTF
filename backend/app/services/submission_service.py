@@ -119,11 +119,7 @@ class SubmissionService:
             )
 
         # Validate flag (considering case sensitivity)
-        is_case_sensitive = True
-        if challenge.rule_config:
-            is_case_sensitive = challenge.rule_config.is_case_sensitive
-
-        flag_to_check = flag_value if is_case_sensitive else flag_value.lower()
+        flag_to_check = flag_value if flag.is_case_sensitive else flag_value.lower()
         is_correct = verify_password(flag_to_check, flag.flag_hash)
 
         # Check if already solved by this team
