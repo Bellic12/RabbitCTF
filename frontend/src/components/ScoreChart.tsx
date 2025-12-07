@@ -61,15 +61,15 @@ const ScoreChart: React.FC<ScoreChartProps> = ({ teams, visibleTeams }) => {
       teams.forEach(team => {
         if (!visibleTeams.has(team.name)) return;
 
-        let score = 0;
-        for (const point of team.timeline) {
-            if (point.time <= time) {
-                score = point.score;
-            } else {
-                break;
-            }
+        // Only set score if there is an exact match in the timeline
+        // This allows recharts to connect points (connectNulls) but stop drawing
+        // if there are no more points for this team.
+        const match = team.timeline.find(p => p.time === time);
+        if (match) {
+            dataPoint[team.name] = match.score;
+        } else {
+            dataPoint[team.name] = null;
         }
-        dataPoint[team.name] = score;
       });
       
       return dataPoint;
@@ -119,11 +119,11 @@ const ScoreChart: React.FC<ScoreChartProps> = ({ teams, visibleTeams }) => {
               visibleTeams.has(team.name) && (
                 <Line
                   key={team.id}
-                  type="monotone"
+                  type="linear"
                   dataKey={team.name}
                   stroke={TEAM_COLORS[index % TEAM_COLORS.length]}
                   strokeWidth={2}
-                  dot={false}
+                  dot={{ r: 3, strokeWidth: 1, fill: TEAM_COLORS[index % TEAM_COLORS.length] }}
                   activeDot={{ r: 6, strokeWidth: 0 }}
                   animationDuration={1000}
                   connectNulls

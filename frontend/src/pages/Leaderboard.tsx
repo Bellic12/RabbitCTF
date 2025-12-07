@@ -39,8 +39,10 @@ const Leaderboard: React.FC = () => {
         const data: ScoreboardResponse = await response.json();
         setTeams(data.teams);
         
-        const allTeamNames = new Set(data.teams.map(t => t.name));
-        setVisibleTeams(allTeamNames);
+        // Only show top 10 initially and in filters
+        const top10 = data.teams.slice(0, 10);
+        const top10Names = new Set(top10.map(t => t.name));
+        setVisibleTeams(top10Names);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An unknown error occurred');
       } finally {
@@ -66,6 +68,9 @@ const Leaderboard: React.FC = () => {
     });
   };
 
+  // Derived state for top 10 teams to be used in Chart and Filters
+  const topTeams = teams.slice(0, 10);
+
   return (
     <div className="flex min-h-screen flex-col bg-base-100 text-white">
       <Navigation />
@@ -88,10 +93,10 @@ const Leaderboard: React.FC = () => {
             </div>
           ) : (
             <>
-              <ScoreChart teams={teams} visibleTeams={visibleTeams} />
+              <ScoreChart teams={topTeams} visibleTeams={visibleTeams} />
               
               <TeamFilters 
-                teams={teams.map(t => ({ id: t.id, name: t.name }))} 
+                teams={topTeams.map(t => ({ id: t.id, name: t.name }))} 
                 visibleTeams={visibleTeams} 
                 toggleTeam={toggleTeam} 
               />
