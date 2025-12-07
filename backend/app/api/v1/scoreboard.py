@@ -33,7 +33,6 @@ class ScoreboardResponse(BaseModel):
 @router.get("/", response_model=ScoreboardResponse)
 def get_scoreboard(
     db: Session = Depends(get_db),
-    current_user=Depends(deps.get_current_user)
 ) -> ScoreboardResponse:
     """Return scoreboard data sourced from real submissions."""
     

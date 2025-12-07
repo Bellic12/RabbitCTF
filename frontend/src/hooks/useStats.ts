@@ -6,7 +6,7 @@ import { api } from '../services/api'
 export function useStats() {
   const { token } = useAuth()
   const [stats, setStats] = useState({
-    totalPoints: 0,
+    usersCount: 0,
     challengesCount: 0,
     teamsCount: 0,
   })
@@ -18,28 +18,32 @@ export function useStats() {
       try {
         let teamsCount = 0
         let challengesCount = 0
-        let totalPoints = 0
+        let usersCount = 0
 
-        if (token) {
-          try {
-            // Fetch scoreboard (authenticated)
-            const scoreboardData = await api.scoreboard.get(token)
-            teamsCount = scoreboardData.teams.length
+        // Fetch scoreboard (public)
+        try {
+          const scoreboardData = await api.scoreboard.get(token || undefined)
+          teamsCount = scoreboardData.teams.length
+        } catch (e) {
+          console.error('Failed to fetch scoreboard', e)
+        }
 
-            // Fetch challenges (authenticated)
-            const challengesData = await api.challenges.list(token)
-            challengesCount = challengesData.length
-            totalPoints = challengesData.reduce(
-              (acc: number, curr: any) => acc + (curr.base_score || 0),
-              0
-            )
-          } catch (e) {
-            console.error('Failed to fetch authenticated data', e)
-          }
+        // Fetch challenge count (public)
+        try {
+          challengesCount = await api.challenges.count()
+        } catch (e) {
+          console.error('Failed to fetch challenge count', e)
+        }
+
+        // Fetch user count (public)
+        try {
+          usersCount = await api.auth.count()
+        } catch (e) {
+          console.error('Failed to fetch user count', e)
         }
 
         setStats({
-          totalPoints,
+          usersCount,
           challengesCount,
           teamsCount,
         })

@@ -71,6 +71,14 @@ async def login_oauth2(
     return token
 
 
+@router.get("/count", response_model=int)
+def count_users(db: Session = Depends(get_db)):
+    """
+    Get total number of registered users (public).
+    """
+    return db.query(User).count()
+
+
 @router.get("/me", response_model=UserResponse)
 async def get_current_user_info(current_user: User = Depends(get_current_user)):
     """

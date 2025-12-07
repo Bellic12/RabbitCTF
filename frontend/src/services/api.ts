@@ -37,6 +37,13 @@ export const api = {
       if (!res.ok) throw new Error('Registration failed')
       return res.json()
     },
+    count: async () => {
+      const res = await fetch(`${API_URL}/auth/count`, {
+        headers: getHeaders(),
+      })
+      if (!res.ok) throw new Error('Failed to fetch user count')
+      return res.json()
+    },
   },
   challenges: {
     list: async (token: string) => {
@@ -51,6 +58,13 @@ export const api = {
         headers: getHeaders(token),
       })
       if (!res.ok) throw new Error('Failed to fetch categories')
+      return res.json()
+    },
+    count: async () => {
+      const res = await fetch(`${API_URL}/challenges/count`, {
+        headers: getHeaders(),
+      })
+      if (!res.ok) throw new Error('Failed to fetch challenge count')
       return res.json()
     },
   },

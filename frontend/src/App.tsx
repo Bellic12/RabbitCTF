@@ -18,6 +18,7 @@ export default function App() {
       {/* Public Routes */}
       <Route path="/" element={<HomePage />} />
       <Route path="/rules" element={<RulesPage />} />
+      <Route path="/leaderboard" element={<LeaderboardPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
 
@@ -25,7 +26,6 @@ export default function App() {
       <Route element={<ProtectedRoute />}>
         <Route path="/challenges" element={<ChallengesPage />} />
         <Route path="/team" element={<TeamPage />} />
-        <Route path="/leaderboard" element={<LeaderboardPage />} />
       </Route>
 
       {/* Admin Routes */}

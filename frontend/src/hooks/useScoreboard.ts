@@ -24,12 +24,8 @@ export function useScoreboard(refreshInterval = 30000) {
   const [error, setError] = useState<string | null>(null)
 
   const fetchScoreboard = useCallback(async () => {
-    if (!token) {
-      setIsLoading(false)
-      return
-    }
     try {
-      const data = await api.scoreboard.get(token)
+      const data = await api.scoreboard.get(token || undefined)
       setTeams(data.teams)
       setError(null)
     } catch (err) {
@@ -42,11 +38,11 @@ export function useScoreboard(refreshInterval = 30000) {
   useEffect(() => {
     fetchScoreboard()
 
-    if (refreshInterval > 0 && token) {
+    if (refreshInterval > 0) {
       const interval = setInterval(fetchScoreboard, refreshInterval)
       return () => clearInterval(interval)
     }
-  }, [fetchScoreboard, refreshInterval, token])
+  }, [fetchScoreboard, refreshInterval])
 
   return { teams, isLoading, error, refetch: fetchScoreboard }
 }

@@ -18,8 +18,8 @@ export default function Navigation() {
   const links = [
     { label: 'Home', to: '/', public: true },
     { label: 'Rules', to: '/rules', public: true },
+    { label: 'Leaderboard', to: '/leaderboard', public: true },
     { label: 'Challenges', to: '/challenges', public: false },
-    { label: 'Leaderboard', to: '/leaderboard', public: false },
     { label: 'Team', to: '/team', public: false },
     { label: 'Admin', to: '/admin', adminOnly: true },
   ]
