@@ -16,6 +16,11 @@ export default function LoginPage() {
     event.preventDefault()
     setError('')
 
+    if (username.length < 3) {
+      setError('Invalid username or password');
+      return;
+    }
+
     // # Authentication example
 
     try {
