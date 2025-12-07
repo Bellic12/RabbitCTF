@@ -1,24 +1,43 @@
-import { useState } from 'react'
-import type { FormEvent } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
-import Navigation from '../components/Navigation'
+import { type FormEvent, useEffect, useState } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+
 import Footer from '../components/Footer'
+import Navigation from '../components/Navigation'
+import { useAuth } from '../context/AuthContext'
+
+type LoginResponse = {
+  access_token: string
+  token_type: string
+}
+
+type ErrorResponse = {
+  detail?: string
+}
 
 export default function LoginPage() {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [successMessage, setSuccessMessage] = useState('')
   const navigate = useNavigate()
+  const location = useLocation()
   const { login } = useAuth()
+
+  useEffect(() => {
+    const state = location.state as { registrationSuccess?: boolean } | null
+    if (state?.registrationSuccess) {
+      setSuccessMessage('Registration successful! Please log in.')
+      window.history.replaceState({}, document.title)
+    }
+  }, [location])
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setError('')
 
     if (username.length < 3) {
-      setError('Invalid username or password');
-      return;
+      setError('Invalid username or password')
+      return
     }
 
     // # Authentication example
@@ -31,18 +50,17 @@ export default function LoginPage() {
       })
 
       if (!response.ok) {
-        const payload = await response.json().catch(() => ({}))
+        const payload = (await response.json().catch(() => ({}))) as ErrorResponse
         setError(payload.detail ?? 'Invalid username or password')
         return
       }
 
-      const data = await response.json()
+      const data = (await response.json()) as LoginResponse
       login(data.access_token)
 
-      navigate('/')
-    } catch (caught) {
+      void navigate('/')
+    } catch {
       setError('Unable to reach the authentication service')
-      console.error('Login request failed', caught)
     }
   }
 
@@ -61,7 +79,26 @@ export default function LoginPage() {
             <p className="mt-2 text-sm text-white/60">Sign in to participate in the competition</p>
           </div>
 
-          <form className="mt-10 space-y-6" onSubmit={handleSubmit}>
+          {successMessage && (
+            <div role="alert" className="alert alert-success mt-6">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="stroke-current shrink-0 h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <span>{successMessage}</span>
+            </div>
+          )}
+
+          <form className="mt-10 space-y-6" onSubmit={e => void handleSubmit(e)}>
             <div className="text-left">
               <label className="text-sm font-semibold text-white/70" htmlFor="username">
                 Username
