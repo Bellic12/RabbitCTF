@@ -1,4 +1,5 @@
 import type { Challenge } from '../types/challenge'
+import { CategoryBadge, DifficultyBadge } from './Badges'
 
 interface ChallengeCardProps {
   challenge: Challenge
@@ -18,21 +19,9 @@ export default function ChallengeCard({ challenge, onClick }: ChallengeCardProps
             {challenge.status === 'solved' ? <SolvedIcon /> : <UnsolvedIcon />}
             {challenge.title}
           </div>
-          <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-white/40">
-            <span className="rounded-full border border-white/10 px-2 py-0.5 text-[11px] text-white/70">
-              {challenge.category}
-            </span>
-            <span
-              className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${
-                challenge.difficulty === 'Easy'
-                  ? 'bg-emerald-500/10 text-emerald-400'
-                  : challenge.difficulty === 'Medium'
-                    ? 'bg-amber-500/10 text-amber-400'
-                    : 'bg-rose-500/10 text-rose-400'
-              }`}
-            >
-              {challenge.difficulty}
-            </span>
+          <div className="flex items-center gap-2">
+            <CategoryBadge category={challenge.category} />
+            <DifficultyBadge difficulty={challenge.difficulty} />
           </div>
         </div>
 
@@ -45,7 +34,7 @@ export default function ChallengeCard({ challenge, onClick }: ChallengeCardProps
       <div className="mt-6 flex flex-wrap gap-2">
         {challenge.tags.map(tag => (
           <span
-            className="rounded-full border border-white/10 bg-black/30 px-3 py-1 text-xs text-white/60"
+            className="rounded border border-white/10 bg-black/30 px-3 py-1 text-xs text-white/60"
             key={tag}
           >
             {tag}
@@ -58,7 +47,7 @@ export default function ChallengeCard({ challenge, onClick }: ChallengeCardProps
 
 function SolvedIcon() {
   return (
-    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-400">
+    <span className="flex h-6 w-6 items-center justify-center rounded bg-emerald-500/15 text-emerald-400">
       <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
         <path
           className="stroke-current"
@@ -74,7 +63,7 @@ function SolvedIcon() {
 
 function UnsolvedIcon() {
   return (
-    <span className="flex h-6 w-6 items-center justify-center rounded-full border border-white/20 text-white/40">
+    <span className="flex h-6 w-6 items-center justify-center rounded border border-white/20 text-white/40">
       <svg aria-hidden="true" className="h-3 w-3" fill="none" viewBox="0 0 24 24">
         <circle className="stroke-current" cx="12" cy="12" r="8" strokeWidth={1.6} />
       </svg>

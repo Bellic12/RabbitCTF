@@ -8,7 +8,7 @@ export default function EventSettings() {
             <label className="label">
               <span className="label-text">Current Status</span>
             </label>
-            <select className="select select-bordered w-full max-w-xs">
+            <select className="select select-bordered bg-base-200 w-full max-w-xs">
               <option>Not Started</option>
               <option>Running</option>
               <option>Paused</option>
@@ -21,13 +21,13 @@ export default function EventSettings() {
             <label className="label">
               <span className="label-text">Start Date & Time</span>
             </label>
-            <input type="datetime-local" className="input input-bordered w-full" defaultValue="2025-02-01T10:00" />
+            <input type="datetime-local" className="input input-bordered bg-base-200 w-full" defaultValue="2025-02-01T10:00" />
           </div>
           <div className="form-control w-full">
             <label className="label">
               <span className="label-text">End Date & Time</span>
             </label>
-            <input type="datetime-local" className="input input-bordered w-full" defaultValue="2025-02-03T18:00" />
+            <input type="datetime-local" className="input input-bordered bg-base-200 w-full" defaultValue="2025-02-03T18:00" />
           </div>
         </div>
         <button className="btn btn-primary mt-6">Update Event Timing</button>
@@ -41,7 +41,19 @@ export default function EventSettings() {
           <label className="label">
             <span className="label-text">Rules Content (Markdown supported)</span>
           </label>
-          <textarea className="textarea textarea-bordered h-32" placeholder="Enter competition rules in Markdown format..."></textarea>
+          <textarea 
+            className="textarea textarea-bordered h-48 font-mono text-sm" 
+            placeholder="Enter competition rules in Markdown format..."
+          ></textarea>
+          <label className="label">
+            <span className="label-text-alt text-white/40">Markdown formatting supported</span>
+            <span className="label-text-alt text-white/40">0 / 10,000 characters</span>
+          </label>
+        </div>
+        <div className="flex gap-2 mt-4">
+          <button className="btn btn-primary">Save Rules</button>
+          <button className="btn btn-outline">Preview</button>
+          <button className="btn btn-outline">View History</button>
         </div>
       </div>
     </div>

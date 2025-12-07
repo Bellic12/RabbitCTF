@@ -67,7 +67,7 @@ export default function AdminPage() {
         {/* Stats Cards */}
         <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-6">
           {stats.map((stat, index) => (
-            <div key={index} className="card bg-base-100 shadow-xl border border-white/5">
+            <div key={index} className="card bg-base-200 shadow-xl border border-white/5">
               <div className="card-body p-4">
                 <div className={`text-3xl font-bold ${stat.color}`}>{stat.value}</div>
                 <div className="text-xs text-white/60">{stat.label}</div>
@@ -97,7 +97,7 @@ export default function AdminPage() {
         </div>
 
         {/* Content */}
-        <div className="rounded-box border border-white/5 bg-base-100 p-6">
+        <div className="rounded-box border border-white/5 bg-base-200 p-6">
           {activeTab === 'event' && <EventSettings />}
           {activeTab === 'challenges' && <ChallengeManagement />}
           {activeTab === 'users' && <UserManagement />}

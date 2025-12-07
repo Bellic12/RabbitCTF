@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { Challenge } from '../types/challenge'
+import { CategoryBadge, DifficultyBadge } from './Badges'
 
 interface ChallengeModalProps {
   challenge: Challenge
@@ -25,20 +26,8 @@ export default function ChallengeModal({ challenge, onClose }: ChallengeModalPro
 
           <div className="space-y-3">
             <div className="flex items-center gap-3 text-sm font-semibold text-white/70">
-              <span
-                className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                  challenge.difficulty === 'Easy'
-                    ? 'bg-emerald-500/10 text-emerald-400'
-                    : challenge.difficulty === 'Medium'
-                      ? 'bg-amber-500/10 text-amber-400'
-                      : 'bg-rose-500/10 text-rose-400'
-                }`}
-              >
-                {challenge.difficulty}
-              </span>
-              <span className="rounded-full border border-white/10 bg-black/30 px-3 py-1 text-xs uppercase tracking-wide text-white/60">
-                {challenge.category}
-              </span>
+              <DifficultyBadge difficulty={challenge.difficulty} />
+              <CategoryBadge category={challenge.category} />
               <span className="text-primary">{challenge.points} points</span>
               <span className="text-white/40">{challenge.solves} solves</span>
             </div>
@@ -83,7 +72,7 @@ export default function ChallengeModal({ challenge, onClose }: ChallengeModalPro
                   <div className="mt-2 flex flex-wrap gap-2">
                     {challenge.tags.map(tag => (
                       <span
-                        className="rounded-full border border-white/10 bg-black/30 px-3 py-1 text-xs text-white/60"
+                        className="rounded border border-white/10 bg-black/30 px-3 py-1 text-xs text-white/60"
                         key={tag}
                       >
                         {tag}
@@ -98,7 +87,7 @@ export default function ChallengeModal({ challenge, onClose }: ChallengeModalPro
                   <h3 className="text-sm font-semibold uppercase tracking-wide text-white/50">
                     Files
                   </h3>
-                  <div className="rounded-2xl border border-white/10 bg-black/20">
+                  <div className="rounded-box border border-white/10 bg-black/20">
                     {challenge.files.map(file => (
                       <div
                         className="flex items-center justify-between gap-4 px-4 py-3 text-white/70"
@@ -109,7 +98,7 @@ export default function ChallengeModal({ challenge, onClose }: ChallengeModalPro
                           <p className="text-xs text-white/40">{file.size}</p>
                         </div>
                         <a
-                          className="btn btn-sm rounded-full border-none bg-primary text-black hover:bg-secondary"
+                          className="btn btn-sm border-none bg-primary text-black hover:bg-secondary"
                           href={file.url}
                         >
                           Download
@@ -125,10 +114,10 @@ export default function ChallengeModal({ challenge, onClose }: ChallengeModalPro
                   <h3 className="text-sm font-semibold uppercase tracking-wide text-white/50">
                     Connection Info
                   </h3>
-                  <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-black/30 px-4 py-3">
+                  <div className="flex items-center gap-3 rounded-box border border-white/10 bg-black/30 px-4 py-3">
                     <code className="flex-1 text-sm text-white/80">{challenge.connectionInfo}</code>
                     <button
-                      className="btn btn-sm rounded-full border-none bg-white/10 text-white hover:bg-white/20"
+                      className="btn btn-sm border-none bg-white/10 text-white hover:bg-white/20"
                       onClick={() => navigator.clipboard.writeText(challenge.connectionInfo ?? '')}
                       type="button"
                     >
@@ -144,12 +133,12 @@ export default function ChallengeModal({ challenge, onClose }: ChallengeModalPro
                 </h3>
                 <form className="flex flex-col gap-3 md:flex-row">
                   <input
-                    className="h-12 flex-1 rounded-2xl border border-white/15 bg-base-300 px-4 text-sm text-white focus:border-primary focus:outline-none"
+                    className="h-12 flex-1 rounded border border-white/15 bg-base-300 px-4 text-sm text-white focus:border-primary focus:outline-none"
                     placeholder="flag{...}"
                     type="text"
                   />
                   <button
-                    className="btn h-12 rounded-full border-none bg-primary px-6 text-sm font-semibold text-black hover:bg-secondary"
+                    className="btn h-12 border-none bg-primary px-6 text-sm font-semibold text-black hover:bg-secondary"
                     type="submit"
                   >
                     Submit
@@ -163,7 +152,7 @@ export default function ChallengeModal({ challenge, onClose }: ChallengeModalPro
                 <div className="space-y-3">
                   {challenge.solveHistory.map((entry, index) => (
                     <div
-                      className="flex items-center justify-between rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white/70"
+                      className="flex items-center justify-between rounded-box border border-white/10 bg-black/20 px-4 py-3 text-sm text-white/70"
                       key={`${entry.team}-${index}`}
                     >
                       <div>
@@ -175,7 +164,7 @@ export default function ChallengeModal({ challenge, onClose }: ChallengeModalPro
                   ))}
                 </div>
               ) : (
-                <div className="rounded-2xl border border-white/10 bg-black/20 p-6 text-center text-white/50">
+                <div className="rounded-box border border-white/10 bg-black/20 p-6 text-center text-white/50">
                   No solves have been recorded yet.
                 </div>
               )}
