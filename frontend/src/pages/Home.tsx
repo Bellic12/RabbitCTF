@@ -1,11 +1,12 @@
 import { Link } from 'react-router-dom'
-import Navigation from '../components/Navigation'
+
 import Footer from '../components/Footer'
+import Navigation from '../components/Navigation'
 import { useStats } from '../hooks/useStats'
 
 export default function HomePage() {
   const { stats } = useStats()
-  
+
   const statsDisplay = [
     { icon: TrophyIcon, label: 'Total Points', value: stats.totalPoints.toString() },
     { icon: ShieldIcon, label: 'Challenges', value: stats.challengesCount.toString() },

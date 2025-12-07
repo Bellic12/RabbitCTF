@@ -1,12 +1,13 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
+
 import AdminPage from './pages/Admin'
 import ChallengesPage from './pages/Challenges'
 import HomePage from './pages/Home'
 import LeaderboardPage from './pages/Leaderboard'
 import LoginPage from './pages/Login'
 import RegisterPage from './pages/Register'
-import TeamPage from './pages/Team'
 import RulesPage from './pages/Rules'
+import TeamPage from './pages/Team'
 
 export default function App() {
   return (

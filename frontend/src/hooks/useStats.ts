@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+
 import { useAuth } from '../context/AuthContext'
 import { api } from '../services/api'
 
@@ -7,7 +8,7 @@ export function useStats() {
   const [stats, setStats] = useState({
     totalPoints: 0,
     challengesCount: 0,
-    teamsCount: 0
+    teamsCount: 0,
   })
   const [isLoading, setIsLoading] = useState(true)
 
@@ -18,7 +19,7 @@ export function useStats() {
         // Fetch scoreboard (public)
         const scoreboardData = await api.scoreboard.get()
         const teamsCount = scoreboardData.teams.length
-        
+
         let challengesCount = 0
         let totalPoints = 0
 
@@ -27,7 +28,10 @@ export function useStats() {
           try {
             const challengesData = await api.challenges.list(token)
             challengesCount = challengesData.length
-            totalPoints = challengesData.reduce((acc: number, curr: any) => acc + (curr.base_score || 0), 0)
+            totalPoints = challengesData.reduce(
+              (acc: number, curr: any) => acc + (curr.base_score || 0),
+              0
+            )
           } catch (e) {
             console.error('Failed to fetch challenges', e)
           }
@@ -36,7 +40,7 @@ export function useStats() {
         setStats({
           totalPoints,
           challengesCount,
-          teamsCount
+          teamsCount,
         })
       } catch (error) {
         console.error('Failed to fetch stats', error)

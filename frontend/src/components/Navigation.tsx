@@ -1,4 +1,5 @@
 import { Link, NavLink } from 'react-router-dom'
+
 import { useAuth } from '../context/AuthContext'
 
 export default function Navigation() {
@@ -17,24 +18,20 @@ export default function Navigation() {
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
         <div className="flex items-center gap-2 text-lg font-semibold text-white">
           <div className="dropdown md:hidden">
-            <div
-              tabIndex={0}
-              role="button"
-              className="btn btn-ghost btn-circle btn-sm text-white"
-            >
-              <svg 
-                xmlns="http://www.w3.org/2000/svg" 
-                className="h-5 w-5" 
-                fill="none" viewBox="0 0 24 24" 
+            <div tabIndex={0} role="button" className="btn btn-ghost btn-circle btn-sm text-white">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
                 stroke="currentColor"
-                > 
-
-                <path 
-                strokeLinecap="round" 
-                strokeLinejoin="round" 
-                strokeWidth="2" 
-                d="M4 6h16M4 12h16M4 18h7" 
-                /> 
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M4 6h16M4 12h16M4 18h7"
+                />
               </svg>
             </div>
             <ul

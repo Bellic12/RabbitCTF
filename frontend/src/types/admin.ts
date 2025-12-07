@@ -1,4 +1,4 @@
-export interface AdminStats {
+export type AdminStats = {
   total_users: number
   total_teams: number
   total_challenges: number

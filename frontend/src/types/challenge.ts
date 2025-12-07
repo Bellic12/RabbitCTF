@@ -2,19 +2,19 @@ export type ChallengeDifficulty = 'Easy' | 'Medium' | 'Hard' | 'Insane'
 export type ChallengeCategory = string
 export type ChallengeStatus = 'solved' | 'open'
 
-export interface ChallengeFile {
+export type ChallengeFile = {
   name: string
   size: string
   url: string
 }
 
-export interface ChallengeSolve {
+export type ChallengeSolve = {
   team: string
   submittedAt: string
   points: number
 }
 
-export interface Challenge {
+export type Challenge = {
   id: string
   title: string
   category: ChallengeCategory

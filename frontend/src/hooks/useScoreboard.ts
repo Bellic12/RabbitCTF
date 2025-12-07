@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback } from 'react'
+
 import { api } from '../services/api'
 
-interface ScorePoint {
+type ScorePoint = {
   time: string
   score: number
 }
 
-interface Team {
+type Team = {
   id: number
   name: string
   timeline: ScorePoint[]
@@ -34,7 +35,7 @@ export function useScoreboard(refreshInterval = 30000) {
 
   useEffect(() => {
     fetchScoreboard()
-    
+
     if (refreshInterval > 0) {
       const interval = setInterval(fetchScoreboard, refreshInterval)
       return () => clearInterval(interval)
