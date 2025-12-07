@@ -118,9 +118,24 @@ class SubmissionService:
                 detail="Challenge flag not configured",
             )
 
-        # Validate flag (considering case sensitivity)
-        flag_to_check = flag_value if flag.is_case_sensitive else flag_value.lower()
-        is_correct = verify_password(flag_to_check, flag.flag_hash)
+        # Validate flag (considering case sensitivity from rule_config)
+        is_case_sensitive = True  # Default to case-sensitive
+        
+        if challenge.rule_config and hasattr(challenge.rule_config, 'is_case_sensitive'):
+            is_case_sensitive = challenge.rule_config.is_case_sensitive
+        
+        flag_to_check = flag_value if is_case_sensitive else flag_value.lower()
+        
+        # Check if flag_hash looks like a bcrypt hash (starts with $2b$ or $2a$ or $2y$)
+        # If not, it might be stored in plain text (for development)
+        if flag.flag_hash.startswith(('$2b$', '$2a$', '$2y$')):
+            # Hash is properly formatted, use bcrypt verification
+            is_correct = verify_password(flag_to_check, flag.flag_hash)
+        else:
+            # Fallback: direct comparison (for development/testing)
+            # In production, all flags should be hashed!
+            stored_flag = flag.flag_hash if is_case_sensitive else flag.flag_hash.lower()
+            is_correct = (flag_to_check == stored_flag)
 
         # Check if already solved by this team
         already_solved = (

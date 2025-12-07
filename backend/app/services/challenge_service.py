@@ -163,13 +163,32 @@ class ChallengeService:
             .count()
         )
 
-        # Get scoring strategy (default to static)
-        strategy_type = "static"  # TODO: Get from challenge config when implemented
+        # Get base score from score_config
+        if challenge.score_config and hasattr(challenge.score_config, 'base_score'):
+            base_score = challenge.score_config.base_score
+        else:
+            base_score = 100  # Default score if no config exists
+
+        # Get scoring configuration
+        if challenge.score_config:
+            strategy_type = getattr(challenge.score_config, 'scoring_type', 'static') or 'static'
+            decay = getattr(challenge.score_config, 'decay_factor', 0.9) or 0.9
+            min_score = getattr(challenge.score_config, 'min_score', 10) or 10
+        else:
+            strategy_type = 'static'
+            decay = 0.9
+            min_score = 10
+
+        # Get scoring strategy
         strategy = get_scoring_strategy(strategy_type)
 
-        return strategy.calculate_score(challenge, solve_count)
-
-    def toggle_visibility(self, challenge_id: int, admin: User) -> Challenge:
+        # Calculate score with correct parameters
+        return strategy.calculate_score(
+            base_score=base_score,
+            solve_count=solve_count,
+            decay=decay,
+            min_score=min_score
+        )
         """
         Toggle challenge visibility (publish/unpublish).
 
