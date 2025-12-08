@@ -4,6 +4,7 @@ Admin-only endpoints for RabbitCTF.
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from typing import List
 
 from app.core.database import get_db
@@ -25,12 +26,12 @@ async def get_admin_stats(
     """
     Get admin dashboard statistics.
     """
-    total_users = db.query(User).count()
-    total_teams = db.query(Team).count()
-    total_challenges = db.query(Challenge).count()
-    active_challenges = db.query(Challenge).filter(~Challenge.is_draft).count()
-    total_submissions = db.query(Submission).count()
-    correct_flags = db.query(Submission).filter(Submission.is_correct).count()
+    total_users = db.query(func.count(User.id)).scalar()
+    total_teams = db.query(func.count(Team.id)).scalar()
+    total_challenges = db.query(func.count(Challenge.id)).scalar()
+    active_challenges = db.query(func.count(Challenge.id)).filter(~Challenge.is_draft).scalar()
+    total_submissions = db.query(func.count(Submission.id)).scalar()
+    correct_flags = db.query(func.count(Submission.id)).filter(Submission.is_correct).scalar()
 
     return AdminStatsResponse(
         total_users=total_users,
