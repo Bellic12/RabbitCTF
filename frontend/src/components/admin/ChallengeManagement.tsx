@@ -1,15 +1,28 @@
+import { useState } from 'react'
+import CreateChallengeModal from './CreateChallengeModal'
+
 export default function ChallengeManagement() {
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+
   const challenges = [
     { id: 1, title: 'SQL Injection Basics', category: 'Web', points: 100, solves: 145, flag: 'flag{sql_injection_is_easy}', visible: true },
     { id: 2, title: 'Buffer Overflow', category: 'Binary', points: 500, solves: 23, flag: 'flag{buffer_overflow_pwned}', visible: true },
     { id: 3, title: 'Hidden Challenge', category: 'Crypto', points: 300, solves: 0, flag: 'flag{crypto_master_hidden}', visible: false },
   ]
 
+  const handleCreateChallenge = (challengeData: any) => {
+    console.log('Creating challenge:', challengeData)
+    // TODO: Implement API call to create challenge
+  }
+
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
         <h3 className="text-lg font-bold">Challenge Management</h3>
-        <button className="btn btn-primary btn-sm gap-2">
+        <button 
+          className="btn btn-primary btn-sm gap-2"
+          onClick={() => setIsCreateModalOpen(true)}
+        >
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
           </svg>
@@ -59,6 +72,12 @@ export default function ChallengeManagement() {
           </div>
         ))}
       </div>
+
+      <CreateChallengeModal 
+        isOpen={isCreateModalOpen} 
+        onClose={() => setIsCreateModalOpen(false)} 
+        onCreate={handleCreateChallenge} 
+      />
     </div>
   )
 }
