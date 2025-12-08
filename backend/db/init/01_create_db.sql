@@ -124,7 +124,7 @@ CREATE TABLE IF NOT EXISTS challenge_rule_config (
 
 CREATE TABLE IF NOT EXISTS challenge_flag (
     challenge_id INT PRIMARY KEY,
-    flag_hash VARCHAR(255) NOT NULL,
+    flag_value VARCHAR(255) NOT NULL,
     FOREIGN KEY (challenge_id) REFERENCES challenge(id) ON DELETE CASCADE
 );
 
@@ -156,7 +156,7 @@ CREATE TABLE IF NOT EXISTS submission (
     user_id INT NOT NULL,
     team_id INT NOT NULL,
     challenge_id INT NOT NULL,
-    submitted_flag_hash VARCHAR(255) NOT NULL,
+    submitted_flag VARCHAR(255) NOT NULL,
     is_correct BOOLEAN DEFAULT FALSE,
     awarded_score INT,
     submitted_at TIMESTAMP DEFAULT NOW(),

@@ -14,7 +14,6 @@ from app.models.challenge_flag import ChallengeFlag
 from app.models.user import User
 from app.models.team import Team
 from app.models.team_member import TeamMember
-from app.core.security import verify_password
 from app.services.challenge_service import ChallengeService
 from app.core.enum import SubmissionStatus
 
@@ -93,7 +92,7 @@ class SubmissionService:
                 challenge_id=challenge_id,
                 user_id=user.id,
                 team_id=team_id,
-                submitted_flag_hash="",
+                submitted_flag="",
                 is_correct=False,
             )
             self.db.add(submission)
@@ -118,24 +117,10 @@ class SubmissionService:
                 detail="Challenge flag not configured",
             )
 
-        # Validate flag (considering case sensitivity from rule_config)
-        is_case_sensitive = True  # Default to case-sensitive
-        
-        if challenge.rule_config and hasattr(challenge.rule_config, 'is_case_sensitive'):
-            is_case_sensitive = challenge.rule_config.is_case_sensitive
-        
-        flag_to_check = flag_value if is_case_sensitive else flag_value.lower()
-        
-        # Check if flag_hash looks like a bcrypt hash (starts with $2b$ or $2a$ or $2y$)
-        # If not, it might be stored in plain text (for development)
-        if flag.flag_hash.startswith(('$2b$', '$2a$', '$2y$')):
-            # Hash is properly formatted, use bcrypt verification
-            is_correct = verify_password(flag_to_check, flag.flag_hash)
-        else:
-            # Fallback: direct comparison (for development/testing)
-            # In production, all flags should be hashed!
-            stored_flag = flag.flag_hash if is_case_sensitive else flag.flag_hash.lower()
-            is_correct = (flag_to_check == stored_flag)
+        # Validate flag (considering case sensitivity)
+        submitted_flag = flag_value if flag.is_case_sensitive else flag_value.lower()
+        stored_flag = flag.flag_value if flag.is_case_sensitive else flag.flag_value.lower()
+        is_correct = submitted_flag == stored_flag
 
         # Check if already solved by this team
         already_solved = (
@@ -179,7 +164,7 @@ class SubmissionService:
             challenge_id=challenge_id,
             user_id=user.id,
             team_id=team_id,
-            submitted_flag_hash=flag_value,  # In production, hash this
+            submitted_flag=flag_value,
             is_correct=is_correct,
             awarded_score=score_awarded,
         )

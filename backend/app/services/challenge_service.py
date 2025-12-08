@@ -12,7 +12,6 @@ from app.models.submission import Submission
 from app.models.user import User
 from app.schemas.challenges import ChallengeCreate, ChallengeUpdate
 from app.core.scoring import get_scoring_strategy
-from app.core.security import get_password_hash
 
 
 class ChallengeService:
@@ -52,7 +51,7 @@ class ChallengeService:
         # Create flag
         flag = ChallengeFlag(
             challenge_id=new_challenge.id,
-            flag_hash=get_password_hash(challenge_data.flag),
+            flag_value=challenge_data.flag,
             is_case_sensitive=challenge_data.is_case_sensitive,
         )
         self.db.add(flag)
@@ -91,14 +90,14 @@ class ChallengeService:
 
         for field, value in update_data.items():
             if field == "flag" and value:
-                # Update flag hash
+                # Update flag value
                 flag = (
                     self.db.query(ChallengeFlag)
                     .filter(ChallengeFlag.challenge_id == challenge_id)
                     .first()
                 )
                 if flag:
-                    flag.flag_hash = get_password_hash(value)
+                    flag.flag_value = value
             elif hasattr(challenge, field):
                 setattr(challenge, field, value)
 

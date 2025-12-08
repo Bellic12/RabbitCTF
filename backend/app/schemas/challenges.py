@@ -86,7 +86,7 @@ class ChallengeCreate(ChallengeBase):
         ...,
         min_length=5,
         max_length=255,
-        description="The correct flag (will be hashed)",
+        description="The correct flag (stored in plain text)",
         examples=["RabbitCTF{h1dd3n_fl4g}"],
     )
     base_score: int = Field(
@@ -234,6 +234,7 @@ class ChallengeDetailResponse(ChallengeResponse):
     success_rate: Optional[float] = Field(
         default=0.0, description="Percentage of successful submissions"
     )
+    flag_content: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
 

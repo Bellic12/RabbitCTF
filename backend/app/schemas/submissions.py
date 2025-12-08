@@ -16,7 +16,7 @@ class SubmissionBase(BaseModel):
     """Base submission schema."""
 
     challenge_id: int = Field(..., gt=0)
-    submitted_flag_hash: str = Field(..., max_length=255)
+    submitted_flag: str = Field(..., max_length=255)
 
 
 class SubmissionResponse(BaseModel):
@@ -39,7 +39,7 @@ class SubmissionResponse(BaseModel):
 class SubmissionDetailResponse(SubmissionResponse):
     """Schema for detailed submission response (admin view)."""
 
-    submitted_flag_hash: str
+    submitted_flag: str
     ip_address: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
