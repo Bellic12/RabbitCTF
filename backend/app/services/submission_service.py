@@ -12,7 +12,6 @@ from app.models.challenge_flag import ChallengeFlag
 from app.models.user import User
 from app.models.team import Team
 from app.models.team_member import TeamMember
-from app.core.security import verify_password
 from app.services.challenge_service import ChallengeService
 from app.core.enum import SubmissionStatus
 
@@ -91,7 +90,7 @@ class SubmissionService:
                 challenge_id=challenge_id,
                 user_id=user.id,
                 team_id=team_id,
-                submitted_flag_hash="",
+                submitted_flag="",
                 is_correct=False,
             )
             self.db.add(submission)
@@ -117,8 +116,9 @@ class SubmissionService:
             )
 
         # Validate flag (considering case sensitivity)
-        flag_to_check = flag_value if flag.is_case_sensitive else flag_value.lower()
-        is_correct = verify_password(flag_to_check, flag.flag_hash)
+        submitted_flag = flag_value if flag.is_case_sensitive else flag_value.lower()
+        stored_flag = flag.flag_value if flag.is_case_sensitive else flag.flag_value.lower()
+        is_correct = submitted_flag == stored_flag
 
         # Check if already solved by this team
         already_solved = (
@@ -162,7 +162,7 @@ class SubmissionService:
             challenge_id=challenge_id,
             user_id=user.id,
             team_id=team_id,
-            submitted_flag_hash=flag_value,  # In production, hash this
+            submitted_flag=flag_value,
             is_correct=is_correct,
             awarded_score=score_awarded,
         )

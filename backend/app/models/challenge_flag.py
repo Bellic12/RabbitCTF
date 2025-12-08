@@ -9,7 +9,7 @@ from app.core.database import Base
 
 class ChallengeFlag(Base):
     """
-    Challenge flag storage (hashed).
+    Challenge flag storage (plain text).
     """
 
     __tablename__ = "challenge_flag"
@@ -17,7 +17,7 @@ class ChallengeFlag(Base):
     challenge_id = Column(
         Integer, ForeignKey("challenge.id", ondelete="CASCADE"), primary_key=True
     )
-    flag_hash = Column(String(255), nullable=False)
+    flag_value = Column(String(255), nullable=False)
 
     # Relationships
     challenge = relationship("Challenge", back_populates="flag")

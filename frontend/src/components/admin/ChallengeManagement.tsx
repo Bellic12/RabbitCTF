@@ -1,33 +1,38 @@
+import { useState, useEffect } from 'react'
+import { useAuth } from '../../context/AuthContext'
+
+interface Challenge {
+  id: number
+  title: string
+  category_name: string
+  base_score: number
+  solve_count: number
+  flag_content: string
+  is_visible: boolean
+}
+
 export default function ChallengeManagement() {
-  const challenges = [
-    {
-      id: 1,
-      title: 'SQL Injection Basics',
-      category: 'Web',
-      points: 100,
-      solves: 145,
-      flag: 'flag{sql_injection_is_easy}',
-      visible: true,
-    },
-    {
-      id: 2,
-      title: 'Buffer Overflow',
-      category: 'Binary',
-      points: 500,
-      solves: 23,
-      flag: 'flag{buffer_overflow_pwned}',
-      visible: true,
-    },
-    {
-      id: 3,
-      title: 'Hidden Challenge',
-      category: 'Crypto',
-      points: 300,
-      solves: 0,
-      flag: 'flag{crypto_master_hidden}',
-      visible: false,
-    },
-  ]
+  const [challenges, setChallenges] = useState<Challenge[]>([])
+  const { token } = useAuth()
+
+  useEffect(() => {
+    const fetchChallenges = async () => {
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/v1/challenges/admin/all`, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        })
+        if (response.ok) {
+          const data = await response.json()
+          setChallenges(data)
+        }
+      } catch (error) {
+        console.error('Failed to fetch challenges:', error)
+      }
+    }
+    if (token) fetchChallenges()
+  }, [token])
 
   return (
     <div>
@@ -57,25 +62,10 @@ export default function ChallengeManagement() {
                   <h4 className="font-bold">{challenge.title}</h4>
                 </div>
                 <div className="flex items-center gap-3 text-sm text-white/60">
-                  {challenge.visible ? (
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      strokeWidth={1.5}
-                      stroke="currentColor"
-                      className="w-4 h-4 text-success"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"
-                      />
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                      />
+                  {challenge.is_visible ? (
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-success">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
                   ) : (
                     <svg
@@ -93,12 +83,12 @@ export default function ChallengeManagement() {
                       />
                     </svg>
                   )}
-                  <span className="badge badge-sm badge-outline">{challenge.category}</span>
-                  <span>{challenge.points} pts</span>
+                  <span className="badge badge-sm badge-outline">{challenge.category_name}</span>
+                  <span>{challenge.base_score} pts</span>
                   <span>•</span>
-                  <span>{challenge.solves} solves</span>
+                  <span>{challenge.solve_count} solves</span>
                 </div>
-                <div className="mt-2 font-mono text-xs text-error">{challenge.flag}</div>
+                <div className="mt-2 font-mono text-xs text-error">{challenge.flag_content}</div>
               </div>
               <div className="flex gap-2">
                 <button className="btn btn-square btn-sm btn-ghost border border-white/10">
