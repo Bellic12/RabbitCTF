@@ -21,7 +21,7 @@ class Submission(Base):
     challenge_id = Column(
         Integer, ForeignKey("challenge.id"), nullable=False, index=True
     )
-    submitted_flag_hash = Column(String(255), nullable=False)
+    submitted_flag = Column(String(255), nullable=False)
     is_correct = Column(Boolean, default=False, index=True)
     awarded_score = Column(Integer)
     submitted_at = Column(

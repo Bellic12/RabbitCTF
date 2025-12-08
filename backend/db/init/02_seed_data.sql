@@ -9,7 +9,7 @@
 -- Insert default roles
 INSERT INTO role (name, description) VALUES 
 ('admin', 'System administrator with full access'),
-('moderator', 'Event moderator with challenge management'),
+('captain', 'Team captain with team management permissions'),
 ('user', 'Regular user/competitor')
 ON CONFLICT (name) DO NOTHING;
 
@@ -44,47 +44,45 @@ ON CONFLICT (name) DO NOTHING;
 -- Password hash generated with bcrypt rounds=12
 INSERT INTO "user" (username, email, role_id) VALUES 
 ('admin', 'admin@rabbitctf.com', (SELECT id FROM role WHERE name = 'admin')),
-('moderator', 'moderator@rabbitctf.com', (SELECT id FROM role WHERE name = 'moderator')),
-('alice', 'alice@example.com', (SELECT id FROM role WHERE name = 'user')),
+('alice', 'alice@example.com', (SELECT id FROM role WHERE name = 'captain')),
 ('bob', 'bob@example.com', (SELECT id FROM role WHERE name = 'user')),
-('charlie', 'charlie@example.com', (SELECT id FROM role WHERE name = 'user')),
+('charlie', 'charlie@example.com', (SELECT id FROM role WHERE name = 'captain')),
 ('diana', 'diana@example.com', (SELECT id FROM role WHERE name = 'user')),
-('eve', 'eve@example.com', (SELECT id FROM role WHERE name = 'user')),
+('eve', 'eve@example.com', (SELECT id FROM role WHERE name = 'captain')),
 ('frank', 'frank@example.com', (SELECT id FROM role WHERE name = 'user')),
-('grace', 'grace@example.com', (SELECT id FROM role WHERE name = 'user')),
-('hank', 'hank@example.com', (SELECT id FROM role WHERE name = 'user')),
+('grace', 'grace@example.com', (SELECT id FROM role WHERE name = 'captain')),
+('hank', 'hank@example.com', (SELECT id FROM role WHERE name = 'captain')),
 ('ivy', 'ivy@example.com', (SELECT id FROM role WHERE name = 'user')),
-('jack', 'jack@example.com', (SELECT id FROM role WHERE name = 'user')),
-('kate', 'kate@example.com', (SELECT id FROM role WHERE name = 'user')),
-('leo', 'leo@example.com', (SELECT id FROM role WHERE name = 'user')),
+('jack', 'jack@example.com', (SELECT id FROM role WHERE name = 'captain')),
+('kate', 'kate@example.com', (SELECT id FROM role WHERE name = 'captain')),
+('leo', 'leo@example.com', (SELECT id FROM role WHERE name = 'captain')),
 ('maya', 'maya@example.com', (SELECT id FROM role WHERE name = 'user')),
-('noah', 'noah@example.com', (SELECT id FROM role WHERE name = 'user')),
-('olivia', 'olivia@example.com', (SELECT id FROM role WHERE name = 'user')),
-('peter', 'peter@example.com', (SELECT id FROM role WHERE name = 'user')),
-('quinn', 'quinn@example.com', (SELECT id FROM role WHERE name = 'user')),
-('ryan', 'ryan@example.com', (SELECT id FROM role WHERE name = 'user')),
-('sarah', 'sarah@example.com', (SELECT id FROM role WHERE name = 'user')),
-('tom', 'tom@example.com', (SELECT id FROM role WHERE name = 'user')),
+('noah', 'noah@example.com', (SELECT id FROM role WHERE name = 'captain')),
+('olivia', 'olivia@example.com', (SELECT id FROM role WHERE name = 'captain')),
+('peter', 'peter@example.com', (SELECT id FROM role WHERE name = 'captain')),
+('quinn', 'quinn@example.com', (SELECT id FROM role WHERE name = 'captain')),
+('ryan', 'ryan@example.com', (SELECT id FROM role WHERE name = 'captain')),
+('sarah', 'sarah@example.com', (SELECT id FROM role WHERE name = 'captain')),
+('tom', 'tom@example.com', (SELECT id FROM role WHERE name = 'captain')),
 ('uma', 'uma@example.com', (SELECT id FROM role WHERE name = 'user')),
-('victor', 'victor@example.com', (SELECT id FROM role WHERE name = 'user')),
-('wendy', 'wendy@example.com', (SELECT id FROM role WHERE name = 'user')),
-('xavier', 'xavier@example.com', (SELECT id FROM role WHERE name = 'user')),
-('yara', 'yara@example.com', (SELECT id FROM role WHERE name = 'user')),
-('zack', 'zack@example.com', (SELECT id FROM role WHERE name = 'user'))
+('victor', 'victor@example.com', (SELECT id FROM role WHERE name = 'captain')),
+('wendy', 'wendy@example.com', (SELECT id FROM role WHERE name = 'captain')),
+('xavier', 'xavier@example.com', (SELECT id FROM role WHERE name = 'captain')),
+('yara', 'yara@example.com', (SELECT id FROM role WHERE name = 'captain')),
+('zack', 'zack@example.com', (SELECT id FROM role WHERE name = 'captain'))
 ON CONFLICT (username) DO NOTHING;
 
 -- Insert user credentials
 -- Password hashes generated with bcrypt 4.2.1
--- admin: admin123, moderator: moderator123, others: password123
+-- admin: admin123, others: password123
 INSERT INTO user_credential (user_id, password_hash, is_temp_password, must_change_password)
 SELECT id, 
     CASE 
         WHEN username = 'admin' THEN '$2b$12$hGgbPXqMSqhlHEGr6.Qobu9i0195UgBFZJlJp4zzgRu9Y81nNJv2q'
-        WHEN username = 'moderator' THEN '$2b$12$oX6/w5bJj9QYl7M4qoyeFelLRGF8vRgcJqw8xB8/4I5o29N4ImY0y'
         ELSE '$2b$12$.6W.XaE8GOJ4h4Whqt1rGOhwMcfqckJVuL0fcB5s/oguaovy35yKu'
     END,
-    CASE WHEN username IN ('admin', 'moderator') THEN TRUE ELSE FALSE END,
-    CASE WHEN username IN ('admin', 'moderator') THEN TRUE ELSE FALSE END
+    CASE WHEN username = 'admin' THEN TRUE ELSE FALSE END,
+    CASE WHEN username = 'admin' THEN TRUE ELSE FALSE END
 FROM "user"
 ON CONFLICT (user_id) DO NOTHING;
 
@@ -249,7 +247,7 @@ INSERT INTO challenge (title, description, category_id, difficulty_id, created_b
     'A simple web challenge. Inspect the page source to find the flag.',
     (SELECT id FROM challenge_category WHERE name = 'Web'),
     (SELECT id FROM difficulty WHERE name = 'Easy'),
-    (SELECT id FROM "user" WHERE username = 'moderator'),
+    (SELECT id FROM "user" WHERE username = 'admin'),
     FALSE
 ),
 (
@@ -265,7 +263,7 @@ INSERT INTO challenge (title, description, category_id, difficulty_id, created_b
     'Analyze the cookies to find the hidden flag.',
     (SELECT id FROM challenge_category WHERE name = 'Web'),
     (SELECT id FROM difficulty WHERE name = 'Easy'),
-    (SELECT id FROM "user" WHERE username = 'moderator'),
+    (SELECT id FROM "user" WHERE username = 'admin'),
     FALSE
 ),
 (
@@ -281,7 +279,7 @@ INSERT INTO challenge (title, description, category_id, difficulty_id, created_b
     'Find the flag hidden in the image EXIF data.',
     (SELECT id FROM challenge_category WHERE name = 'Forensics'),
     (SELECT id FROM difficulty WHERE name = 'Easy'),
-    (SELECT id FROM "user" WHERE username = 'moderator'),
+    (SELECT id FROM "user" WHERE username = 'admin'),
     FALSE
 ),
 (
@@ -297,7 +295,7 @@ INSERT INTO challenge (title, description, category_id, difficulty_id, created_b
     'Analyze this PCAP file to find credentials.',
     (SELECT id FROM challenge_category WHERE name = 'Forensics'),
     (SELECT id FROM difficulty WHERE name = 'Easy'),
-    (SELECT id FROM "user" WHERE username = 'moderator'),
+    (SELECT id FROM "user" WHERE username = 'admin'),
     FALSE
 ),
 (
@@ -313,7 +311,7 @@ INSERT INTO challenge (title, description, category_id, difficulty_id, created_b
     'The flag is in this text file, but you need to look carefully.',
     (SELECT id FROM challenge_category WHERE name = 'Misc'),
     (SELECT id FROM difficulty WHERE name = 'Easy'),
-    (SELECT id FROM "user" WHERE username = 'moderator'),
+    (SELECT id FROM "user" WHERE username = 'admin'),
     FALSE
 ),
 -- Medium challenges (10)
@@ -322,7 +320,7 @@ INSERT INTO challenge (title, description, category_id, difficulty_id, created_b
     'Can you bypass the login form? URL: http://challenge.local/login',
     (SELECT id FROM challenge_category WHERE name = 'Web'),
     (SELECT id FROM difficulty WHERE name = 'Medium'),
-    (SELECT id FROM "user" WHERE username = 'moderator'),
+    (SELECT id FROM "user" WHERE username = 'admin'),
     FALSE
 ),
 (
@@ -338,7 +336,7 @@ INSERT INTO challenge (title, description, category_id, difficulty_id, created_b
     'Decrypt the message encrypted with XOR cipher. Key length: 5',
     (SELECT id FROM challenge_category WHERE name = 'Crypto'),
     (SELECT id FROM difficulty WHERE name = 'Medium'),
-    (SELECT id FROM "user" WHERE username = 'moderator'),
+    (SELECT id FROM "user" WHERE username = 'admin'),
     FALSE
 ),
 (
@@ -354,7 +352,7 @@ INSERT INTO challenge (title, description, category_id, difficulty_id, created_b
     'Analyze this memory dump to extract the password.',
     (SELECT id FROM challenge_category WHERE name = 'Forensics'),
     (SELECT id FROM difficulty WHERE name = 'Medium'),
-    (SELECT id FROM "user" WHERE username = 'moderator'),
+    (SELECT id FROM "user" WHERE username = 'admin'),
     FALSE
 ),
 (
@@ -370,7 +368,7 @@ INSERT INTO challenge (title, description, category_id, difficulty_id, created_b
     'Analyze this binary to find the hardcoded password.',
     (SELECT id FROM challenge_category WHERE name = 'Reverse'),
     (SELECT id FROM difficulty WHERE name = 'Medium'),
-    (SELECT id FROM "user" WHERE username = 'moderator'),
+    (SELECT id FROM "user" WHERE username = 'admin'),
     FALSE
 ),
 (
@@ -386,7 +384,7 @@ INSERT INTO challenge (title, description, category_id, difficulty_id, created_b
     'Track down the location of this person using available information.',
     (SELECT id FROM challenge_category WHERE name = 'OSINT'),
     (SELECT id FROM difficulty WHERE name = 'Medium'),
-    (SELECT id FROM "user" WHERE username = 'moderator'),
+    (SELECT id FROM "user" WHERE username = 'admin'),
     FALSE
 ),
 (
@@ -403,7 +401,7 @@ INSERT INTO challenge (title, description, category_id, difficulty_id, created_b
     'Exploit this vulnerable binary to get the flag. Download: challenge.bin',
     (SELECT id FROM challenge_category WHERE name = 'Pwn'),
     (SELECT id FROM difficulty WHERE name = 'Hard'),
-    (SELECT id FROM "user" WHERE username = 'moderator'),
+    (SELECT id FROM "user" WHERE username = 'admin'),
     FALSE
 ),
 (
@@ -419,7 +417,7 @@ INSERT INTO challenge (title, description, category_id, difficulty_id, created_b
     'Blind SQL injection challenge. Extract the admin password.',
     (SELECT id FROM challenge_category WHERE name = 'Web'),
     (SELECT id FROM difficulty WHERE name = 'Hard'),
-    (SELECT id FROM "user" WHERE username = 'moderator'),
+    (SELECT id FROM "user" WHERE username = 'admin'),
     FALSE
 ),
 (
@@ -435,7 +433,7 @@ INSERT INTO challenge (title, description, category_id, difficulty_id, created_b
     'Break the AES encryption with side-channel attack.',
     (SELECT id FROM challenge_category WHERE name = 'Crypto'),
     (SELECT id FROM difficulty WHERE name = 'Hard'),
-    (SELECT id FROM "user" WHERE username = 'moderator'),
+    (SELECT id FROM "user" WHERE username = 'admin'),
     FALSE
 ),
 (
@@ -451,7 +449,7 @@ INSERT INTO challenge (title, description, category_id, difficulty_id, created_b
     'Use OSINT techniques to find the hidden service.',
     (SELECT id FROM challenge_category WHERE name = 'OSINT'),
     (SELECT id FROM difficulty WHERE name = 'Hard'),
-    (SELECT id FROM "user" WHERE username = 'moderator'),
+    (SELECT id FROM "user" WHERE username = 'admin'),
     FALSE
 ),
 -- Insane challenges (3)
@@ -468,7 +466,7 @@ INSERT INTO challenge (title, description, category_id, difficulty_id, created_b
     'Break the ECC implementation with mathematical attack.',
     (SELECT id FROM challenge_category WHERE name = 'Crypto'),
     (SELECT id FROM difficulty WHERE name = 'Insane'),
-    (SELECT id FROM "user" WHERE username = 'moderator'),
+    (SELECT id FROM "user" WHERE username = 'admin'),
     FALSE
 ),
 (
@@ -528,42 +526,42 @@ FROM challenge c
 JOIN difficulty d ON c.difficulty_id = d.id
 ON CONFLICT (challenge_id) DO NOTHING;
 
--- Insert challenge flags (hashed with SHA256)
-INSERT INTO challenge_flag (challenge_id, flag_hash)
+-- Insert challenge flags (plain text in RabbitCTF{} format)
+INSERT INTO challenge_flag (challenge_id, flag_value)
 SELECT 
     id,
     CASE 
-        WHEN title = 'Welcome to RabbitCTF' THEN 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'
-        WHEN title = 'Basic Web' THEN 'a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3'
-        WHEN title = 'Caesar Cipher' THEN 'ca978112ca1bbdcafac231b39a23dc4da786eff8147c4e72b9807785afee48bb'
-        WHEN title = 'Cookie Monster' THEN '3e23e8160039594a33894f6564e1b1348bbd7a0088d42c4acb73eeaed59c009d'
-        WHEN title = 'Base64 Basics' THEN '2e7d2c03a9507ae265ecf5b5356885a53393a2029d241394997265a1a25aefc6'
-        WHEN title = 'Image Metadata' THEN '18ac3e7343f016890c510e93f935261169d9e3f565436429830faf0934f4f8e4'
-        WHEN title = 'Simple Reverse' THEN '3f79bb7b435b05321651daefd374cdc681dc06faa65e374e38337b88ca046dea'
-        WHEN title = 'Network Traffic' THEN '4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce'
-        WHEN title = 'Social Media Hunt' THEN '4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a'
-        WHEN title = 'Hidden in Plain Sight' THEN '6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918'
-        WHEN title = 'SQL Injection 101' THEN '3e23e8160039594a33894f6564e1b1348bbd7a0088d42c4acb73eeaed59c009d'
-        WHEN title = 'Hidden Message' THEN '2e7d2c03a9507ae265ecf5b5356885a53393a2029d241394997265a1a25aefc6'
-        WHEN title = 'XOR Encryption' THEN '5267768822ee624d48fce15ec5ca79cbd602cb7f4c2157a516556991f22ef8c7'
-        WHEN title = 'JWT Manipulation' THEN '7902699be42c8a8e46fbbb4501726517e86b22c56a189f7625a6da49081b2451'
-        WHEN title = 'Memory Forensics' THEN '8f14e45fceea167a5a36dedd4bea2543fa38d84fe8be4c7e4c5e1d1e4fbe5c8c'
-        WHEN title = 'API Enumeration' THEN '9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08'
-        WHEN title = 'Binary Analysis' THEN 'a3b14d2f3c6e8b7a1d5c9f4e2b8a7c6d5f9e1a3b7c4d8e2f6a1b5c9d3e7f4a8b'
-        WHEN title = 'Wireless Attack' THEN 'b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2'
-        WHEN title = 'Digital Footprint' THEN 'c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4'
-        WHEN title = 'Audio Steganography' THEN 'd5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6'
-        WHEN title = 'Buffer Overflow' THEN '18ac3e7343f016890c510e93f935261169d9e3f565436429830faf0934f4f8e4'
-        WHEN title = 'RSA Decryption' THEN '3f79bb7b435b05321651daefd374cdc681dc06faa65e374e38337b88ca046dea'
-        WHEN title = 'Advanced SQL Injection' THEN 'e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8'
-        WHEN title = 'Format String Exploit' THEN 'f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0'
-        WHEN title = 'Advanced Crypto' THEN 'a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2'
-        WHEN title = 'Reverse Engineering Pro' THEN 'b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4'
-        WHEN title = 'Deep Web Investigation' THEN 'c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6'
-        WHEN title = 'Kernel Exploitation' THEN 'd7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8'
-        WHEN title = 'Elliptic Curve Cryptography' THEN 'e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0'
-        WHEN title = 'Multi-Layer Obfuscation' THEN 'f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2'
-        ELSE 'default_hash'
+        WHEN title = 'Welcome to RabbitCTF' THEN 'RabbitCTF{w3lc0m3_t0_th3_g4m3}'
+        WHEN title = 'Basic Web' THEN 'RabbitCTF{1nsp3ct_th3_s0urc3}'
+        WHEN title = 'Caesar Cipher' THEN 'RabbitCTF{c4es4r_c1ph3r}'
+        WHEN title = 'Cookie Monster' THEN 'RabbitCTF{c00k13_m0nst3r}'
+        WHEN title = 'Base64 Basics' THEN 'RabbitCTF{b4s364_d3c0d1ng}'
+        WHEN title = 'Image Metadata' THEN 'RabbitCTF{3x1f_d4t4_h1dd3n}'
+        WHEN title = 'Simple Reverse' THEN 'RabbitCTF{s1mpl3_r3v3rs3}'
+        WHEN title = 'Network Traffic' THEN 'RabbitCTF{p4ck3t_4n4lys1s}'
+        WHEN title = 'Social Media Hunt' THEN 'RabbitCTF{0s1nt_m4st3r}'
+        WHEN title = 'Hidden in Plain Sight' THEN 'RabbitCTF{h1dd3n_1n_pl41n}'
+        WHEN title = 'SQL Injection 101' THEN 'RabbitCTF{sql_1nj3ct10n}'
+        WHEN title = 'Hidden Message' THEN 'RabbitCTF{st3g4n0gr4phy}'
+        WHEN title = 'XOR Encryption' THEN 'RabbitCTF{x0r_3ncrypt10n}'
+        WHEN title = 'JWT Manipulation' THEN 'RabbitCTF{jwt_f0rg3ry}'
+        WHEN title = 'Memory Forensics' THEN 'RabbitCTF{m3m0ry_dump}'
+        WHEN title = 'API Enumeration' THEN 'RabbitCTF{4p1_3num3r4t10n}'
+        WHEN title = 'Binary Analysis' THEN 'RabbitCTF{b1n4ry_4n4lys1s}'
+        WHEN title = 'Wireless Attack' THEN 'RabbitCTF{w1r3l3ss_cr4ck}'
+        WHEN title = 'Digital Footprint' THEN 'RabbitCTF{d1g1t4l_tr4ck1ng}'
+        WHEN title = 'Audio Steganography' THEN 'RabbitCTF{4ud10_st3g0}'
+        WHEN title = 'Buffer Overflow' THEN 'RabbitCTF{buff3r_0v3rfl0w}'
+        WHEN title = 'RSA Decryption' THEN 'RabbitCTF{rs4_d3crypt10n}'
+        WHEN title = 'Advanced SQL Injection' THEN 'RabbitCTF{bl1nd_sql1}'
+        WHEN title = 'Format String Exploit' THEN 'RabbitCTF{f0rm4t_str1ng}'
+        WHEN title = 'Advanced Crypto' THEN 'RabbitCTF{4dv_crypt0}'
+        WHEN title = 'Reverse Engineering Pro' THEN 'RabbitCTF{r3v3rs3_pr0}'
+        WHEN title = 'Deep Web Investigation' THEN 'RabbitCTF{d33p_w3b}'
+        WHEN title = 'Kernel Exploitation' THEN 'RabbitCTF{k3rn3l_3xpl01t}'
+        WHEN title = 'Elliptic Curve Cryptography' THEN 'RabbitCTF{3cc_crypt0}'
+        WHEN title = 'Multi-Layer Obfuscation' THEN 'RabbitCTF{mult1_0bfusc4t10n}'
+        ELSE 'RabbitCTF{default_flag}'
     END
 FROM challenge
 ON CONFLICT (challenge_id) DO NOTHING;
@@ -617,7 +615,7 @@ INSERT INTO event_rule_version (content_md, version_number, created_by) VALUES
 This document contains the official rules for the RabbitCTF competition.
 
 ### General Rules:
-1. **Respect**: Be respectful to other participants, organizers, and moderators
+1. **Respect**: Be respectful to other participants and organizers
 2. **Fair Play**: No sharing of flags or solutions during the competition
 3. **Team Play**: Work only with your registered team members
 4. **Attacks**: Do not attack the competition infrastructure
@@ -647,7 +645,7 @@ This document contains the official rules for the RabbitCTF competition.
 - DoS attacks on challenges or infrastructure
 
 ### Contact:
-- For technical issues, contact the moderators
+- For technical issues, contact the administrators
 - For rule clarifications, check announcements or ask in general chat
 
 **Good luck and have fun!**
@@ -687,7 +685,7 @@ INSERT INTO notification (title, message, type, is_published, created_by, publis
     'A new Hard difficulty challenge has been added to the Web category. Check it out!',
     'success',
     TRUE,
-    (SELECT id FROM "user" WHERE username = 'moderator'),
+    (SELECT id FROM "user" WHERE username = 'admin'),
     NOW() - INTERVAL '2 days'
 ),
 (
@@ -711,7 +709,7 @@ INSERT INTO notification (title, message, type, is_published, created_by, publis
     'Team Alpha has achieved first blood on the Buffer Overflow challenge!',
     'success',
     TRUE,
-    (SELECT id FROM "user" WHERE username = 'moderator'),
+    (SELECT id FROM "user" WHERE username = 'admin'),
     NOW() - INTERVAL '5 days'
 ),
 (
@@ -727,7 +725,7 @@ INSERT INTO notification (title, message, type, is_published, created_by, publis
     'The leaderboard has been updated with dynamic scoring. Check your team position!',
     'info',
     TRUE,
-    (SELECT id FROM "user" WHERE username = 'moderator'),
+    (SELECT id FROM "user" WHERE username = 'admin'),
     NOW() - INTERVAL '7 days'
 ),
 (
@@ -743,7 +741,7 @@ INSERT INTO notification (title, message, type, is_published, created_by, publis
     'OSINT challenges have been added. Sharpen your investigation skills!',
     'success',
     TRUE,
-    (SELECT id FROM "user" WHERE username = 'moderator'),
+    (SELECT id FROM "user" WHERE username = 'admin'),
     NOW() - INTERVAL '9 days'
 ),
 (
@@ -759,7 +757,7 @@ INSERT INTO notification (title, message, type, is_published, created_by, publis
     'Join our forensics workshop this Saturday to improve your skills!',
     'info',
     TRUE,
-    (SELECT id FROM "user" WHERE username = 'moderator'),
+    (SELECT id FROM "user" WHERE username = 'admin'),
     NOW() - INTERVAL '11 days'
 ),
 (
@@ -775,7 +773,7 @@ INSERT INTO notification (title, message, type, is_published, created_by, publis
     'The Memory Forensics challenge has been updated with additional hints.',
     'info',
     TRUE,
-    (SELECT id FROM "user" WHERE username = 'moderator'),
+    (SELECT id FROM "user" WHERE username = 'admin'),
     NOW() - INTERVAL '13 days'
 ),
 (
@@ -791,7 +789,7 @@ INSERT INTO notification (title, message, type, is_published, created_by, publis
     'Attend our cryptography webinar next week to learn advanced techniques.',
     'info',
     TRUE,
-    (SELECT id FROM "user" WHERE username = 'moderator'),
+    (SELECT id FROM "user" WHERE username = 'admin'),
     NOW() - INTERVAL '15 days'
 ),
 (
@@ -807,7 +805,7 @@ INSERT INTO notification (title, message, type, is_published, created_by, publis
     'Some challenge difficulties have been adjusted based on solve rates.',
     'info',
     TRUE,
-    (SELECT id FROM "user" WHERE username = 'moderator'),
+    (SELECT id FROM "user" WHERE username = 'admin'),
     NOW() - INTERVAL '17 days'
 ),
 (
@@ -831,7 +829,7 @@ INSERT INTO notification (title, message, type, is_published, created_by, publis
     'Practice mode is now available for beginners. No points, just learning!',
     'info',
     TRUE,
-    (SELECT id FROM "user" WHERE username = 'moderator'),
+    (SELECT id FROM "user" WHERE username = 'admin'),
     NOW() - INTERVAL '20 days'
 ),
 (
@@ -847,7 +845,7 @@ INSERT INTO notification (title, message, type, is_published, created_by, publis
     'Remember to use strong passwords and enable two-factor authentication!',
     'warning',
     TRUE,
-    (SELECT id FROM "user" WHERE username = 'moderator'),
+    (SELECT id FROM "user" WHERE username = 'admin'),
     NOW() - INTERVAL '22 days'
 ),
 (
@@ -899,7 +897,7 @@ INSERT INTO audit_log (user_id, action, resource_type, resource_id, details, ip_
     '192.168.1.102'
 ),
 (
-    (SELECT id FROM "user" WHERE username = 'moderator'),
+    (SELECT id FROM "user" WHERE username = 'admin'),
     'UPDATE',
     'challenge',
     2,
@@ -1003,7 +1001,7 @@ INSERT INTO audit_log (user_id, action, resource_type, resource_id, details, ip_
     '127.0.0.1'
 ),
 (
-    (SELECT id FROM "user" WHERE username = 'moderator'),
+    (SELECT id FROM "user" WHERE username = 'admin'),
     'CREATE',
     'challenge',
     5,
@@ -1043,7 +1041,7 @@ INSERT INTO audit_log (user_id, action, resource_type, resource_id, details, ip_
     '127.0.0.1'
 ),
 (
-    (SELECT id FROM "user" WHERE username = 'moderator'),
+    (SELECT id FROM "user" WHERE username = 'admin'),
     'UPDATE',
     'notification',
     2,
@@ -1065,115 +1063,115 @@ ON CONFLICT DO NOTHING;
 -- =============================================
 
 -- Insert submissions (ensuring varied distribution for realistic leaderboard, at least 60 submissions)
-INSERT INTO submission (user_id, team_id, challenge_id, submitted_flag_hash, is_correct, awarded_score) VALUES
+INSERT INTO submission (user_id, team_id, challenge_id, submitted_flag, is_correct, awarded_score) VALUES
 -- Team Alpha submissions (top performer - 9 correct)
-((SELECT id FROM "user" WHERE username = 'alice'), (SELECT id FROM team WHERE name = 'Team Alpha'), (SELECT id FROM challenge WHERE title = 'Welcome to RabbitCTF'), 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', TRUE, 100),
-((SELECT id FROM "user" WHERE username = 'bob'), (SELECT id FROM team WHERE name = 'Team Alpha'), (SELECT id FROM challenge WHERE title = 'Basic Web'), 'a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3', TRUE, 100),
-((SELECT id FROM "user" WHERE username = 'alice'), (SELECT id FROM team WHERE name = 'Team Alpha'), (SELECT id FROM challenge WHERE title = 'Caesar Cipher'), 'ca978112ca1bbdcafac231b39a23dc4da786eff8147c4e72b9807785afee48bb', TRUE, 100),
-((SELECT id FROM "user" WHERE username = 'bob'), (SELECT id FROM team WHERE name = 'Team Alpha'), (SELECT id FROM challenge WHERE title = 'Cookie Monster'), '3e23e8160039594a33894f6564e1b1348bbd7a0088d42c4acb73eeaed59c009d', TRUE, 100),
-((SELECT id FROM "user" WHERE username = 'alice'), (SELECT id FROM team WHERE name = 'Team Alpha'), (SELECT id FROM challenge WHERE title = 'Base64 Basics'), '2e7d2c03a9507ae265ecf5b5356885a53393a2029d241394997265a1a25aefc6', TRUE, 100),
-((SELECT id FROM "user" WHERE username = 'bob'), (SELECT id FROM team WHERE name = 'Team Alpha'), (SELECT id FROM challenge WHERE title = 'SQL Injection 101'), '3e23e8160039594a33894f6564e1b1348bbd7a0088d42c4acb73eeaed59c009d', TRUE, 250),
-((SELECT id FROM "user" WHERE username = 'alice'), (SELECT id FROM team WHERE name = 'Team Alpha'), (SELECT id FROM challenge WHERE title = 'Hidden Message'), '2e7d2c03a9507ae265ecf5b5356885a53393a2029d241394997265a1a25aefc6', TRUE, 250),
-((SELECT id FROM "user" WHERE username = 'bob'), (SELECT id FROM team WHERE name = 'Team Alpha'), (SELECT id FROM challenge WHERE title = 'XOR Encryption'), '5267768822ee624d48fce15ec5ca79cbd602cb7f4c2157a516556991f22ef8c7', TRUE, 250),
-((SELECT id FROM "user" WHERE username = 'alice'), (SELECT id FROM team WHERE name = 'Team Alpha'), (SELECT id FROM challenge WHERE title = 'Buffer Overflow'), '18ac3e7343f016890c510e93f935261169d9e3f565436429830faf0934f4f8e4', TRUE, 500),
+((SELECT id FROM "user" WHERE username = 'alice'), (SELECT id FROM team WHERE name = 'Team Alpha'), (SELECT id FROM challenge WHERE title = 'Welcome to RabbitCTF'), 'RabbitCTF{w3lc0m3_t0_th3_g4m3}', TRUE, 100),
+((SELECT id FROM "user" WHERE username = 'bob'), (SELECT id FROM team WHERE name = 'Team Alpha'), (SELECT id FROM challenge WHERE title = 'Basic Web'), 'RabbitCTF{1nsp3ct_th3_s0urc3}', TRUE, 100),
+((SELECT id FROM "user" WHERE username = 'alice'), (SELECT id FROM team WHERE name = 'Team Alpha'), (SELECT id FROM challenge WHERE title = 'Caesar Cipher'), 'RabbitCTF{c4es4r_c1ph3r}', TRUE, 100),
+((SELECT id FROM "user" WHERE username = 'bob'), (SELECT id FROM team WHERE name = 'Team Alpha'), (SELECT id FROM challenge WHERE title = 'Cookie Monster'), 'RabbitCTF{c00k13_m0nst3r}', TRUE, 100),
+((SELECT id FROM "user" WHERE username = 'alice'), (SELECT id FROM team WHERE name = 'Team Alpha'), (SELECT id FROM challenge WHERE title = 'Base64 Basics'), 'RabbitCTF{b4s364_d3c0d1ng}', TRUE, 100),
+((SELECT id FROM "user" WHERE username = 'bob'), (SELECT id FROM team WHERE name = 'Team Alpha'), (SELECT id FROM challenge WHERE title = 'SQL Injection 101'), 'RabbitCTF{c00k13_m0nst3r}', TRUE, 250),
+((SELECT id FROM "user" WHERE username = 'alice'), (SELECT id FROM team WHERE name = 'Team Alpha'), (SELECT id FROM challenge WHERE title = 'Hidden Message'), 'RabbitCTF{b4s364_d3c0d1ng}', TRUE, 250),
+((SELECT id FROM "user" WHERE username = 'bob'), (SELECT id FROM team WHERE name = 'Team Alpha'), (SELECT id FROM challenge WHERE title = 'XOR Encryption'), 'RabbitCTF{x0r_3ncrypt10n}', TRUE, 250),
+((SELECT id FROM "user" WHERE username = 'alice'), (SELECT id FROM team WHERE name = 'Team Alpha'), (SELECT id FROM challenge WHERE title = 'Buffer Overflow'), 'RabbitCTF{3x1f_d4t4_h1dd3n}', TRUE, 500),
 
 -- Team Beta submissions (7 correct)
-((SELECT id FROM "user" WHERE username = 'charlie'), (SELECT id FROM team WHERE name = 'Team Beta'), (SELECT id FROM challenge WHERE title = 'Welcome to RabbitCTF'), 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', TRUE, 100),
-((SELECT id FROM "user" WHERE username = 'diana'), (SELECT id FROM team WHERE name = 'Team Beta'), (SELECT id FROM challenge WHERE title = 'Basic Web'), 'a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3', TRUE, 100),
-((SELECT id FROM "user" WHERE username = 'charlie'), (SELECT id FROM team WHERE name = 'Team Beta'), (SELECT id FROM challenge WHERE title = 'Caesar Cipher'), 'ca978112ca1bbdcafac231b39a23dc4da786eff8147c4e72b9807785afee48bb', TRUE, 100),
-((SELECT id FROM "user" WHERE username = 'diana'), (SELECT id FROM team WHERE name = 'Team Beta'), (SELECT id FROM challenge WHERE title = 'Cookie Monster'), '3e23e8160039594a33894f6564e1b1348bbd7a0088d42c4acb73eeaed59c009d', TRUE, 100),
-((SELECT id FROM "user" WHERE username = 'charlie'), (SELECT id FROM team WHERE name = 'Team Beta'), (SELECT id FROM challenge WHERE title = 'SQL Injection 101'), '3e23e8160039594a33894f6564e1b1348bbd7a0088d42c4acb73eeaed59c009d', TRUE, 240),
-((SELECT id FROM "user" WHERE username = 'diana'), (SELECT id FROM team WHERE name = 'Team Beta'), (SELECT id FROM challenge WHERE title = 'Hidden Message'), '2e7d2c03a9507ae265ecf5b5356885a53393a2029d241394997265a1a25aefc6', TRUE, 240),
-((SELECT id FROM "user" WHERE username = 'charlie'), (SELECT id FROM team WHERE name = 'Team Beta'), (SELECT id FROM challenge WHERE title = 'XOR Encryption'), '5267768822ee624d48fce15ec5ca79cbd602cb7f4c2157a516556991f22ef8c7', TRUE, 240),
+((SELECT id FROM "user" WHERE username = 'charlie'), (SELECT id FROM team WHERE name = 'Team Beta'), (SELECT id FROM challenge WHERE title = 'Welcome to RabbitCTF'), 'RabbitCTF{w3lc0m3_t0_th3_g4m3}', TRUE, 100),
+((SELECT id FROM "user" WHERE username = 'diana'), (SELECT id FROM team WHERE name = 'Team Beta'), (SELECT id FROM challenge WHERE title = 'Basic Web'), 'RabbitCTF{1nsp3ct_th3_s0urc3}', TRUE, 100),
+((SELECT id FROM "user" WHERE username = 'charlie'), (SELECT id FROM team WHERE name = 'Team Beta'), (SELECT id FROM challenge WHERE title = 'Caesar Cipher'), 'RabbitCTF{c4es4r_c1ph3r}', TRUE, 100),
+((SELECT id FROM "user" WHERE username = 'diana'), (SELECT id FROM team WHERE name = 'Team Beta'), (SELECT id FROM challenge WHERE title = 'Cookie Monster'), 'RabbitCTF{c00k13_m0nst3r}', TRUE, 100),
+((SELECT id FROM "user" WHERE username = 'charlie'), (SELECT id FROM team WHERE name = 'Team Beta'), (SELECT id FROM challenge WHERE title = 'SQL Injection 101'), 'RabbitCTF{c00k13_m0nst3r}', TRUE, 240),
+((SELECT id FROM "user" WHERE username = 'diana'), (SELECT id FROM team WHERE name = 'Team Beta'), (SELECT id FROM challenge WHERE title = 'Hidden Message'), 'RabbitCTF{b4s364_d3c0d1ng}', TRUE, 240),
+((SELECT id FROM "user" WHERE username = 'charlie'), (SELECT id FROM team WHERE name = 'Team Beta'), (SELECT id FROM challenge WHERE title = 'XOR Encryption'), 'RabbitCTF{x0r_3ncrypt10n}', TRUE, 240),
 
 -- Team Gamma submissions (6 correct)
-((SELECT id FROM "user" WHERE username = 'eve'), (SELECT id FROM team WHERE name = 'Team Gamma'), (SELECT id FROM challenge WHERE title = 'Welcome to RabbitCTF'), 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', TRUE, 100),
-((SELECT id FROM "user" WHERE username = 'frank'), (SELECT id FROM team WHERE name = 'Team Gamma'), (SELECT id FROM challenge WHERE title = 'Basic Web'), 'a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3', TRUE, 100),
-((SELECT id FROM "user" WHERE username = 'eve'), (SELECT id FROM team WHERE name = 'Team Gamma'), (SELECT id FROM challenge WHERE title = 'Caesar Cipher'), 'ca978112ca1bbdcafac231b39a23dc4da786eff8147c4e72b9807785afee48bb', TRUE, 100),
-((SELECT id FROM "user" WHERE username = 'frank'), (SELECT id FROM team WHERE name = 'Team Gamma'), (SELECT id FROM challenge WHERE title = 'Simple Reverse'), '3f79bb7b435b05321651daefd374cdc681dc06faa65e374e38337b88ca046dea', TRUE, 100),
-((SELECT id FROM "user" WHERE username = 'eve'), (SELECT id FROM team WHERE name = 'Team Gamma'), (SELECT id FROM challenge WHERE title = 'SQL Injection 101'), '3e23e8160039594a33894f6564e1b1348bbd7a0088d42c4acb73eeaed59c009d', TRUE, 230),
-((SELECT id FROM "user" WHERE username = 'frank'), (SELECT id FROM team WHERE name = 'Team Gamma'), (SELECT id FROM challenge WHERE title = 'JWT Manipulation'), '7902699be42c8a8e46fbbb4501726517e86b22c56a189f7625a6da49081b2451', TRUE, 230),
+((SELECT id FROM "user" WHERE username = 'eve'), (SELECT id FROM team WHERE name = 'Team Gamma'), (SELECT id FROM challenge WHERE title = 'Welcome to RabbitCTF'), 'RabbitCTF{w3lc0m3_t0_th3_g4m3}', TRUE, 100),
+((SELECT id FROM "user" WHERE username = 'frank'), (SELECT id FROM team WHERE name = 'Team Gamma'), (SELECT id FROM challenge WHERE title = 'Basic Web'), 'RabbitCTF{1nsp3ct_th3_s0urc3}', TRUE, 100),
+((SELECT id FROM "user" WHERE username = 'eve'), (SELECT id FROM team WHERE name = 'Team Gamma'), (SELECT id FROM challenge WHERE title = 'Caesar Cipher'), 'RabbitCTF{c4es4r_c1ph3r}', TRUE, 100),
+((SELECT id FROM "user" WHERE username = 'frank'), (SELECT id FROM team WHERE name = 'Team Gamma'), (SELECT id FROM challenge WHERE title = 'Simple Reverse'), 'RabbitCTF{s1mpl3_r3v3rs3}', TRUE, 100),
+((SELECT id FROM "user" WHERE username = 'eve'), (SELECT id FROM team WHERE name = 'Team Gamma'), (SELECT id FROM challenge WHERE title = 'SQL Injection 101'), 'RabbitCTF{c00k13_m0nst3r}', TRUE, 230),
+((SELECT id FROM "user" WHERE username = 'frank'), (SELECT id FROM team WHERE name = 'Team Gamma'), (SELECT id FROM challenge WHERE title = 'JWT Manipulation'), 'RabbitCTF{jwt_f0rg3ry}', TRUE, 230),
 
 -- Team Delta submissions (5 correct)
-((SELECT id FROM "user" WHERE username = 'grace'), (SELECT id FROM team WHERE name = 'Team Delta'), (SELECT id FROM challenge WHERE title = 'Welcome to RabbitCTF'), 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', TRUE, 100),
-((SELECT id FROM "user" WHERE username = 'grace'), (SELECT id FROM team WHERE name = 'Team Delta'), (SELECT id FROM challenge WHERE title = 'Basic Web'), 'a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3', TRUE, 100),
-((SELECT id FROM "user" WHERE username = 'grace'), (SELECT id FROM team WHERE name = 'Team Delta'), (SELECT id FROM challenge WHERE title = 'Caesar Cipher'), 'ca978112ca1bbdcafac231b39a23dc4da786eff8147c4e72b9807785afee48bb', TRUE, 100),
-((SELECT id FROM "user" WHERE username = 'grace'), (SELECT id FROM team WHERE name = 'Team Delta'), (SELECT id FROM challenge WHERE title = 'Image Metadata'), '18ac3e7343f016890c510e93f935261169d9e3f565436429830faf0934f4f8e4', TRUE, 100),
-((SELECT id FROM "user" WHERE username = 'grace'), (SELECT id FROM team WHERE name = 'Team Delta'), (SELECT id FROM challenge WHERE title = 'SQL Injection 101'), '3e23e8160039594a33894f6564e1b1348bbd7a0088d42c4acb73eeaed59c009d', TRUE, 220),
+((SELECT id FROM "user" WHERE username = 'grace'), (SELECT id FROM team WHERE name = 'Team Delta'), (SELECT id FROM challenge WHERE title = 'Welcome to RabbitCTF'), 'RabbitCTF{w3lc0m3_t0_th3_g4m3}', TRUE, 100),
+((SELECT id FROM "user" WHERE username = 'grace'), (SELECT id FROM team WHERE name = 'Team Delta'), (SELECT id FROM challenge WHERE title = 'Basic Web'), 'RabbitCTF{1nsp3ct_th3_s0urc3}', TRUE, 100),
+((SELECT id FROM "user" WHERE username = 'grace'), (SELECT id FROM team WHERE name = 'Team Delta'), (SELECT id FROM challenge WHERE title = 'Caesar Cipher'), 'RabbitCTF{c4es4r_c1ph3r}', TRUE, 100),
+((SELECT id FROM "user" WHERE username = 'grace'), (SELECT id FROM team WHERE name = 'Team Delta'), (SELECT id FROM challenge WHERE title = 'Image Metadata'), 'RabbitCTF{3x1f_d4t4_h1dd3n}', TRUE, 100),
+((SELECT id FROM "user" WHERE username = 'grace'), (SELECT id FROM team WHERE name = 'Team Delta'), (SELECT id FROM challenge WHERE title = 'SQL Injection 101'), 'RabbitCTF{c00k13_m0nst3r}', TRUE, 220),
 
 -- Team Epsilon submissions (4 correct)
-((SELECT id FROM "user" WHERE username = 'jack'), (SELECT id FROM team WHERE name = 'Team Epsilon'), (SELECT id FROM challenge WHERE title = 'Welcome to RabbitCTF'), 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', TRUE, 100),
-((SELECT id FROM "user" WHERE username = 'jack'), (SELECT id FROM team WHERE name = 'Team Epsilon'), (SELECT id FROM challenge WHERE title = 'Basic Web'), 'a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3', TRUE, 100),
-((SELECT id FROM "user" WHERE username = 'jack'), (SELECT id FROM team WHERE name = 'Team Epsilon'), (SELECT id FROM challenge WHERE title = 'Caesar Cipher'), 'ca978112ca1bbdcafac231b39a23dc4da786eff8147c4e72b9807785afee48bb', TRUE, 100),
-((SELECT id FROM "user" WHERE username = 'jack'), (SELECT id FROM team WHERE name = 'Team Epsilon'), (SELECT id FROM challenge WHERE title = 'Network Traffic'), '4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce', TRUE, 100),
+((SELECT id FROM "user" WHERE username = 'jack'), (SELECT id FROM team WHERE name = 'Team Epsilon'), (SELECT id FROM challenge WHERE title = 'Welcome to RabbitCTF'), 'RabbitCTF{w3lc0m3_t0_th3_g4m3}', TRUE, 100),
+((SELECT id FROM "user" WHERE username = 'jack'), (SELECT id FROM team WHERE name = 'Team Epsilon'), (SELECT id FROM challenge WHERE title = 'Basic Web'), 'RabbitCTF{1nsp3ct_th3_s0urc3}', TRUE, 100),
+((SELECT id FROM "user" WHERE username = 'jack'), (SELECT id FROM team WHERE name = 'Team Epsilon'), (SELECT id FROM challenge WHERE title = 'Caesar Cipher'), 'RabbitCTF{c4es4r_c1ph3r}', TRUE, 100),
+((SELECT id FROM "user" WHERE username = 'jack'), (SELECT id FROM team WHERE name = 'Team Epsilon'), (SELECT id FROM challenge WHERE title = 'Network Traffic'), 'RabbitCTF{p4ck3t_4n4lys1s}', TRUE, 100),
 
 -- Team Zeta submissions (5 correct)
-((SELECT id FROM "user" WHERE username = 'leo'), (SELECT id FROM team WHERE name = 'Team Zeta'), (SELECT id FROM challenge WHERE title = 'Welcome to RabbitCTF'), 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', TRUE, 100),
-((SELECT id FROM "user" WHERE username = 'maya'), (SELECT id FROM team WHERE name = 'Team Zeta'), (SELECT id FROM challenge WHERE title = 'Basic Web'), 'a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3', TRUE, 100),
-((SELECT id FROM "user" WHERE username = 'leo'), (SELECT id FROM team WHERE name = 'Team Zeta'), (SELECT id FROM challenge WHERE title = 'Caesar Cipher'), 'ca978112ca1bbdcafac231b39a23dc4da786eff8147c4e72b9807785afee48bb', TRUE, 100),
-((SELECT id FROM "user" WHERE username = 'maya'), (SELECT id FROM team WHERE name = 'Team Zeta'), (SELECT id FROM challenge WHERE title = 'Social Media Hunt'), '4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a', TRUE, 100),
-((SELECT id FROM "user" WHERE username = 'leo'), (SELECT id FROM team WHERE name = 'Team Zeta'), (SELECT id FROM challenge WHERE title = 'API Enumeration'), '9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08', TRUE, 210),
+((SELECT id FROM "user" WHERE username = 'leo'), (SELECT id FROM team WHERE name = 'Team Zeta'), (SELECT id FROM challenge WHERE title = 'Welcome to RabbitCTF'), 'RabbitCTF{w3lc0m3_t0_th3_g4m3}', TRUE, 100),
+((SELECT id FROM "user" WHERE username = 'maya'), (SELECT id FROM team WHERE name = 'Team Zeta'), (SELECT id FROM challenge WHERE title = 'Basic Web'), 'RabbitCTF{1nsp3ct_th3_s0urc3}', TRUE, 100),
+((SELECT id FROM "user" WHERE username = 'leo'), (SELECT id FROM team WHERE name = 'Team Zeta'), (SELECT id FROM challenge WHERE title = 'Caesar Cipher'), 'RabbitCTF{c4es4r_c1ph3r}', TRUE, 100),
+((SELECT id FROM "user" WHERE username = 'maya'), (SELECT id FROM team WHERE name = 'Team Zeta'), (SELECT id FROM challenge WHERE title = 'Social Media Hunt'), 'RabbitCTF{0s1nt_m4st3r}', TRUE, 100),
+((SELECT id FROM "user" WHERE username = 'leo'), (SELECT id FROM team WHERE name = 'Team Zeta'), (SELECT id FROM challenge WHERE title = 'API Enumeration'), 'RabbitCTF{4p1_3num3r4t10n}', TRUE, 210),
 
 -- Team Eta submissions (3 correct)
-((SELECT id FROM "user" WHERE username = 'noah'), (SELECT id FROM team WHERE name = 'Team Eta'), (SELECT id FROM challenge WHERE title = 'Welcome to RabbitCTF'), 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', TRUE, 100),
-((SELECT id FROM "user" WHERE username = 'noah'), (SELECT id FROM team WHERE name = 'Team Eta'), (SELECT id FROM challenge WHERE title = 'Basic Web'), 'a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3', TRUE, 100),
-((SELECT id FROM "user" WHERE username = 'noah'), (SELECT id FROM team WHERE name = 'Team Eta'), (SELECT id FROM challenge WHERE title = 'Caesar Cipher'), 'ca978112ca1bbdcafac231b39a23dc4da786eff8147c4e72b9807785afee48bb', TRUE, 100),
+((SELECT id FROM "user" WHERE username = 'noah'), (SELECT id FROM team WHERE name = 'Team Eta'), (SELECT id FROM challenge WHERE title = 'Welcome to RabbitCTF'), 'RabbitCTF{w3lc0m3_t0_th3_g4m3}', TRUE, 100),
+((SELECT id FROM "user" WHERE username = 'noah'), (SELECT id FROM team WHERE name = 'Team Eta'), (SELECT id FROM challenge WHERE title = 'Basic Web'), 'RabbitCTF{1nsp3ct_th3_s0urc3}', TRUE, 100),
+((SELECT id FROM "user" WHERE username = 'noah'), (SELECT id FROM team WHERE name = 'Team Eta'), (SELECT id FROM challenge WHERE title = 'Caesar Cipher'), 'RabbitCTF{c4es4r_c1ph3r}', TRUE, 100),
 
 -- Team Theta submissions (3 correct)
-((SELECT id FROM "user" WHERE username = 'peter'), (SELECT id FROM team WHERE name = 'Team Theta'), (SELECT id FROM challenge WHERE title = 'Welcome to RabbitCTF'), 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', TRUE, 100),
-((SELECT id FROM "user" WHERE username = 'peter'), (SELECT id FROM team WHERE name = 'Team Theta'), (SELECT id FROM challenge WHERE title = 'Basic Web'), 'a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3', TRUE, 100),
-((SELECT id FROM "user" WHERE username = 'peter'), (SELECT id FROM team WHERE name = 'Team Theta'), (SELECT id FROM challenge WHERE title = 'Hidden in Plain Sight'), '6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918', TRUE, 100),
+((SELECT id FROM "user" WHERE username = 'peter'), (SELECT id FROM team WHERE name = 'Team Theta'), (SELECT id FROM challenge WHERE title = 'Welcome to RabbitCTF'), 'RabbitCTF{w3lc0m3_t0_th3_g4m3}', TRUE, 100),
+((SELECT id FROM "user" WHERE username = 'peter'), (SELECT id FROM team WHERE name = 'Team Theta'), (SELECT id FROM challenge WHERE title = 'Basic Web'), 'RabbitCTF{1nsp3ct_th3_s0urc3}', TRUE, 100),
+((SELECT id FROM "user" WHERE username = 'peter'), (SELECT id FROM team WHERE name = 'Team Theta'), (SELECT id FROM challenge WHERE title = 'Hidden in Plain Sight'), 'RabbitCTF{h1dd3n_1n_pl41n}', TRUE, 100),
 
 -- Team Iota submissions (2 correct)
-((SELECT id FROM "user" WHERE username = 'ryan'), (SELECT id FROM team WHERE name = 'Team Iota'), (SELECT id FROM challenge WHERE title = 'Welcome to RabbitCTF'), 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', TRUE, 100),
-((SELECT id FROM "user" WHERE username = 'ryan'), (SELECT id FROM team WHERE name = 'Team Iota'), (SELECT id FROM challenge WHERE title = 'Basic Web'), 'a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3', TRUE, 100),
+((SELECT id FROM "user" WHERE username = 'ryan'), (SELECT id FROM team WHERE name = 'Team Iota'), (SELECT id FROM challenge WHERE title = 'Welcome to RabbitCTF'), 'RabbitCTF{w3lc0m3_t0_th3_g4m3}', TRUE, 100),
+((SELECT id FROM "user" WHERE username = 'ryan'), (SELECT id FROM team WHERE name = 'Team Iota'), (SELECT id FROM challenge WHERE title = 'Basic Web'), 'RabbitCTF{1nsp3ct_th3_s0urc3}', TRUE, 100),
 
 -- Team Kappa submissions (3 correct)
-((SELECT id FROM "user" WHERE username = 'sarah'), (SELECT id FROM team WHERE name = 'Team Kappa'), (SELECT id FROM challenge WHERE title = 'Welcome to RabbitCTF'), 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', TRUE, 100),
-((SELECT id FROM "user" WHERE username = 'uma'), (SELECT id FROM team WHERE name = 'Team Kappa'), (SELECT id FROM challenge WHERE title = 'Basic Web'), 'a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3', TRUE, 100),
-((SELECT id FROM "user" WHERE username = 'sarah'), (SELECT id FROM team WHERE name = 'Team Kappa'), (SELECT id FROM challenge WHERE title = 'Binary Analysis'), 'a3b14d2f3c6e8b7a1d5c9f4e2b8a7c6d5f9e1a3b7c4d8e2f6a1b5c9d3e7f4a8b', TRUE, 200),
+((SELECT id FROM "user" WHERE username = 'sarah'), (SELECT id FROM team WHERE name = 'Team Kappa'), (SELECT id FROM challenge WHERE title = 'Welcome to RabbitCTF'), 'RabbitCTF{w3lc0m3_t0_th3_g4m3}', TRUE, 100),
+((SELECT id FROM "user" WHERE username = 'uma'), (SELECT id FROM team WHERE name = 'Team Kappa'), (SELECT id FROM challenge WHERE title = 'Basic Web'), 'RabbitCTF{1nsp3ct_th3_s0urc3}', TRUE, 100),
+((SELECT id FROM "user" WHERE username = 'sarah'), (SELECT id FROM team WHERE name = 'Team Kappa'), (SELECT id FROM challenge WHERE title = 'Binary Analysis'), 'RabbitCTF{b1n4ry_4n4lys1s}', TRUE, 200),
 
 -- Team Lambda submissions (2 correct)
-((SELECT id FROM "user" WHERE username = 'victor'), (SELECT id FROM team WHERE name = 'Team Lambda'), (SELECT id FROM challenge WHERE title = 'Welcome to RabbitCTF'), 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', TRUE, 100),
-((SELECT id FROM "user" WHERE username = 'victor'), (SELECT id FROM team WHERE name = 'Team Lambda'), (SELECT id FROM challenge WHERE title = 'Base64 Basics'), '2e7d2c03a9507ae265ecf5b5356885a53393a2029d241394997265a1a25aefc6', TRUE, 100),
+((SELECT id FROM "user" WHERE username = 'victor'), (SELECT id FROM team WHERE name = 'Team Lambda'), (SELECT id FROM challenge WHERE title = 'Welcome to RabbitCTF'), 'RabbitCTF{w3lc0m3_t0_th3_g4m3}', TRUE, 100),
+((SELECT id FROM "user" WHERE username = 'victor'), (SELECT id FROM team WHERE name = 'Team Lambda'), (SELECT id FROM challenge WHERE title = 'Base64 Basics'), 'RabbitCTF{b4s364_d3c0d1ng}', TRUE, 100),
 
 -- Team Mu submissions (2 correct)
-((SELECT id FROM "user" WHERE username = 'yara'), (SELECT id FROM team WHERE name = 'Team Mu'), (SELECT id FROM challenge WHERE title = 'Welcome to RabbitCTF'), 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', TRUE, 100),
-((SELECT id FROM "user" WHERE username = 'yara'), (SELECT id FROM team WHERE name = 'Team Mu'), (SELECT id FROM challenge WHERE title = 'Audio Steganography'), 'd5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6', TRUE, 190),
+((SELECT id FROM "user" WHERE username = 'yara'), (SELECT id FROM team WHERE name = 'Team Mu'), (SELECT id FROM challenge WHERE title = 'Welcome to RabbitCTF'), 'RabbitCTF{w3lc0m3_t0_th3_g4m3}', TRUE, 100),
+((SELECT id FROM "user" WHERE username = 'yara'), (SELECT id FROM team WHERE name = 'Team Mu'), (SELECT id FROM challenge WHERE title = 'Audio Steganography'), 'RabbitCTF{4ud10_st3g0}', TRUE, 190),
 
 -- Team Nu submissions (1 correct)
-((SELECT id FROM "user" WHERE username = 'wendy'), (SELECT id FROM team WHERE name = 'Team Nu'), (SELECT id FROM challenge WHERE title = 'Welcome to RabbitCTF'), 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', TRUE, 100),
+((SELECT id FROM "user" WHERE username = 'wendy'), (SELECT id FROM team WHERE name = 'Team Nu'), (SELECT id FROM challenge WHERE title = 'Welcome to RabbitCTF'), 'RabbitCTF{w3lc0m3_t0_th3_g4m3}', TRUE, 100),
 
 -- Team Xi submissions (1 correct)
-((SELECT id FROM "user" WHERE username = 'xavier'), (SELECT id FROM team WHERE name = 'Team Xi'), (SELECT id FROM challenge WHERE title = 'Welcome to RabbitCTF'), 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', TRUE, 100),
+((SELECT id FROM "user" WHERE username = 'xavier'), (SELECT id FROM team WHERE name = 'Team Xi'), (SELECT id FROM challenge WHERE title = 'Welcome to RabbitCTF'), 'RabbitCTF{w3lc0m3_t0_th3_g4m3}', TRUE, 100),
 
 -- Team Omicron submissions (1 correct)
-((SELECT id FROM "user" WHERE username = 'zack'), (SELECT id FROM team WHERE name = 'Team Omicron'), (SELECT id FROM challenge WHERE title = 'Welcome to RabbitCTF'), 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', TRUE, 100),
+((SELECT id FROM "user" WHERE username = 'zack'), (SELECT id FROM team WHERE name = 'Team Omicron'), (SELECT id FROM challenge WHERE title = 'Welcome to RabbitCTF'), 'RabbitCTF{w3lc0m3_t0_th3_g4m3}', TRUE, 100),
 
 -- Team Pi submissions (2 correct)
-((SELECT id FROM "user" WHERE username = 'hank'), (SELECT id FROM team WHERE name = 'Team Pi'), (SELECT id FROM challenge WHERE title = 'Welcome to RabbitCTF'), 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', TRUE, 100),
-((SELECT id FROM "user" WHERE username = 'ivy'), (SELECT id FROM team WHERE name = 'Team Pi'), (SELECT id FROM challenge WHERE title = 'Digital Footprint'), 'c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4', TRUE, 180),
+((SELECT id FROM "user" WHERE username = 'hank'), (SELECT id FROM team WHERE name = 'Team Pi'), (SELECT id FROM challenge WHERE title = 'Welcome to RabbitCTF'), 'RabbitCTF{w3lc0m3_t0_th3_g4m3}', TRUE, 100),
+((SELECT id FROM "user" WHERE username = 'ivy'), (SELECT id FROM team WHERE name = 'Team Pi'), (SELECT id FROM challenge WHERE title = 'Digital Footprint'), 'RabbitCTF{d1g1t4l_tr4ck1ng}', TRUE, 180),
 
 -- Team Rho submissions (1 correct)
-((SELECT id FROM "user" WHERE username = 'kate'), (SELECT id FROM team WHERE name = 'Team Rho'), (SELECT id FROM challenge WHERE title = 'Welcome to RabbitCTF'), 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', TRUE, 100),
+((SELECT id FROM "user" WHERE username = 'kate'), (SELECT id FROM team WHERE name = 'Team Rho'), (SELECT id FROM challenge WHERE title = 'Welcome to RabbitCTF'), 'RabbitCTF{w3lc0m3_t0_th3_g4m3}', TRUE, 100),
 
 -- Team Sigma submissions (1 correct)
-((SELECT id FROM "user" WHERE username = 'olivia'), (SELECT id FROM team WHERE name = 'Team Sigma'), (SELECT id FROM challenge WHERE title = 'Welcome to RabbitCTF'), 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', TRUE, 100),
+((SELECT id FROM "user" WHERE username = 'olivia'), (SELECT id FROM team WHERE name = 'Team Sigma'), (SELECT id FROM challenge WHERE title = 'Welcome to RabbitCTF'), 'RabbitCTF{w3lc0m3_t0_th3_g4m3}', TRUE, 100),
 
 -- Team Tau submissions (1 correct)
-((SELECT id FROM "user" WHERE username = 'quinn'), (SELECT id FROM team WHERE name = 'Team Tau'), (SELECT id FROM challenge WHERE title = 'Welcome to RabbitCTF'), 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', TRUE, 100),
+((SELECT id FROM "user" WHERE username = 'quinn'), (SELECT id FROM team WHERE name = 'Team Tau'), (SELECT id FROM challenge WHERE title = 'Welcome to RabbitCTF'), 'RabbitCTF{w3lc0m3_t0_th3_g4m3}', TRUE, 100),
 
 -- Team Upsilon submissions (1 correct)
-((SELECT id FROM "user" WHERE username = 'tom'), (SELECT id FROM team WHERE name = 'Team Upsilon'), (SELECT id FROM challenge WHERE title = 'Welcome to RabbitCTF'), 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', TRUE, 100),
+((SELECT id FROM "user" WHERE username = 'tom'), (SELECT id FROM team WHERE name = 'Team Upsilon'), (SELECT id FROM challenge WHERE title = 'Welcome to RabbitCTF'), 'RabbitCTF{w3lc0m3_t0_th3_g4m3}', TRUE, 100),
 
 -- Some incorrect submissions for realism
-((SELECT id FROM "user" WHERE username = 'charlie'), (SELECT id FROM team WHERE name = 'Team Beta'), (SELECT id FROM challenge WHERE title = 'Buffer Overflow'), 'wrong_hash_1', FALSE, 0),
-((SELECT id FROM "user" WHERE username = 'eve'), (SELECT id FROM team WHERE name = 'Team Gamma'), (SELECT id FROM challenge WHERE title = 'RSA Decryption'), 'wrong_hash_2', FALSE, 0),
-((SELECT id FROM "user" WHERE username = 'jack'), (SELECT id FROM team WHERE name = 'Team Epsilon'), (SELECT id FROM challenge WHERE title = 'Hidden Message'), 'wrong_hash_3', FALSE, 0),
-((SELECT id FROM "user" WHERE username = 'noah'), (SELECT id FROM team WHERE name = 'Team Eta'), (SELECT id FROM challenge WHERE title = 'XOR Encryption'), 'wrong_hash_4', FALSE, 0),
-((SELECT id FROM "user" WHERE username = 'peter'), (SELECT id FROM team WHERE name = 'Team Theta'), (SELECT id FROM challenge WHERE title = 'SQL Injection 101'), 'wrong_hash_5', FALSE, 0),
-((SELECT id FROM "user" WHERE username = 'diana'), (SELECT id FROM team WHERE name = 'Team Beta'), (SELECT id FROM challenge WHERE title = 'Advanced Crypto'), 'wrong_hash_6', FALSE, 0),
-((SELECT id FROM "user" WHERE username = 'grace'), (SELECT id FROM team WHERE name = 'Team Delta'), (SELECT id FROM challenge WHERE title = 'Kernel Exploitation'), 'wrong_hash_7', FALSE, 0)
+((SELECT id FROM "user" WHERE username = 'charlie'), (SELECT id FROM team WHERE name = 'Team Beta'), (SELECT id FROM challenge WHERE title = 'Buffer Overflow'), 'RabbitCTF{wr0ng_fl4g_1}', FALSE, 0),
+((SELECT id FROM "user" WHERE username = 'eve'), (SELECT id FROM team WHERE name = 'Team Gamma'), (SELECT id FROM challenge WHERE title = 'RSA Decryption'), 'RabbitCTF{wr0ng_fl4g_2}', FALSE, 0),
+((SELECT id FROM "user" WHERE username = 'jack'), (SELECT id FROM team WHERE name = 'Team Epsilon'), (SELECT id FROM challenge WHERE title = 'Hidden Message'), 'RabbitCTF{wr0ng_fl4g_3}', FALSE, 0),
+((SELECT id FROM "user" WHERE username = 'noah'), (SELECT id FROM team WHERE name = 'Team Eta'), (SELECT id FROM challenge WHERE title = 'XOR Encryption'), 'RabbitCTF{wr0ng_fl4g_4}', FALSE, 0),
+((SELECT id FROM "user" WHERE username = 'peter'), (SELECT id FROM team WHERE name = 'Team Theta'), (SELECT id FROM challenge WHERE title = 'SQL Injection 101'), 'RabbitCTF{wr0ng_fl4g_5}', FALSE, 0),
+((SELECT id FROM "user" WHERE username = 'diana'), (SELECT id FROM team WHERE name = 'Team Beta'), (SELECT id FROM challenge WHERE title = 'Advanced Crypto'), 'RabbitCTF{wr0ng_fl4g_6}', FALSE, 0),
+((SELECT id FROM "user" WHERE username = 'grace'), (SELECT id FROM team WHERE name = 'Team Delta'), (SELECT id FROM challenge WHERE title = 'Kernel Exploitation'), 'RabbitCTF{wr0ng_fl4g_7}', FALSE, 0)
 ON CONFLICT DO NOTHING;
 
 -- Insert submission blocks (at least 20)
@@ -1201,3 +1199,4 @@ INSERT INTO submission_block (user_id, challenge_id, blocked_until, reason) VALU
 ((SELECT id FROM "user" WHERE username = 'hank'), (SELECT id FROM challenge WHERE title = 'Simple Reverse'), NOW() + INTERVAL '4 minutes', 'Rate limit exceeded'),
 ((SELECT id FROM "user" WHERE username = 'ivy'), (SELECT id FROM challenge WHERE title = 'Social Media Hunt'), NOW() + INTERVAL '8 minutes', 'Too many incorrect attempts')
 ON CONFLICT DO NOTHING;
+

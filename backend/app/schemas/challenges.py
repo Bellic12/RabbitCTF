@@ -86,7 +86,7 @@ class ChallengeCreate(ChallengeBase):
         ...,
         min_length=5,
         max_length=255,
-        description="The correct flag (will be hashed)",
+        description="The correct flag (stored in plain text)",
         examples=["RabbitCTF{h1dd3n_fl4g}"],
     )
     base_score: int = Field(

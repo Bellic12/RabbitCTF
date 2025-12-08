@@ -132,7 +132,7 @@ def read_all_challenges_admin(
             "updated_at": c.updated_at,
             "total_attempts": 0,
             "success_rate": 0.0,
-            "flag_content": c.flag.flag_hash if c.flag else None
+            "flag_content": c.flag.flag_value if c.flag else None
         })
 
     return results

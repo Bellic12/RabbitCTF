@@ -51,7 +51,7 @@ async def submit_flag(
     Submit a flag for validation.
 
     - **challenge_id**: ID of the challenge
-    - **submitted_flag_hash**: The flag value you want to submit
+    - **submitted_flag**: The flag value you want to submit
 
     Returns validation result and score if correct.
     """
@@ -60,7 +60,7 @@ async def submit_flag(
     result = submission_service.submit_flag(
         user=current_user,
         challenge_id=submission_data.challenge_id,
-        flag_value=submission_data.submitted_flag_hash,
+        flag_value=submission_data.submitted_flag,
     )
 
     return {
@@ -409,7 +409,7 @@ async def admin_get_all_submissions(
                 is_correct=sub.is_correct,
                 awarded_score=sub.awarded_score,
                 submitted_at=sub.submitted_at,
-                submitted_flag_hash=sub.submitted_flag_hash,
+                submitted_flag=sub.submitted_flag,
                 ip_address=None,  # Add if you track IP addresses
             )
         )
@@ -461,7 +461,7 @@ async def admin_get_challenge_submissions(
                 is_correct=sub.is_correct,
                 awarded_score=sub.awarded_score,
                 submitted_at=sub.submitted_at,
-                submitted_flag_hash=sub.submitted_flag_hash,
+                submitted_flag=sub.submitted_flag,
                 ip_address=None,
             )
         )
