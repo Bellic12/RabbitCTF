@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 
 interface CreateChallengeModalProps {
   isOpen: boolean
@@ -7,7 +7,6 @@ interface CreateChallengeModalProps {
 }
 
 export default function CreateChallengeModal({ isOpen, onClose, onCreate }: CreateChallengeModalProps) {
-  const fileInputRef = useRef<HTMLInputElement>(null)
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -51,8 +50,9 @@ export default function CreateChallengeModal({ isOpen, onClose, onCreate }: Crea
   }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setFormData(prev => ({ ...prev, file: e.target.files[0] }))
+    const files = e.target.files
+    if (files && files[0]) {
+      setFormData(prev => ({ ...prev, file: files[0] }))
     }
   }
 
@@ -240,24 +240,11 @@ export default function CreateChallengeModal({ isOpen, onClose, onCreate }: Crea
               <label className="label pb-2">
                 <span className="label-text font-bold text-base-content">Upload File</span>
               </label>
-              <div className="flex items-center gap-4">
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={handleFileChange}
-                  className="hidden"
-                />
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="btn btn-primary"
-                >
-                  Choose File
-                </button>
-                <span className="text-sm text-base-content/70 truncate max-w-[200px]">
-                  {formData.file ? formData.file.name : 'No file selected'}
-                </span>
-              </div>
+              <input
+                type="file"
+                onChange={handleFileChange}
+                className="file-input file-input-primary w-full"
+              />
             </div>
 
             {/* Connection Info */}
