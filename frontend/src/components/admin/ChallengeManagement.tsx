@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../context/AuthContext'
+import CreateChallengeModal from './CreateChallengeModal'
 
 interface Challenge {
   id: number
@@ -13,6 +14,7 @@ interface Challenge {
 
 export default function ChallengeManagement() {
   const [challenges, setChallenges] = useState<Challenge[]>([])
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const { token } = useAuth()
 
   useEffect(() => {
