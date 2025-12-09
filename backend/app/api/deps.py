@@ -10,7 +10,6 @@ from typing import Optional
 from app.core.database import get_db
 from app.core.security import decode_access_token
 from app.models.user import User
-from app.models.role import Role
 
 # OAuth2 scheme for token authentication
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")

@@ -1,14 +1,15 @@
-import { createContext, useContext, useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 
-interface User {
+import { createContext, useContext, useEffect, useState } from 'react'
+
+type User = {
   id: number
   username: string
   email: string
   role_id: number
 }
 
-interface AuthContextType {
+type AuthContextType = {
   user: User | null
   token: string | null
   login: (token: string) => void

@@ -1,7 +1,8 @@
 import type { Challenge } from '../types/challenge'
+
 import { CategoryBadge, DifficultyBadge } from './Badges'
 
-interface ChallengeCardProps {
+type ChallengeCardProps = {
   challenge: Challenge
   onClick: (challenge: Challenge) => void
 }

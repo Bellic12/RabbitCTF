@@ -16,19 +16,33 @@
   --color-base-content: #ffffff;
 
   /* Primario: Turquesa brillante */
-  --color-primary: #2dd4bf; 
+  --color-primary: #2dd4bf;
   --color-primary-content: #000000;
 
   /* Secundario: Azul índigo para soporte visual */
   --color-secondary: #6366f1;
   --color-secondary-content: #ffffff;
 
+  /* Acénto: Púrpura vibrante */
+  --color-accent: #8b5cf6;
+  --color-accent-content: #ffffff;
+
   --color-neutral: #1f2937;
   --color-neutral-content: #ffffff;
 
-  --color-info: #3abff8;
+  /* Éxito: Verde menta */
   --color-success: #36d399;
+  --color-success-content: #0b1120;
+
+  /* Información: Azul cielo */
+  --color-info: #3abff8;
+  --color-info-content: #0b1120;
+
+  /* Advertencia: Amarillo dorado */
   --color-warning: #fbbd23;
+  --color-warning-content: #0b1120;
+
+  /* Error: Rojo coral */
   --color-error: #ff5861;
   --color-error-content: #000000;
 

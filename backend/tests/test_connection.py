@@ -11,8 +11,6 @@ from pathlib import Path
 backend_dir = Path(__file__).parent.parent
 sys.path.insert(0, str(backend_dir))
 
-from app.core.database import engine, DATABASE_URL
-from sqlalchemy import text
 
 # print("🔌 Verificando conexión a PostgreSQL...")
 
@@ -44,10 +42,10 @@ def test_connection():
             version = result.fetchone()[0]
 
             print("¡CONEXIÓN EXITOSA!\n")
-            print(f"PostgreSQL Version:")
+            print("PostgreSQL Version:")
             print(f"   {version[:80]}...\n")
 
-            print(f" Información de la Base de Datos:")
+            print(" Información de la Base de Datos:")
             print(f"   Database: {engine.url.database}")
             print(f"   User:     {engine.url.username}")
             print(f"   Host:     {engine.url.host}")
@@ -76,7 +74,7 @@ def test_connection():
 
             # Query 3: Contar registros en tablas principales
             if tables:
-                print(f"\n Registros en Tablas Principales:")
+                print("\n Registros en Tablas Principales:")
                 main_tables = [
                     "role",
                     "difficulty",

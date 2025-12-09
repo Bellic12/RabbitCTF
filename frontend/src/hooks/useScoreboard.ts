@@ -1,12 +1,14 @@
 import { useState, useEffect, useCallback } from 'react'
+
+import { useAuth } from '../context/AuthContext'
 import { api } from '../services/api'
 
-interface ScorePoint {
+type ScorePoint = {
   time: string
   score: number
 }
 
-interface Team {
+type Team = {
   id: number
   name: string
   timeline: ScorePoint[]
@@ -16,13 +18,14 @@ interface Team {
 }
 
 export function useScoreboard(refreshInterval = 30000) {
+  const { token } = useAuth()
   const [teams, setTeams] = useState<Team[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   const fetchScoreboard = useCallback(async () => {
     try {
-      const data = await api.scoreboard.get()
+      const data = await api.scoreboard.get(token || undefined)
       setTeams(data.teams)
       setError(null)
     } catch (err) {
@@ -30,11 +33,11 @@ export function useScoreboard(refreshInterval = 30000) {
     } finally {
       setIsLoading(false)
     }
-  }, [])
+  }, [token])
 
   useEffect(() => {
     fetchScoreboard()
-    
+
     if (refreshInterval > 0) {
       const interval = setInterval(fetchScoreboard, refreshInterval)
       return () => clearInterval(interval)

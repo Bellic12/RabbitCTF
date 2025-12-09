@@ -41,7 +41,9 @@ export default function Configuration() {
 
       <div className="border border-error/20 rounded-lg p-6 bg-error/5">
         <h3 className="text-lg font-bold text-error mb-2">Danger Zone</h3>
-        <p className="text-sm text-white/60 mb-4">Reset competition data. This action cannot be undone.</p>
+        <p className="text-sm text-white/60 mb-4">
+          Reset competition data. This action cannot be undone.
+        </p>
         <button className="btn btn-error btn-outline btn-sm">Reset Competition</button>
       </div>
     </div>

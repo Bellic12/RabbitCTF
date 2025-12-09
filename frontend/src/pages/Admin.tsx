@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react'
-import Navigation from '../components/Navigation'
-import Footer from '../components/Footer'
-import EventSettings from '../components/admin/EventSettings'
-import ChallengeManagement from '../components/admin/ChallengeManagement'
-import UserManagement from '../components/admin/UserManagement'
+
 import ActivityLog from '../components/admin/ActivityLog'
+import ChallengeManagement from '../components/admin/ChallengeManagement'
 import Configuration from '../components/admin/Configuration'
+import EventSettings from '../components/admin/EventSettings'
+import UserManagement from '../components/admin/UserManagement'
+import Footer from '../components/Footer'
+import Navigation from '../components/Navigation'
 import { useAuth } from '../context/AuthContext'
 import type { AdminStats } from '../types/admin'
 
@@ -48,20 +49,35 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen bg-base-100 font-sans text-base-content">
       <Navigation />
-      
+
       <main className="mx-auto max-w-7xl p-6">
         {/* Header */}
         <div className="mb-8 flex items-center justify-between">
           <div>
             <div className="flex items-center gap-3">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-8 w-8 text-primary">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z" />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={2}
+                stroke="currentColor"
+                className="h-8 w-8 text-primary"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z"
+                />
               </svg>
               <h1 className="text-3xl font-bold">Admin Dashboard</h1>
             </div>
-            <p className="mt-1 text-white/60">Manage competition settings, challenges, users, and monitor activity</p>
+            <p className="mt-1 text-white/60">
+              Manage competition settings, challenges, users, and monitor activity
+            </p>
           </div>
-          <div className="badge badge-outline badge-lg border-primary text-primary">Administrator</div>
+          <div className="badge badge-outline badge-lg border-primary text-primary">
+            Administrator
+          </div>
         </div>
 
         {/* Stats Cards */}
@@ -83,16 +99,16 @@ export default function AdminPage() {
             { id: 'challenges', label: 'Challenges' },
             { id: 'users', label: 'Users & Teams' },
             { id: 'activity', label: 'Activity Log' },
-            { id: 'config', label: 'Configuration' }
-          ].map((tab) => (
-             <a 
-               key={tab.id} 
-               role="tab" 
-               className={`tab ${activeTab === tab.id ? 'tab-active !bg-base-100 !text-white' : ''}`}
-               onClick={() => setActiveTab(tab.id)}
-             >
-               {tab.label}
-             </a>
+            { id: 'config', label: 'Configuration' },
+          ].map(tab => (
+            <a
+              key={tab.id}
+              role="tab"
+              className={`tab ${activeTab === tab.id ? 'tab-active !bg-base-100 !text-white' : ''}`}
+              onClick={() => setActiveTab(tab.id)}
+            >
+              {tab.label}
+            </a>
           ))}
         </div>
 

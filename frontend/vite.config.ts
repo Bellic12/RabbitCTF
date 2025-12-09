@@ -8,6 +8,7 @@ export default defineConfig({
     host: true,
     proxy: {
       '/api': {
+        // eslint-disable-next-line node/no-process-env
         target: process.env.VITE_API_TARGET || 'http://localhost:8000',
         changeOrigin: true,
       },

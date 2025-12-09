@@ -1,13 +1,14 @@
 import { Link } from 'react-router-dom'
-import Navigation from '../components/Navigation'
+
 import Footer from '../components/Footer'
+import Navigation from '../components/Navigation'
 import { useStats } from '../hooks/useStats'
 
 export default function HomePage() {
   const { stats } = useStats()
-  
+
   const statsDisplay = [
-    { icon: TrophyIcon, label: 'Total Points', value: stats.totalPoints.toString() },
+    { icon: UserIcon, label: 'Users Registered', value: stats.usersCount.toString() },
     { icon: ShieldIcon, label: 'Challenges', value: stats.challengesCount.toString() },
     { icon: TeamIcon, label: 'Teams Registered', value: stats.teamsCount.toString() },
   ]
@@ -33,12 +34,6 @@ export default function HomePage() {
                 </span>
               </div>
               <div className="mt-8 flex flex-wrap justify-center gap-4">
-                <Link
-                  className="btn h-12 w-48 border-none bg-primary text-base font-semibold text-black hover:bg-secondary"
-                  to="/challenges"
-                >
-                  View Challenges
-                </Link>
                 <Link
                   className="btn h-12 w-48 border border-white/20 bg-transparent text-base font-semibold text-white hover:bg-white/5"
                   to="/leaderboard"
@@ -73,12 +68,12 @@ export default function HomePage() {
   )
 }
 
-function TrophyIcon() {
+function UserIcon() {
   return (
     <svg aria-hidden="true" className="h-6 w-6" fill="none" viewBox="0 0 24 24">
       <path
         className="stroke-current"
-        d="M8 4h8v2.5a3.5 3.5 0 01-3 3.46V12h2a3 3 0 013 3v1h-4v3H10v-3H6v-1a3 3 0 013-3h2V9.96a3.5 3.5 0 01-3-3.46V4zM5 4h3v2H6a1 1 0 01-1-1V4zm11 0h3v1a1 1 0 01-1 1h-2V4z"
+        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
         strokeLinecap="round"
         strokeLinejoin="round"
         strokeWidth={1.4}
