@@ -10,6 +10,8 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.api import deps
+from app.models.challenge_score_config import ChallengeScoreConfig
 from app.models.event_config import EventConfig
 from app.models.submission import Submission
 from app.models.team import Team
@@ -43,7 +45,10 @@ class LeaderboardResponse(BaseModel):
 
 
 @router.get("/", response_model=LeaderboardResponse)
-def get_leaderboard(db: Session = Depends(get_db)) -> LeaderboardResponse:
+def get_leaderboard(
+    db: Session = Depends(get_db),
+    current_user=Depends(deps.get_current_user)
+) -> LeaderboardResponse:
     """Return leaderboard data sourced from real submissions."""
 
     teams = (

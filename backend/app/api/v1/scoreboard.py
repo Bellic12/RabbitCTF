@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends
-from typing import List, Dict, Optional
+from typing import List
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from sqlalchemy import func
@@ -7,6 +7,7 @@ from datetime import datetime, timezone, timedelta
 from collections import defaultdict
 
 from app.core.database import get_db
+from app.api import deps
 from app.models.team import Team
 from app.models.submission import Submission
 from app.models.event_config import EventConfig

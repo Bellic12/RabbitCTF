@@ -81,13 +81,21 @@ export default function EventSettings() {
             <div className="label">
               <span className="label-text">Start Date & Time</span>
             </div>
-            <input type="datetime-local" className="input input-bordered w-full" defaultValue="2025-02-01T10:00" />
+            <input
+              type="datetime-local"
+              className="input input-bordered w-full"
+              defaultValue="2025-02-01T10:00"
+            />
           </label>
           <label className="form-control w-full">
             <div className="label">
               <span className="label-text">End Date & Time</span>
             </div>
-            <input type="datetime-local" className="input input-bordered w-full" defaultValue="2025-02-03T18:00" />
+            <input
+              type="datetime-local"
+              className="input input-bordered w-full"
+              defaultValue="2025-02-03T18:00"
+            />
           </label>
         </div>
         <button className="btn btn-primary mt-6">Update Event Timing</button>
@@ -97,7 +105,10 @@ export default function EventSettings() {
 
       <div>
         <h3 className="text-lg font-bold mb-4">
-          Rules & Guidelines <span className="font-bold italic text-white/40 ml-2 text-base">(Markdown supported)</span>
+          Rules & Guidelines{' '}
+          <span className="font-bold italic text-white/40 ml-2 text-base">
+            (Markdown supported)
+          </span>
         </h3>
         <div className="form-control w-full">
           <div className="relative w-full">
@@ -105,7 +116,7 @@ export default function EventSettings() {
               className="textarea textarea-bordered h-96 w-full font-mono text-sm pb-8" 
               placeholder="Enter competition rules in Markdown format..."
               value={rules}
-              onChange={(e) => setRules(e.target.value)}
+              onChange={e => setRules(e.target.value)}
               maxLength={10000}
             ></textarea>
             <span className="absolute bottom-2 right-3 text-xs text-white/40 pointer-events-none">

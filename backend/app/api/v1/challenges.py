@@ -9,6 +9,16 @@ from app.models.challenge_category import ChallengeCategory
 router = APIRouter()
 
 
+@router.get("/count", response_model=int)
+def count_challenges(
+    db: Session = Depends(deps.get_db),
+) -> Any:
+    """
+    Get total number of active challenges (public).
+    """
+    return db.query(Challenge).filter(~Challenge.is_draft).count()
+
+
 @router.get("/categories", response_model=List[ChallengeCategoryResponse])
 def read_categories(
     db: Session = Depends(deps.get_db),
