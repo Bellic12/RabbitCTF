@@ -85,13 +85,7 @@ def get_leaderboard(
         db.query(
             Submission.team_id,
             Submission.submitted_at,
-            func.coalesce(Submission.awarded_score, ChallengeScoreConfig.base_score, 0).label(
-                "points"
-            ),
-        )
-        .outerjoin(
-            ChallengeScoreConfig,
-            ChallengeScoreConfig.challenge_id == Submission.challenge_id,
+            Submission.awarded_score.label("points"),
         )
         .filter(Submission.is_correct.is_(True))
         .order_by(Submission.team_id.asc(), Submission.submitted_at.asc(), Submission.id.asc())
@@ -145,10 +139,9 @@ def get_leaderboard(
                 elif first_point_time == reference_time and progression_points[0].score != 0:
                     progression_points.insert(0, ScoreProgressPoint(time=reference_time, score=0))
 
-        # Calculate final score from progression instead of relying on team.total_score
-        final_score = 0
-        if progression_points:
-            final_score = progression_points[-1].score
+        # Use team.total_score as the authoritative value
+        # (It's pre-calculated and updated on each correct submission)
+        final_score = team.total_score or 0
 
         leaderboard_teams.append(
             TeamLeaderboard(

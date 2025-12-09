@@ -86,7 +86,7 @@ class AuthService:
             data={
                 "sub": user.id,
                 "username": user.username,
-                "role": user.role.name,  # Include role name (admin, moderator, user)
+                "role": user.role.name,  # Include role name (admin, captain, user)
             },
             expires_delta=access_token_expires,
         )

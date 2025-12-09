@@ -76,7 +76,7 @@ class ChallengeBase(BaseModel):
 
 
 class ChallengeCreate(ChallengeBase):
-    """Schema for creating a challenge (admin/moderator only)."""
+    """Schema for creating a challenge (admin only)."""
 
     category_id: int = Field(..., gt=0, description="Category ID", examples=[1])
     difficulty_id: int = Field(

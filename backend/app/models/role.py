@@ -10,7 +10,7 @@ from app.core.database import Base
 
 class Role(Base):
     """
-    User role model (admin, moderator, user).
+    User role model (admin, captain, user).
     """
 
     __tablename__ = "role"

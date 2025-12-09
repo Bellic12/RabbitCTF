@@ -101,25 +101,25 @@ async def get_current_admin(current_user: User = Depends(get_current_user)) -> U
     return current_user
 
 
-async def get_current_moderator_or_admin(
+async def get_current_captain_or_admin(
     current_user: User = Depends(get_current_user),
 ) -> User:
     """
-    Ensure current user is a moderator or admin.
+    Ensure current user is a captain or admin.
 
     Args:
-        current_user: Current authenticated user
+        current_user: Currently authenticated user
 
     Returns:
-        Current moderator or admin user
+        Current captain or admin user
 
     Raises:
-        HTTPException: If user is not a moderator or admin
+        HTTPException: If user is not a captain or admin
     """
-    if current_user.role.name not in ["admin", "moderator"]:
+    if current_user.role.name not in ["admin", "captain"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not enough permissions. Moderator or Admin role required.",
+            detail="Not enough permissions. Captain or Admin role required.",
         )
 
     return current_user
@@ -130,7 +130,7 @@ def require_role(allowed_roles: list[str]):
     Custom dependency factory to check multiple roles.
 
     Usage:
-        @router.get("/", dependencies=[Depends(require_role(["admin", "moderator"]))])
+        @router.get("/", dependencies=[Depends(require_role(["admin", "captain"]))])
 
     Args:
         allowed_roles: List of role names that are allowed

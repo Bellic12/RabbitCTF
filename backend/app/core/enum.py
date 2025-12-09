@@ -9,7 +9,7 @@ class UserRole(str, Enum):
     """User roles in the system."""
 
     ADMIN = "admin"
-    MODERATOR = "moderator"
+    CAPTAIN = "captain"
     PARTICIPANT = "user"  # En tu DB se llama "user"
 
 
