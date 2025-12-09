@@ -117,10 +117,16 @@ class SubmissionService:
                 detail="Challenge flag not configured",
             )
 
-        # Validate flag (considering case sensitivity)
-        submitted_flag = flag_value if flag.is_case_sensitive else flag_value.lower()
-        stored_flag = flag.flag_value if flag.is_case_sensitive else flag.flag_value.lower()
-        is_correct = submitted_flag == stored_flag
+        # Validate flag (considering case sensitivity from rule_config)
+        is_case_sensitive = True  # Default to case-sensitive
+        
+        if challenge.rule_config and hasattr(challenge.rule_config, 'is_case_sensitive'):
+            is_case_sensitive = challenge.rule_config.is_case_sensitive
+        
+        # Compare flags directly (plain text comparison)
+        submitted_flag = flag_value if is_case_sensitive else flag_value.lower()
+        stored_flag = flag.flag_value if is_case_sensitive else flag.flag_value.lower()
+        is_correct = (submitted_flag == stored_flag)
 
         # Check if already solved by this team
         already_solved = (
@@ -170,7 +176,23 @@ class SubmissionService:
         )
 
         self.db.add(submission)
-        self.db.commit()
+        
+        try:
+            self.db.commit()
+        except Exception as e:
+            self.db.rollback()
+            # If this is a duplicate constraint error and the challenge was already solved
+            if "idx_submission_team_challenge_unique" in str(e) or "duplicate key" in str(e):
+                # Return already solved message
+                return SubmissionResult(
+                    is_correct=is_correct,
+                    score_awarded=0,
+                    message="Challenge already solved by your team!",
+                    status=SubmissionStatus.CORRECT if is_correct else SubmissionStatus.INCORRECT,
+                    is_first_blood=False,
+                )
+            # Re-raise if it's a different error
+            raise
 
         # Prepare result message
         if is_correct:

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { FormEvent } from 'react'
 import type { Challenge } from '../types/challenge'
 
@@ -15,12 +15,79 @@ interface SubmissionResponse {
   is_first_blood: boolean
 }
 
+interface ChallengeFile {
+  id: number
+  name: string
+  size: string
+  type: string
+  url: string
+}
+
+const buildDownload = async (fileUrl: string, fileName: string) => {
+  const token = localStorage.getItem('token')
+  if (!token) {
+    throw new Error('Not authenticated')
+  }
+
+  const res = await fetch(`${import.meta.env.VITE_API_URL || ''}${fileUrl}`, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  })
+
+  if (!res.ok) {
+    throw new Error('Download failed')
+  }
+
+  const blob = await res.blob()
+  const url = window.URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = fileName
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  window.URL.revokeObjectURL(url)
+}
+
 export default function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
   const [tab, setTab] = useState<'details' | 'history'>('details')
   const [flagValue, setFlagValue] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submissionResult, setSubmissionResult] = useState<SubmissionResponse | null>(null)
   const [error, setError] = useState('')
+  const [files, setFiles] = useState<ChallengeFile[]>([])
+  const [isLoadingFiles, setIsLoadingFiles] = useState(true)
+
+  useEffect(() => {
+    fetchChallengeFiles()
+  }, [challenge.id])
+
+  const fetchChallengeFiles = async () => {
+    setIsLoadingFiles(true)
+    try {
+      const token = localStorage.getItem('token')
+      if (!token) return
+
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL || ''}/api/v1/challenges/${challenge.id}/files`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      )
+
+      if (response.ok) {
+        const data = await response.json()
+        setFiles(data)
+      }
+    } catch (error) {
+      console.error('Failed to fetch challenge files:', error)
+    } finally {
+      setIsLoadingFiles(false)
+    }
+  }
 
   const handleSubmitFlag = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -48,7 +115,7 @@ export default function ChallengeModal({ challenge, onClose }: ChallengeModalPro
         {
           body: JSON.stringify({
             challenge_id: challenge.id,
-            submitted_flag_hash: flagValue,
+            submitted_flag: flagValue,
           }),
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -82,7 +149,6 @@ export default function ChallengeModal({ challenge, onClose }: ChallengeModalPro
   return (
     <dialog className="modal modal-open">
       <div className="modal-box w-11/12 max-w-2xl border border-white/10 bg-base-200 text-base-content p-0 overflow-hidden">
-        {/* Header / Close Button */}
         <div className="relative p-8 pb-0">
           <button
             aria-label="Close"
@@ -134,7 +200,6 @@ export default function ChallengeModal({ challenge, onClose }: ChallengeModalPro
           </div>
         </div>
 
-        {/* Content */}
         <div className="p-8 pt-0">
           {tab === 'details' ? (
             <div className="mt-6 space-y-6 text-sm text-white/70">
@@ -145,7 +210,7 @@ export default function ChallengeModal({ challenge, onClose }: ChallengeModalPro
                 <p className="mt-2 text-white/70">{challenge.description}</p>
               </section>
 
-              {challenge.tags.length > 0 && (
+              {challenge.tags && challenge.tags.length > 0 && (
                 <section>
                   <h3 className="text-sm font-semibold uppercase tracking-wide text-white/50">
                     Tags
@@ -163,29 +228,54 @@ export default function ChallengeModal({ challenge, onClose }: ChallengeModalPro
                 </section>
               )}
 
-              {challenge.files && challenge.files.length > 0 && (
+              {(files.length > 0 || isLoadingFiles) && (
                 <section className="space-y-3">
                   <h3 className="text-sm font-semibold uppercase tracking-wide text-white/50">
                     Files
                   </h3>
                   <div className="rounded-2xl border border-white/10 bg-black/20">
-                    {challenge.files.map(file => (
-                      <div
-                        className="flex items-center justify-between gap-4 px-4 py-3 text-white/70"
-                        key={file.name}
-                      >
-                        <div className="space-y-1">
-                          <p className="text-sm text-white">{file.name}</p>
-                          <p className="text-xs text-white/40">{file.size}</p>
-                        </div>
-                        <a
-                          className="btn btn-sm rounded-full border-none bg-primary text-black hover:bg-secondary"
-                          href={file.url}
-                        >
-                          Download
-                        </a>
+                    {isLoadingFiles ? (
+                      <div className="flex items-center justify-center px-4 py-6">
+                        <span className="loading loading-spinner loading-md text-primary"></span>
                       </div>
-                    ))}
+                    ) : files.length > 0 ? (
+                      files.map((file, index) => (
+                        <div
+                          className={`flex items-center justify-between gap-4 px-4 py-3 text-white/70 ${
+                            index < files.length - 1 ? 'border-b border-white/10' : ''
+                          }`}
+                          key={file.id}
+                        >
+                          <div className="flex items-center gap-3 flex-1 min-w-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <div className="space-y-1 min-w-0">
+                              <p className="text-sm text-white truncate">{file.name}</p>
+                              <p className="text-xs text-white/40">{file.size}</p>
+                            </div>
+                          </div>
+                          <button
+                            className="btn btn-sm rounded-full border-none bg-primary text-black hover:bg-secondary flex-shrink-0"
+                            onClick={async () => {
+                              try {
+                                await buildDownload(file.url, file.name)
+                              } catch (err) {
+                                console.error('Download failed', err)
+                                setError('Unable to download file. Are you logged in?')
+                              }
+                            }}
+                            type="button"
+                          >
+                            Download
+                          </button>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="px-4 py-3 text-center text-white/40 text-sm">
+                        No files available
+                      </div>
+                    )}
                   </div>
                 </section>
               )}
@@ -213,7 +303,6 @@ export default function ChallengeModal({ challenge, onClose }: ChallengeModalPro
                   Submit Flag
                 </h3>
 
-                {/* Success Alert */}
                 {submissionResult?.is_correct && (
                   <div className="flex items-center gap-3 rounded-2xl border border-emerald-500/50 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-400">
                     <SuccessIcon />
@@ -226,7 +315,6 @@ export default function ChallengeModal({ challenge, onClose }: ChallengeModalPro
                   </div>
                 )}
 
-                {/* Incorrect Alert */}
                 {submissionResult && !submissionResult.is_correct && (
                   <div className="flex items-center gap-3 rounded-2xl border border-rose-500/50 bg-rose-500/10 px-4 py-3 text-sm text-rose-400">
                     <AlertIcon />
@@ -234,7 +322,6 @@ export default function ChallengeModal({ challenge, onClose }: ChallengeModalPro
                   </div>
                 )}
 
-                {/* Error Alert */}
                 {error.length > 0 && (
                   <div className="flex items-center gap-3 rounded-2xl border border-error-content bg-error px-4 py-3 text-sm text-error-content">
                     <AlertIcon />
@@ -242,7 +329,7 @@ export default function ChallengeModal({ challenge, onClose }: ChallengeModalPro
                   </div>
                 )}
 
-                <form className="flex flex-col gap-3 md:flex-row" onSubmit={handleSubmitFlag}>
+                <div className="flex flex-col gap-3 md:flex-row">
                   <input
                     className="h-12 flex-1 rounded-2xl border border-white/15 bg-base-300 px-4 text-sm text-white focus:border-primary focus:outline-none disabled:opacity-50"
                     disabled={isSubmitting}
@@ -250,15 +337,21 @@ export default function ChallengeModal({ challenge, onClose }: ChallengeModalPro
                     placeholder="flag{...}"
                     type="text"
                     value={flagValue}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !isSubmitting) {
+                        handleSubmitFlag(e as any)
+                      }
+                    }}
                   />
                   <button
                     className="btn h-12 rounded-full border-none bg-primary px-6 text-sm font-semibold text-black hover:bg-secondary disabled:opacity-50"
                     disabled={isSubmitting}
-                    type="submit"
+                    type="button"
+                    onClick={(e) => handleSubmitFlag(e as any)}
                   >
                     {isSubmitting ? 'Submitting...' : 'Submit'}
                   </button>
-                </form>
+                </div>
               </section>
             </div>
           ) : (
@@ -287,9 +380,7 @@ export default function ChallengeModal({ challenge, onClose }: ChallengeModalPro
           )}
         </div>
       </div>
-      <form method="dialog" className="modal-backdrop">
-        <button onClick={onClose}>close</button>
-      </form>
+      <div className="modal-backdrop bg-black/50" onClick={onClose}></div>
     </dialog>
   )
 }
@@ -325,7 +416,7 @@ function SuccessIcon() {
     >
       <path
         className="stroke-current"
-        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+        d="M9 12l2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
         strokeLinecap="round"
         strokeLinejoin="round"
         strokeWidth={1.6}

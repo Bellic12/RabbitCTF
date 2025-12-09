@@ -141,7 +141,7 @@ CREATE TABLE IF NOT EXISTS challenge_file (
     challenge_id INT NOT NULL,
     file_path VARCHAR(255) NOT NULL,
     file_name VARCHAR(255) NOT NULL,
-    file_type VARCHAR(20),
+    file_type VARCHAR(100),
     file_size_mb FLOAT,
     uploaded_at TIMESTAMP DEFAULT NOW(),
     FOREIGN KEY (challenge_id) REFERENCES challenge(id) ON DELETE CASCADE
