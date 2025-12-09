@@ -71,7 +71,7 @@ class UserCreate(UserBase):
     @classmethod
     def validate_username(cls, v: str) -> str:
         """Validate username format."""
-        if v.lower() in ["admin", "root", "system", "moderator", "ctf"]:
+        if v.lower() in ["admin", "root", "system", "captain", "ctf"]:
             raise ValueError("This username is reserved")
         return v
 

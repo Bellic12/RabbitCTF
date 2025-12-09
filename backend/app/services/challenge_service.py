@@ -8,6 +8,7 @@ from typing import List, Optional
 
 from app.models.challenge import Challenge
 from app.models.challenge_flag import ChallengeFlag
+from app.models.challenge_score_config import ChallengeScoreConfig
 from app.models.submission import Submission
 from app.models.user import User
 from app.schemas.challenges import ChallengeCreate, ChallengeUpdate
@@ -144,13 +145,13 @@ class ChallengeService:
 
     def calculate_current_score(self, challenge: Challenge) -> int:
         """
-        Calculate current score for a challenge based on solve count.
+        Calculate current score for a challenge based on solve count using Strategy Pattern.
 
         Args:
             challenge: Challenge to calculate score for
 
         Returns:
-            Current score value
+            Current score value based on scoring strategy
         """
         # Get solve count (count distinct teams that solved it)
         solve_count = (
@@ -162,11 +163,31 @@ class ChallengeService:
             .count()
         )
 
-        # Get scoring strategy (default to static)
-        strategy_type = "static"  # TODO: Get from challenge config when implemented
-        strategy = get_scoring_strategy(strategy_type)
+        # Get challenge score configuration
+        score_config = (
+            self.db.query(ChallengeScoreConfig)
+            .filter(ChallengeScoreConfig.challenge_id == challenge.id)
+            .first()
+        )
 
-        return strategy.calculate_score(challenge, solve_count)
+        # Use default values if no config exists
+        if not score_config:
+            strategy = get_scoring_strategy("static")
+            return strategy.calculate_score(
+                base_score=challenge.base_score or 100,
+                solve_count=solve_count,
+                decay=0.9,
+                min_score=10
+            )
+
+        # Use Strategy Pattern with configuration
+        strategy = get_scoring_strategy(score_config.scoring_mode.lower())
+        return strategy.calculate_score(
+            base_score=score_config.base_score,
+            solve_count=solve_count,
+            decay=score_config.decay_factor or 0.9,
+            min_score=score_config.min_score or 10
+        )
 
     def toggle_visibility(self, challenge_id: int, admin: User) -> Challenge:
         """
