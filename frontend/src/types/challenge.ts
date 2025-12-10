@@ -22,6 +22,7 @@ export type Challenge = {
   points: number
   solves: number
   status: ChallengeStatus
+  solvedBy?: string
   description: string
   tags: string[]
   connectionInfo?: string

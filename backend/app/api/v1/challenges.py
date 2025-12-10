@@ -22,6 +22,7 @@ from app.models.challenge_flag import ChallengeFlag
 from app.models.challenge_file import ChallengeFile
 from app.models.submission import Submission
 from app.models.team_member import TeamMember
+from app.models.user import User
 import os
 import uuid
 
@@ -105,6 +106,7 @@ def read_challenges(
         )
         
         is_solved = False
+        solved_by = None
         if team_member:
             submission = (
                 db.query(Submission)
@@ -115,7 +117,11 @@ def read_challenges(
                 )
                 .first()
             )
-            is_solved = submission is not None
+            if submission:
+                is_solved = True
+                solver = db.query(User).filter(User.id == submission.user_id).first()
+                if solver:
+                    solved_by = solver.username
         
         results.append(
             {
@@ -130,6 +136,7 @@ def read_challenges(
                 "current_score": c.score_config.base_score if c.score_config else 0,
                 "solve_count": 0,
                 "is_solved": is_solved,
+                "solved_by": solved_by,
                 "created_at": c.created_at,
                 "operational_data": c.operational_data,
             }

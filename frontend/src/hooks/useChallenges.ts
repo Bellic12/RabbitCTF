@@ -35,6 +35,7 @@ export function useChallenges() {
         points: c.base_score,
         solves: c.solve_count || 0,
         status: c.is_solved ? 'solved' : 'open',
+        solvedBy: c.solved_by,
         description: c.description,
         tags: [],
         connectionInfo: c.operational_data,

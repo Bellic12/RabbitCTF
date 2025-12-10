@@ -13,7 +13,7 @@ import type {
 } from '../types/challenge'
 
 export default function ChallengesPage() {
-  const { challenges, categories, isLoading } = useChallenges()
+  const { challenges, categories, isLoading, refetch } = useChallenges()
   const [searchTerm, setSearchTerm] = useState('')
 
   const [categoryFilter, setCategoryFilter] = useState<'All' | ChallengeCategory>('All')
@@ -119,7 +119,16 @@ export default function ChallengesPage() {
 
       <Footer />
 
-      {selected && <ChallengeModal challenge={selected} onClose={() => setSelected(null)} />}
+      {selected && (
+        <ChallengeModal
+          challenge={selected}
+          onClose={() => setSelected(null)}
+          onSuccess={() => {
+            refetch()
+            setSelected(prev => (prev ? { ...prev, status: 'solved' } : null))
+          }}
+        />
+      )}
     </div>
   )
 }
