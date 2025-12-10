@@ -155,6 +155,29 @@ export const api = {
       if (!res.ok) throw new Error('Failed to update config')
       return res.json()
     },
+    getUsers: async (token: string) => {
+      const res = await fetch(`${API_URL}/admin/users`, {
+        headers: getHeaders(token),
+      })
+      if (!res.ok) throw new Error('Failed to fetch users')
+      return res.json()
+    },
+    deleteUser: async (token: string, userId: number) => {
+      const res = await fetch(`${API_URL}/admin/users/${userId}`, {
+        method: 'DELETE',
+        headers: getHeaders(token),
+      })
+      if (!res.ok) throw new Error('Failed to delete user')
+      return res.json()
+    },
+    deleteTeam: async (token: string, teamId: number) => {
+      const res = await fetch(`${API_URL}/admin/teams/${teamId}`, {
+        method: 'DELETE',
+        headers: getHeaders(token),
+      })
+      if (!res.ok) throw new Error('Failed to delete team')
+      return res.json()
+    },
     getSubmissions: async (token: string, params?: any) => {
       const query = new URLSearchParams(params).toString()
       const res = await fetch(`${API_URL}/admin/submissions?${query}`, {
