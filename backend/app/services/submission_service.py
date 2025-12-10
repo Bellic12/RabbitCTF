@@ -87,11 +87,12 @@ class SubmissionService:
 
         # Check rate limit
         if not self._check_rate_limit(user.id, challenge_id):
+            # Record the blocked attempt in submissions table
             submission = Submission(
                 challenge_id=challenge_id,
                 user_id=user.id,
                 team_id=team_id,
-                submitted_flag="",
+                submitted_flag=flag_value,
                 is_correct=False,
             )
             self.db.add(submission)
