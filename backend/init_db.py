@@ -43,7 +43,15 @@ async def main():
                 await run_sql_file(conn, file)
             else:
                 print(f"File not found: {file}")
-                
+        
+        # Verify data
+        try:
+            row = await conn.fetchrow('SELECT count(*) FROM "user"')
+            count = row['count']
+            print(f"Verification: Found {count} users in the database.")
+        except Exception as e:
+            print(f"Verification failed: {e}")
+
         await conn.close()
         print("Database initialization completed.")
         
