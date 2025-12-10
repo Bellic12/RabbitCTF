@@ -1,9 +1,10 @@
 from typing import List, Any
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Request
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session, joinedload
 from app.api import deps
 from app.core.database import get_db
+from app.core.audit import log_audit
 from app.schemas.challenges import (
     ChallengeResponse,
     ChallengeCategoryResponse,
@@ -20,6 +21,7 @@ from app.models.challenge_visibility_config import ChallengeVisibilityConfig
 from app.models.challenge_flag import ChallengeFlag
 from app.models.challenge_file import ChallengeFile
 from app.models.submission import Submission
+from app.models.team_member import TeamMember
 import os
 import uuid
 
@@ -84,8 +86,10 @@ def read_challenges(
             joinedload(Challenge.category),
             joinedload(Challenge.difficulty),
             joinedload(Challenge.score_config),
+            joinedload(Challenge.visibility_config),
         )
         .filter(~Challenge.is_draft)
+        .filter(Challenge.visibility_config.has(is_visible=True))
         .offset(skip)
         .limit(limit)
         .all()
@@ -93,6 +97,26 @@ def read_challenges(
 
     results = []
     for c in challenges:
+        # Check if current user's team has solved this challenge
+        team_member = (
+            db.query(TeamMember)
+            .filter(TeamMember.user_id == current_user.id)
+            .first()
+        )
+        
+        is_solved = False
+        if team_member:
+            submission = (
+                db.query(Submission)
+                .filter(
+                    Submission.challenge_id == c.id,
+                    Submission.team_id == team_member.team_id,
+                    Submission.is_correct == True
+                )
+                .first()
+            )
+            is_solved = submission is not None
+        
         results.append(
             {
                 "id": c.id,
@@ -105,7 +129,7 @@ def read_challenges(
                 "base_score": c.score_config.base_score if c.score_config else 0,
                 "current_score": c.score_config.base_score if c.score_config else 0,
                 "solve_count": 0,
-                "is_solved": False,
+                "is_solved": is_solved,
                 "created_at": c.created_at,
                 "operational_data": c.operational_data,
             }
@@ -157,26 +181,21 @@ def read_all_challenges_admin(
                 "created_at": c.created_at,
                 "operational_data": c.operational_data,
                 "is_draft": c.is_draft,
-                "is_visible": (
-                    c.visibility_config.is_visible if c.visibility_config else False
-                ),
-                "visible_from": (
-                    c.visibility_config.visible_from if c.visibility_config else None
-                ),
-                "visible_until": (
-                    c.visibility_config.visible_until if c.visibility_config else None
-                ),
-                "attempt_limit": (
-                    c.rule_config.attempt_limit if c.rule_config else 0
-                ),
-                "is_case_sensitive": (
-                    c.rule_config.is_case_sensitive if c.rule_config else True
-                ),
-                "scoring_mode": (
-                    c.score_config.scoring_mode if c.score_config else "STATIC"
-                ),
-                "decay_factor": c.score_config.decay_factor if c.score_config else None,
-                "min_score": c.score_config.min_score if c.score_config else None,
+                "score_config": {
+                    "base_score": c.score_config.base_score if c.score_config else 0,
+                    "scoring_mode": c.score_config.scoring_mode if c.score_config else "STATIC",
+                    "decay_factor": c.score_config.decay_factor if c.score_config else None,
+                    "min_score": c.score_config.min_score if c.score_config else None,
+                },
+                "visibility_config": {
+                    "is_visible": c.visibility_config.is_visible if c.visibility_config else False,
+                    "visible_from": c.visibility_config.visible_from if c.visibility_config else None,
+                    "visible_until": c.visibility_config.visible_until if c.visibility_config else None,
+                },
+                "rule_config": {
+                    "attempt_limit": c.rule_config.attempt_limit if c.rule_config else 0,
+                    "is_case_sensitive": c.rule_config.is_case_sensitive if c.rule_config else True,
+                },
                 "created_by": c.created_by,
                 "updated_at": c.updated_at,
                 "total_attempts": 0,
@@ -191,6 +210,7 @@ def read_all_challenges_admin(
 @router.post("/admin/create", response_model=dict, status_code=status.HTTP_201_CREATED)
 def create_challenge(
     challenge_data: ChallengeCreateRequest,
+    request: Request,
     db: Session = Depends(get_db),
     current_user=Depends(deps.get_current_admin),
 ) -> Any:
@@ -243,6 +263,17 @@ def create_challenge(
 
     db.commit()
     db.refresh(new_challenge)
+    
+    # Log challenge creation
+    log_audit(
+        db=db,
+        user_id=current_user.id,
+        action="CREATE",
+        resource_type="challenge",
+        resource_id=new_challenge.id,
+        details={"action": "created_challenge", "challenge_title": new_challenge.title},
+        request=request
+    )
 
     return {"id": new_challenge.id, "title": new_challenge.title, "message": "Challenge created successfully"}
 
@@ -250,13 +281,19 @@ def create_challenge(
 @router.patch("/admin/{challenge_id}/toggle-visibility", response_model=dict)
 def toggle_challenge_visibility(
     challenge_id: int,
+    request: Request,
     db: Session = Depends(get_db),
     current_user=Depends(deps.get_current_admin),
 ) -> Any:
     """
     Toggle challenge visibility (admin only).
     """
-    challenge = db.query(Challenge).filter(Challenge.id == challenge_id).first()
+    challenge = (
+        db.query(Challenge)
+        .options(joinedload(Challenge.visibility_config))
+        .filter(Challenge.id == challenge_id)
+        .first()
+    )
 
     if not challenge:
         raise HTTPException(
@@ -264,6 +301,7 @@ def toggle_challenge_visibility(
         )
 
     # Toggle visibility config
+    old_visibility = challenge.visibility_config.is_visible if challenge.visibility_config else False
     if challenge.visibility_config:
         challenge.visibility_config.is_visible = (
             not challenge.visibility_config.is_visible
@@ -279,13 +317,28 @@ def toggle_challenge_visibility(
     if challenge.visibility_config and challenge.visibility_config.is_visible:
         challenge.is_draft = False
 
+    new_visibility = challenge.visibility_config.is_visible if challenge.visibility_config else False
     db.commit()
+    
+    # Log visibility change
+    log_audit(
+        db=db,
+        user_id=current_user.id,
+        action="UPDATE",
+        resource_type="challenge",
+        resource_id=challenge_id,
+        details={
+            "action": "toggled_visibility",
+            "challenge_title": challenge.title,
+            "old_visibility": old_visibility,
+            "new_visibility": new_visibility
+        },
+        request=request
+    )
 
     return {
         "id": challenge_id,
-        "is_visible": (
-            challenge.visibility_config.is_visible if challenge.visibility_config else False
-        ),
+        "is_visible": new_visibility,
         "message": "Visibility toggled successfully",
     }
 
@@ -361,6 +414,7 @@ def get_challenge_admin(
 def update_challenge_admin(
     challenge_id: int,
     payload: ChallengeUpdateRequest,
+    request: Request,
     db: Session = Depends(get_db),
     current_user=Depends(deps.get_current_admin),
 ):
@@ -462,6 +516,17 @@ def update_challenge_admin(
                 challenge.is_draft = False
 
     db.commit()
+    
+    # Log challenge update
+    log_audit(
+        db=db,
+        user_id=current_user.id,
+        action="UPDATE",
+        resource_type="challenge",
+        resource_id=challenge.id,
+        details={"action": "updated_challenge", "challenge_title": challenge.title},
+        request=request
+    )
 
     return {"id": challenge.id, "message": "Challenge updated successfully"}
 
@@ -548,6 +613,109 @@ def create_category(
         "name": new_category.name,
         "description": new_category.description,
         "message": "Category created successfully"
+    }
+
+
+@router.patch("/admin/categories/{category_id}", response_model=dict)
+def update_category(
+    category_id: int,
+    category_data: dict,
+    db: Session = Depends(get_db),
+    current_user=Depends(deps.get_current_admin),
+) -> Any:
+    """
+    Update an existing challenge category (admin only).
+    """
+    category = db.query(ChallengeCategory).filter(
+        ChallengeCategory.id == category_id
+    ).first()
+    
+    if not category:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Category not found"
+        )
+    
+    # Check if new name conflicts with another category
+    if "name" in category_data and category_data["name"] != category.name:
+        existing = db.query(ChallengeCategory).filter(
+            ChallengeCategory.name == category_data["name"],
+            ChallengeCategory.id != category_id
+        ).first()
+        
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Category '{category_data['name']}' already exists"
+            )
+        category.name = category_data["name"]
+    
+    if "description" in category_data:
+        category.description = category_data.get("description")
+    
+    if "is_active" in category_data:
+        category.is_active = category_data.get("is_active", True)
+    
+    db.commit()
+    db.refresh(category)
+    
+    return {
+        "id": category.id,
+        "name": category.name,
+        "description": category.description,
+        "message": "Category updated successfully"
+    }
+
+
+@router.delete("/admin/categories/{category_id}", response_model=dict)
+def delete_category(
+    category_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user=Depends(deps.get_current_admin),
+) -> Any:
+    """
+    Delete a challenge category (admin only).
+    Category can only be deleted if it has no challenges assigned.
+    """
+    category = db.query(ChallengeCategory).filter(
+        ChallengeCategory.id == category_id
+    ).first()
+    
+    if not category:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Category not found"
+        )
+    
+    # Check if category has any challenges
+    challenge_count = db.query(Challenge).filter(
+        Challenge.category_id == category_id
+    ).count()
+    
+    if challenge_count > 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Cannot delete category with {challenge_count} challenge(s) assigned"
+        )
+    
+    db.delete(category)
+    db.commit()
+    
+    # Log category deletion
+    log_audit(
+        db=db,
+        user_id=current_user.id,
+        action="DELETE",
+        resource_type="category",
+        resource_id=category_id,
+        details={"action": "deleted_category", "category_name": category.name},
+        request=request
+    )
+    
+    return {
+        "id": category_id,
+        "message": f"Category '{category.name}' deleted successfully"
     }
 
 @router.post("/admin/{challenge_id}/files", response_model=dict)

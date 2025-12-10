@@ -35,6 +35,7 @@ export default function ChallengeManagement() {
   const [selectedChallengeId, setSelectedChallengeId] = useState<number | null>(null)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [togglingVisibility, setTogglingVisibility] = useState<number | null>(null)
   const { token } = useAuth()
 
   useEffect(() => {
@@ -87,6 +88,24 @@ export default function ChallengeManagement() {
   }
 
   const handleToggleVisibility = async (challengeId: number) => {
+    setTogglingVisibility(challengeId)
+    
+    // Actualización optimista - actualizar UI inmediatamente
+    const previousChallenges = [...challenges]
+    setChallenges(prevChallenges => 
+      prevChallenges.map(challenge => 
+        challenge.id === challengeId
+          ? {
+              ...challenge,
+              visibility_config: {
+                ...challenge.visibility_config,
+                is_visible: !challenge.visibility_config?.is_visible
+              }
+            }
+          : challenge
+      )
+    )
+
     try {
       const response = await fetch(
         `${import.meta.env.VITE_API_URL || ''}/api/v1/challenges/admin/${challengeId}/toggle-visibility`,
@@ -99,18 +118,38 @@ export default function ChallengeManagement() {
       )
 
       if (response.ok) {
-        setSuccess('Challenge visibility toggled!')
-        fetchChallenges()
+        const result = await response.json()
+        // Confirmar con el valor real del backend
+        setChallenges(prevChallenges => 
+          prevChallenges.map(challenge => 
+            challenge.id === challengeId
+              ? {
+                  ...challenge,
+                  visibility_config: {
+                    ...challenge.visibility_config,
+                    is_visible: result.is_visible
+                  }
+                }
+              : challenge
+          )
+        )
+        setSuccess('Visibility updated successfully!')
         setTimeout(() => setSuccess(''), 3000)
       } else {
+        // Revertir en caso de error
+        setChallenges(previousChallenges)
         const payload = await response.json().catch(() => ({}))
         setError(payload.detail ?? 'Failed to toggle visibility')
         setTimeout(() => setError(''), 3000)
       }
     } catch (error) {
+      // Revertir en caso de error
+      setChallenges(previousChallenges)
       setError('Unable to toggle visibility')
       console.error('Toggle visibility failed:', error)
       setTimeout(() => setError(''), 3000)
+    } finally {
+      setTogglingVisibility(null)
     }
   }
 
@@ -183,11 +222,14 @@ export default function ChallengeManagement() {
               </div>
               <div className="flex gap-2">
                 <button 
-                  className="btn btn-square btn-sm btn-ghost border border-white/10"
+                  className="btn btn-square btn-sm btn-ghost border border-white/10 relative"
                   onClick={() => handleToggleVisibility(challenge.id)}
+                  disabled={togglingVisibility === challenge.id}
                   title="Toggle Visibility"
                 >
-                  {challenge.visibility_config?.is_visible ? (
+                  {togglingVisibility === challenge.id ? (
+                    <span className="loading loading-spinner loading-xs"></span>
+                  ) : challenge.visibility_config?.is_visible ? (
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
                       <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
