@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Request, HTTPException
 from sqlalchemy.orm import Session
 from typing import Any
 from typing import Any, Optional
 
 from app.api import deps
 from app.core.database import get_db
+from app.core.audit import log_audit
 from app.schemas.teams import TeamCreate, TeamJoin, TeamResponse, TeamDetailResponse
 from app.services.team_service import TeamService
 
@@ -20,6 +21,21 @@ def get_my_team(
     """
     team_service = TeamService(db)
     return team_service.get_user_team(current_user)
+
+@router.get("/{team_id}", response_model=Optional[TeamDetailResponse])
+def get_team_details(
+    team_id: int,
+    db: Session = Depends(get_db),
+    current_user = Depends(deps.get_current_user),
+) -> Any:
+    """
+    Get team details by ID.
+    """
+    team_service = TeamService(db)
+    team = team_service.get_team_by_id(team_id)
+    if not team:
+        raise HTTPException(status_code=404, detail="Team not found")
+    return team
 
 @router.post("/", response_model=TeamResponse)
 def create_team(
@@ -72,7 +88,6 @@ def join_team(
     )
     
     return team
-    return team_service.join_team(team_in, current_user)
 
 
 @router.post("/leave")

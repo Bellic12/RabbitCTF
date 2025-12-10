@@ -105,11 +105,12 @@ class SubmissionService:
                 remaining = int((block.blocked_until - datetime.utcnow()).total_seconds() / 60) + 1
                 msg = f"You are blocked from submitting to this challenge for {remaining} minutes."
 
+            # Record the blocked attempt in submissions table
             submission = Submission(
                 challenge_id=challenge_id,
                 user_id=user.id,
                 team_id=team_id,
-                submitted_flag="",
+                submitted_flag=flag_value,
                 is_correct=False,
             )
             self.db.add(submission)

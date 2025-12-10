@@ -15,6 +15,7 @@ from app.schemas.teams import TeamResponse
 from app.models.user import User
 from app.models.team import Team
 from app.models.challenge import Challenge
+from app.models.challenge_category import ChallengeCategory
 from app.models.submission import Submission
 from app.models.event_config import EventConfig
 from app.schemas.admin import (
@@ -23,6 +24,8 @@ from app.schemas.admin import (
     ChallengeStatItem,
     EventConfigResponse,
     EventConfigUpdate
+    EventConfigUpdate,
+    AdminSubmissionResponse
 )
 
 router = APIRouter()
@@ -105,6 +108,48 @@ async def delete_user(
     username = user.username
     db.delete(user)
     db.commit()
+
+    return {"message": f"User {username} deleted successfully"}
+
+
+@router.get("/config", response_model=EventConfigResponse)
+async def get_event_config(
+    current_user: User = Depends(get_current_admin), db: Session = Depends(get_db)
+):
+    """
+    Get event configuration.
+    """
+    config = db.query(EventConfig).first()
+    if not config:
+        # Create default config if not exists
+        config = EventConfig()
+        db.add(config)
+        db.commit()
+        db.refresh(config)
+    return config
+
+
+@router.put("/config", response_model=EventConfigResponse)
+async def update_event_config(
+    config_in: EventConfigUpdate,
+    current_user: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+):
+    """
+    Update event configuration.
+    """
+    config = db.query(EventConfig).first()
+    if not config:
+        config = EventConfig()
+        db.add(config)
+    
+    update_data = config_in.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(config, field, value)
+    
+    db.commit()
+    db.refresh(config)
+    return config
 
     return {"message": f"User '{username}' deleted successfully"}
 
@@ -245,6 +290,12 @@ async def get_event_config(
 @router.put("/config", response_model=EventConfigResponse)
 async def update_event_config(
     config_in: EventConfigUpdate,
+@router.get("/submissions", response_model=List[AdminSubmissionResponse])
+async def get_admin_submissions(
+    challenge_id: Optional[int] = None,
+    team_id: Optional[int] = None,
+    skip: int = 0,
+    limit: int = 100,
     current_user: User = Depends(get_current_admin),
     db: Session = Depends(get_db),
 ):
@@ -263,3 +314,42 @@ async def update_event_config(
     db.commit()
     db.refresh(config)
     return config
+    Get all submissions with details (admin only).
+    """
+    query = (
+        db.query(Submission)
+        .join(User, Submission.user_id == User.id)
+        .join(Team, Submission.team_id == Team.id)
+        .join(Challenge, Submission.challenge_id == Challenge.id)
+        .outerjoin(ChallengeCategory, Challenge.category_id == ChallengeCategory.id)
+    )
+
+    if challenge_id:
+        query = query.filter(Submission.challenge_id == challenge_id)
+
+    if team_id:
+        query = query.filter(Submission.team_id == team_id)
+
+    submissions = (
+        query.order_by(Submission.submitted_at.desc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+
+    return [
+        AdminSubmissionResponse(
+            id=sub.id,
+            user_id=sub.user_id,
+            username=sub.user.username,
+            team_id=sub.team_id,
+            team_name=sub.team.name,
+            challenge_id=sub.challenge_id,
+            challenge_title=sub.challenge.title,
+            category_name=sub.challenge.category.name if sub.challenge.category else "Unknown",
+            submitted_flag=sub.submitted_flag,
+            is_correct=sub.is_correct,
+            submitted_at=sub.submitted_at,
+        )
+        for sub in submissions
+    ]

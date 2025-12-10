@@ -14,6 +14,7 @@ from app.models.user import User
 from app.models.submission import Submission
 from app.models.challenge import Challenge
 from app.models.challenge_category import ChallengeCategory
+from app.models.event_config import EventConfig
 from app.schemas.teams import TeamCreate, TeamJoin, TeamDetailResponse, TeamMemberResponse, SolvedChallengeResponse
 from app.core.security import get_password_hash, verify_password
 
@@ -133,7 +134,8 @@ class TeamService:
             )
 
         # Check team size limit
-        max_team_size = 4  # Default from event_config
+        event_config = self.db.query(EventConfig).first()
+        max_team_size = event_config.max_team_size if event_config else 4
 
         current_size = (
             self.db.query(TeamMember).filter(TeamMember.team_id == team.id).count()
@@ -446,4 +448,106 @@ class TeamService:
             solved_challenges_count=solved_count,
             solved_challenges=solved_challenges_data,
         )
+
+    def get_team_by_id(self, team_id: int) -> Optional[TeamDetailResponse]:
+        """
+        Get team details by ID.
+        """
+        team = self.db.query(Team).filter(Team.id == team_id).first()
+        if not team:
+            return None
+
+        # Get all members
+        members = self.db.query(TeamMember).filter(TeamMember.team_id == team.id).all()
+        
+        # Calculate member scores and build member responses
+        member_responses = []
+        for member in members:
+            # Calculate score for this member
+            score = (
+                self.db.query(func.sum(Submission.awarded_score))
+                .filter(
+                    Submission.user_id == member.user_id,
+                    Submission.is_correct == True
+                )
+                .scalar()
+            ) or 0
+            
+            member_user = self.db.query(User).filter(User.id == member.user_id).first()
+            
+            member_responses.append(
+                TeamMemberResponse(
+                    user_id=member.user_id,
+                    username=member_user.username,
+                    email=member_user.email,
+                    is_captain=(member.user_id == team.captain_id),
+                    joined_at=member.joined_at,
+                    score=score
+                )
+            )
+
+        # Calculate total solved challenges
+        solved_count = (
+            self.db.query(Submission)
+            .filter(
+                Submission.team_id == team.id,
+                Submission.is_correct == True
+            )
+            .count()
+        )
+
+        # Calculate total team score dynamically
+        total_team_score = (
+            self.db.query(func.sum(Submission.awarded_score))
+            .filter(
+                Submission.team_id == team.id,
+                Submission.is_correct == True
+            )
+            .scalar()
+        ) or 0
+
+        # Get solved challenges with details
+        solved_challenges_query = (
+            self.db.query(
+                Challenge.id,
+                Challenge.title,
+                ChallengeCategory.name.label("category_name"),
+                Submission.awarded_score,
+                Submission.submitted_at
+            )
+            .join(Submission, Submission.challenge_id == Challenge.id)
+            .join(ChallengeCategory, ChallengeCategory.id == Challenge.category_id)
+            .filter(
+                Submission.team_id == team.id,
+                Submission.is_correct == True
+            )
+            .order_by(Submission.submitted_at.desc())
+            .all()
+        )
+
+        solved_challenges_data = [
+            SolvedChallengeResponse(
+                id=row.id,
+                title=row.title,
+                category_name=row.category_name,
+                points=row.awarded_score,
+                solved_at=row.submitted_at
+            )
+            for row in solved_challenges_query
+        ]
+
+        return TeamDetailResponse(
+            id=team.id,
+            name=team.name,
+            captain_id=team.captain_id,
+            total_score=total_team_score,
+            created_at=team.created_at,
+            member_count=len(members),
+            captain_username=team.captain.username,
+            members=member_responses,
+            solved_challenges_count=solved_count,
+            solved_challenges=solved_challenges_data,
+        )
+
+    def get_leaderboard(self, limit: int = 100) -> List[Team]:
         return self.db.query(Team).order_by(Team.total_score.desc()).limit(limit).all()

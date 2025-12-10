@@ -40,7 +40,6 @@ export default function TeamStats({ solvedChallenges }: TeamStatsProps) {
   return (
     <div className="card bg-base-200 shadow-xl border border-base-300">
       <div className="card-body">
-        <h2 className="card-title text-2xl font-bold text-white mb-6">Team Statistics</h2>
         
         <div className="flex flex-col md:flex-row items-center justify-around gap-8">
           {/* Chart Section */}

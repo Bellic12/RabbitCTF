@@ -1,5 +1,6 @@
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Any, Dict
+from datetime import datetime
 
 
 class AdminStatsResponse(BaseModel):
@@ -29,19 +30,33 @@ class ChallengeStatsResponse(BaseModel):
     challenges_stats: List[ChallengeStatItem]
 
 
-class EventConfigBase(BaseModel):
+class EventConfigUpdate(BaseModel):
+    max_team_size: Optional[int] = None
+    max_submission_attempts: Optional[int] = None
+    submission_time_window_seconds: Optional[int] = None
+    submission_block_minutes: Optional[int] = None
+
+class EventConfigResponse(BaseModel):
+    max_team_size: int
     max_submission_attempts: int
     submission_time_window_seconds: int
     submission_block_minutes: int
-
-
-class EventConfigUpdate(EventConfigBase):
-    pass
-
-
-class EventConfigResponse(EventConfigBase):
-    id: int
+    from_attributes = True 
     
+class AdminSubmissionResponse(BaseModel):
+    id: int
+    user_id: int
+    username: str
+    team_id: int
+    team_name: str
+    challenge_id: int
+    challenge_title: str
+    category_name: str
+    submitted_flag: str
+    is_correct: bool
+    submitted_at: datetime
+
     class Config:
         from_attributes = True
+
 
