@@ -5,6 +5,7 @@ from typing import Any, Optional
 
 from app.api import deps
 from app.core.database import get_db
+from app.core.audit import log_audit
 from app.schemas.teams import TeamCreate, TeamJoin, TeamResponse, TeamDetailResponse
 from app.services.team_service import TeamService
 
@@ -72,7 +73,6 @@ def join_team(
     )
     
     return team
-    return team_service.join_team(team_in, current_user)
 
 
 @router.post("/leave")
