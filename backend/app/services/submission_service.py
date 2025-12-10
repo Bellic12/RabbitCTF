@@ -9,6 +9,7 @@ from dataclasses import dataclass
 
 from app.models.submission import Submission
 from app.models.challenge_flag import ChallengeFlag
+from app.models.challenge_score_config import ChallengeScoreConfig
 from app.models.user import User
 from app.models.team import Team
 from app.models.team_member import TeamMember
@@ -141,9 +142,21 @@ class SubmissionService:
         # Calculate score (only if first solve by this team)
         score_awarded = 0
         is_first_blood = False
+        score_config = None
 
         if is_correct and not already_solved:
-            score_awarded = self.challenge_service.calculate_current_score(challenge)
+            # Get score configuration to check if dynamic scoring
+            score_config = (
+                self.db.query(ChallengeScoreConfig)
+                .filter(ChallengeScoreConfig.challenge_id == challenge_id)
+                .first()
+            )
+            is_dynamic = score_config and score_config.scoring_mode.lower() == "dynamic"
+            
+            # For dynamic scoring, score will be set by recalculate_dynamic_scores
+            # For static scoring, calculate score now
+            if not is_dynamic:
+                score_awarded = self.challenge_service.calculate_current_score(challenge)
 
             # Check if this is first blood (first solve overall)
             first_solve = (
@@ -157,11 +170,13 @@ class SubmissionService:
 
             is_first_blood = first_solve is None
 
-            # Update team score
-            team = self.db.query(Team).filter(Team.id == team_id).first()
-            if team:
-                team.total_score += score_awarded
-                self.db.add(team)
+            # For static scoring, update team score now
+            # For dynamic scoring, skip this - recalculate_dynamic_scores will handle it
+            if not is_dynamic:
+                team = self.db.query(Team).filter(Team.id == team_id).first()
+                if team:
+                    team.total_score += score_awarded
+                    self.db.add(team)
 
         # Create submission record
         submission = Submission(
@@ -170,7 +185,7 @@ class SubmissionService:
             team_id=team_id,
             submitted_flag=flag_value,
             is_correct=is_correct,
-            awarded_score=score_awarded,
+            awarded_score=score_awarded,  # 0 for dynamic, actual score for static
         )
 
         self.db.add(submission)
@@ -191,6 +206,17 @@ class SubmissionService:
                 )
             # Re-raise if it's a different error
             raise
+
+        # If this is a correct submission for a dynamic scoring challenge,
+        # recalculate all scores to reflect the new solve count
+        if is_correct and not already_solved and score_config:
+            if score_config.scoring_mode.lower() == "dynamic":
+                # Recalculate all dynamic scores for this challenge
+                self.challenge_service.recalculate_dynamic_scores(challenge_id)
+                
+                # Refresh submission to get updated awarded_score
+                self.db.refresh(submission)
+                score_awarded = submission.awarded_score
 
         # Prepare result message
         if is_correct:
