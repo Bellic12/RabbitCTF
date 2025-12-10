@@ -13,6 +13,10 @@ DATABASE_URL = os.getenv(
     "DATABASE_URL", "postgresql+psycopg://rabbitctf:rabbitctf@localhost:5432/rabbitctf"
 )
 
+# Railway provides URLs as postgresql://... and psycopg2 expects postgresql+psycopg2
+if DATABASE_URL.startswith("postgresql://"):
+    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg2://", 1)
+
 # Convert postgresql:// to postgresql+psycopg2:// for psycopg2-binary
 if DATABASE_URL.startswith("postgresql://"):
     DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg2://", 1)
