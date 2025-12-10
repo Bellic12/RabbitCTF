@@ -66,28 +66,6 @@ export default function TeamPage() {
     fetchTeam()
   }, [token])
 
-  const handleLeaveTeam = async () => {
-    if (!token || !confirm('Are you sure you want to leave the team?')) return
-    try {
-      await api.teams.leave(token)
-      setTeam(null)
-    } catch (error) {
-      console.error('Failed to leave team:', error)
-      alert('Failed to leave team')
-    }
-  }
-
-  const handleDeleteTeam = async () => {
-    if (!token || !confirm('Are you sure you want to delete the team? This action cannot be undone.')) return
-    try {
-      await api.teams.delete(token)
-      setTeam(null)
-    } catch (error) {
-      console.error('Failed to delete team:', error)
-      alert('Failed to delete team')
-    }
-  }
-
   if (loading) {
     return (
       <div className="flex min-h-screen flex-col bg-base-100 text-white">
@@ -148,34 +126,54 @@ export default function TeamPage() {
             <div className="space-y-4">
               <h2 className="text-2xl font-bold px-1">Team Members</h2>
               <div className="grid gap-4">
-                {team.members.map((member) => (
-                  <div key={member.user_id} className="card bg-base-200 shadow-md hover:bg-base-300 transition-colors border border-base-300">
-                    <div className="card-body flex-row items-center justify-between p-4 sm:p-6">
-                      <div className="flex items-center gap-4">
-                        <div className="avatar placeholder">
-                          <div className="bg-neutral text-neutral-content rounded-full w-12 flex items-center justify-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
-                            </svg>
+                {team.members.map((member) => {
+                  const maxScore = Math.max(...team.members.map(m => m.score))
+                  const isMVP = member.score > 0 && member.score === maxScore
+
+                  return (
+                    <div key={member.user_id} className={`card bg-base-200 shadow-md hover:bg-base-300 transition-colors border ${isMVP ? 'border-yellow-500/50' : 'border-base-300'}`}>
+                      <div className="card-body flex-row items-center justify-between p-4 sm:p-6">
+                        <div className="flex items-center gap-4">
+                          <div className={`avatar placeholder ${isMVP ? 'online' : ''}`}>
+                            <div className={`bg-neutral text-neutral-content rounded-full w-12 flex items-center justify-center ${isMVP ? 'ring ring-yellow-500 ring-offset-base-100 ring-offset-2' : ''}`}>
+                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+                              </svg>
+                            </div>
+                          </div>
+                          <div>
+                            <div className="font-bold text-lg flex items-center gap-2">
+                              {member.username}
+                              {member.is_captain && (
+                                <div className="badge badge-accent badge-sm p-3">Captain</div>
+                              )}
+                              {isMVP && (
+                                <div className="badge badge-warning badge-sm gap-1 p-3 font-bold text-warning-content">
+                                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3">
+                                    <path fillRule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z" clipRule="evenodd" />
+                                  </svg>
+                                  MVP
+                                </div>
+                              )}
+                            </div>
+                            <div className="text-sm opacity-60">{member.email}</div>
                           </div>
                         </div>
-                        <div>
-                          <div className="font-bold text-lg flex items-center gap-2">
-                            {member.username}
-                            {member.is_captain && (
-                              <div className="badge badge-accent badge-sm p-3">Captain</div>
+                        <div className="text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            {isMVP && (
+                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 text-yellow-500 animate-pulse">
+                                <path fillRule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z" clipRule="evenodd" />
+                              </svg>
                             )}
+                            <div className={`font-mono text-xl font-bold ${isMVP ? 'text-yellow-500' : 'text-primary'}`}>{member.score}</div>
                           </div>
-                          <div className="text-sm opacity-60">{member.email}</div>
+                          <div className="text-xs opacity-60">points</div>
                         </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="font-mono text-xl font-bold text-primary">{member.score}</div>
-                        <div className="text-xs opacity-60">points</div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
 
