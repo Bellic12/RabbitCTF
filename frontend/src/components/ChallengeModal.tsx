@@ -59,6 +59,7 @@ export default function ChallengeModal({ challenge, onClose }: ChallengeModalPro
   const [error, setError] = useState('')
   const [files, setFiles] = useState<ChallengeFile[]>([])
   const [isLoadingFiles, setIsLoadingFiles] = useState(true)
+  const [isCopied, setIsCopied] = useState(false)
 
   useEffect(() => {
     fetchChallengeFiles()
@@ -289,11 +290,28 @@ export default function ChallengeModal({ challenge, onClose }: ChallengeModalPro
                   <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-black/30 px-4 py-3">
                     <code className="flex-1 text-sm text-white/80">{challenge.connectionInfo}</code>
                     <button
-                      className="btn btn-sm rounded-full border-none bg-white/10 text-white hover:bg-white/20"
-                      onClick={() => navigator.clipboard.writeText(challenge.connectionInfo ?? '')}
+                      className={`btn btn-sm rounded-full border-none transition-all ${
+                        isCopied 
+                          ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30' 
+                          : 'bg-white/10 text-white hover:bg-white/20'
+                      }`}
+                      onClick={async () => {
+                        await navigator.clipboard.writeText(challenge.connectionInfo ?? '')
+                        setIsCopied(true)
+                        setTimeout(() => setIsCopied(false), 2000)
+                      }}
                       type="button"
                     >
-                      Copy
+                      {isCopied ? (
+                        <>
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                          Copied!
+                        </>
+                      ) : (
+                        'Copy'
+                      )}
                     </button>
                   </div>
                 </section>
