@@ -45,11 +45,21 @@ export default function EventTimer({ variant = 'navbar' }: EventTimerProps) {
       let targetDate: number | null = null
       let mode: 'starting' | 'ending' | 'ended' = 'ended'
 
+      // Helper to ensure date is parsed as UTC
+      const parseAsUtc = (dateStr: string) => {
+        // Check if string has timezone info (Z or offset)
+        if (dateStr.match(/(Z|[+-]\d{2}:?\d{2})$/)) {
+          return new Date(dateStr).getTime()
+        }
+        // If not, append Z to force UTC
+        return new Date(`${dateStr}Z`).getTime()
+      }
+
       if (config.status === 'not_started' && config.start_time) {
-        targetDate = new Date(config.start_time).getTime()
+        targetDate = parseAsUtc(config.start_time)
         mode = 'starting'
       } else if (config.status === 'active' && config.end_time) {
-        targetDate = new Date(config.end_time).getTime()
+        targetDate = parseAsUtc(config.end_time)
         mode = 'ending'
       }
 

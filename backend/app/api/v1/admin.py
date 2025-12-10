@@ -93,19 +93,19 @@ async def update_event_config(
     now = datetime.now(timezone.utc)
     update_data = config_in.dict(exclude_unset=True)
     
-    # Validation 1: Check if trying to update start_time when event has already started
-    if 'start_time' in update_data and update_data['start_time']:
-        if config.start_time:
-            # Ensure config.start_time is timezone-aware
-            current_start_time = config.start_time
-            if current_start_time.tzinfo is None:
-                current_start_time = current_start_time.replace(tzinfo=timezone.utc)
-                
-            if now >= current_start_time:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Cannot modify start time after the event has already started"
-                )
+    # Validation 1: Removed to allow admins to reschedule events even if they started
+    # if 'start_time' in update_data and update_data['start_time']:
+    #     if config.start_time:
+    #         # Ensure config.start_time is timezone-aware
+    #         current_start_time = config.start_time
+    #         if current_start_time.tzinfo is None:
+    #             current_start_time = current_start_time.replace(tzinfo=timezone.utc)
+    #             
+    #         if now >= current_start_time:
+    #             raise HTTPException(
+    #                 status_code=status.HTTP_400_BAD_REQUEST,
+    #                 detail="Cannot modify start time after the event has already started"
+    #             )
     
     # Validation 2: Ensure end_time is after start_time
     new_start_time = update_data.get('start_time', config.start_time)
