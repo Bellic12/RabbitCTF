@@ -36,8 +36,11 @@ app.include_router(api_router, prefix="/api/v1")
 # Ensure DB tables exist on startup (idempotent)
 @app.on_event("startup")
 def startup_event():
-    # Create all tables if missing
-    Base.metadata.create_all(bind=engine, checkfirst=True)
+    # Create all tables if missing (ignore errors if already exist)
+    try:
+        Base.metadata.create_all(bind=engine, checkfirst=True)
+    except Exception:
+        pass  # Tables may already exist partially
 
     # Optionally seed core reference data if empty
     with SessionLocal() as db:
