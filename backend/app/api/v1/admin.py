@@ -23,7 +23,8 @@ from app.schemas.admin import (
     ChallengeStatsResponse, 
     ChallengeStatItem,
     EventConfigResponse,
-    EventConfigUpdate
+    EventConfigUpdate,
+    AdminSubmissionResponse
 )
 
 router = APIRouter()
