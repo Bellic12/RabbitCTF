@@ -22,7 +22,11 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 24 hours
 
     # CORS
-    BACKEND_CORS_ORIGINS: list = ["http://localhost:8080", "http://localhost:5173"]
+    BACKEND_CORS_ORIGINS: list[str] = [
+        "http://localhost:8080",
+        "http://localhost:5173",
+        "https://frontend-production-9af7.up.railway.app"
+    ]
 
     # Password Hashing
     PWD_CONTEXT_SCHEMES: list = ["bcrypt"]

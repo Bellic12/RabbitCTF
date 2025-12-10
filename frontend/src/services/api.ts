@@ -1,4 +1,6 @@
-const API_URL = import.meta.env.VITE_API_URL || '/api/v1'
+// Remove trailing slash from API_URL if present
+const baseUrl = import.meta.env.VITE_API_URL?.replace(/\/$/, '') || ''
+const API_URL = baseUrl ? `${baseUrl}/api/v1` : '/api/v1'
 
 const getHeaders = (token?: string) => {
   const headers: HeadersInit = {
