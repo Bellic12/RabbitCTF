@@ -18,8 +18,11 @@ RUN pip install --no-cache-dir -r /app/requirements.txt
 # Copy the backend sources.
 COPY . /app
 
+# Make start script executable
+RUN chmod +x /app/start.sh
+
 # Expose Uvicorn port.
 EXPOSE 8000
 
-# Start the API server.
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Start the API server via the start script (which inits DB)
+CMD ["/app/start.sh"]
