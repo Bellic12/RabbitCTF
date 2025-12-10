@@ -12,6 +12,9 @@ interface EditChallengeModalProps {
 interface Category {
   id: number
   name: string
+  description?: string
+  challenge_count?: number
+  is_active: boolean
 }
 
 interface Difficulty {
@@ -70,6 +73,35 @@ export default function EditChallengeModal({ challengeId, isOpen, onClose, onUpd
   const [uploadError, setUploadError] = useState('')
   const [loading, setLoading] = useState(false)
   const [scoringLocked, setScoringLocked] = useState(false)
+  const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false)
+
+  // Edit Category Modal State
+  const [editCategoryModal, setEditCategoryModal] = useState<{
+    isOpen: boolean
+    categoryId: number | null
+    currentName: string
+    currentDescription: string
+  }>({
+    isOpen: false,
+    categoryId: null,
+    currentName: '',
+    currentDescription: ''
+  })
+
+  // Confirmation Modal State
+  const [confirmationModal, setConfirmationModal] = useState<{
+    isOpen: boolean
+    title: string
+    message: string
+    type: 'info' | 'warning' | 'error'
+    onConfirm: () => void
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info',
+    onConfirm: () => {}
+  })
 
   const [formData, setFormData] = useState({
     title: '',
@@ -89,16 +121,50 @@ export default function EditChallengeModal({ challengeId, isOpen, onClose, onUpd
   })
 
   useEffect(() => {
-    if (!isOpen || !challengeId || !token) return
+    if (!isOpen || !token) return
     setLoading(true)
     setError('')
-    Promise.all([fetchCategories(), fetchDifficulties(), fetchChallengeDetail(challengeId)])
-      .catch(() => setError('Unable to load challenge details'))
-      .finally(() => setLoading(false))
+    
+    const loadData = async () => {
+      try {
+        await Promise.all([fetchCategories(), fetchDifficulties()])
+        
+        if (challengeId) {
+          await fetchChallengeDetail(challengeId)
+        } else {
+          // Reset form for create mode
+          setFormData({
+            title: '',
+            description: '',
+            category_id: '',
+            difficulty_id: '',
+            scoringType: 'static',
+            baseScore: '100',
+            minimumScore: '10',
+            decayFactor: '0.9',
+            attemptLimit: '5',
+            isCaseSensitive: true,
+            visibility: 'Hidden',
+            flag: '',
+            connectionInfo: '',
+            isDraft: true,
+          })
+          setExistingFiles([])
+          setNewFiles([])
+          setScoringLocked(false)
+        }
+      } catch (err) {
+        setError('Unable to load data')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadData()
   }, [isOpen, challengeId, token])
 
   const fetchCategories = async () => {
-    const res = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/v1/challenges/categories`, {
+    const res = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/v1/challenges/categories?include_hidden=true`, {
       headers: { Authorization: `Bearer ${token}` }
     })
     if (res.ok) {
@@ -228,9 +294,9 @@ export default function EditChallengeModal({ challengeId, isOpen, onClose, onUpd
     }
   }
 
-  const submitUpdate = async (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    if (!challengeId || !token) return
+    if (!token) return
     setError('')
     setUploadError('')
     setIsSubmitting(true)
@@ -262,41 +328,89 @@ export default function EditChallengeModal({ challengeId, isOpen, onClose, onUpd
     }
 
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/v1/challenges/admin/${challengeId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(body),
-      })
+      let targetId = challengeId
 
-      if (!res.ok) {
-        const payload = await res.json().catch(() => ({}))
-        setError(payload.detail ?? 'Failed to update challenge')
-        setIsSubmitting(false)
-        return
+      if (challengeId) {
+        // Update existing challenge
+        const res = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/v1/challenges/admin/${challengeId}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(body),
+        })
+
+        if (!res.ok) {
+          const payload = await res.json().catch(() => ({}))
+          setError(payload.detail ?? 'Failed to update challenge')
+          setIsSubmitting(false)
+          return
+        }
+      } else {
+        // Create new challenge
+        const res = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/v1/challenges/admin/create`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(body),
+        })
+
+        if (!res.ok) {
+          const payload = await res.json().catch(() => ({}))
+          if (res.status === 422 && payload.detail && Array.isArray(payload.detail)) {
+            const errors = payload.detail.map((err: any) => {
+              const field = err.loc?.[err.loc.length - 1] || 'field'
+              return `${field}: ${err.msg}`
+            }).join(', ')
+            setError(`Validation error: ${errors}`)
+          } else {
+            setError(payload.detail ?? 'Failed to create challenge')
+          }
+          setIsSubmitting(false)
+          return
+        }
+
+        const data = await res.json()
+        targetId = data.id
       }
 
       // Upload new files if provided
-      if (newFiles.length > 0) {
+      if (newFiles.length > 0 && targetId) {
         const fd = new FormData()
         newFiles.forEach(file => fd.append('files', file))
-        const uploadRes = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/v1/challenges/admin/${challengeId}/files`, {
+        const uploadRes = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/v1/challenges/admin/${targetId}/files`, {
           method: 'POST',
           headers: { Authorization: `Bearer ${token}` },
           body: fd,
         })
+        
         if (!uploadRes.ok) {
+          // If create mode and upload fails, rollback
+          if (!challengeId) {
+             try {
+              await fetch(`${import.meta.env.VITE_API_URL || ''}/api/v1/challenges/admin/${targetId}`, {
+                method: 'DELETE',
+                headers: { Authorization: `Bearer ${token}` }
+              })
+            } catch (e) { /* ignore */ }
+          }
+
           const errorText = await uploadRes.text()
           try {
             const errorJson = JSON.parse(errorText)
-            setUploadError(errorJson.detail || 'Challenge updated but some files failed to upload.')
+            setUploadError(errorJson.detail || 'Challenge saved but files failed to upload.')
           } catch {
-            setUploadError('Challenge updated but some files failed to upload.')
+            setUploadError('Challenge saved but files failed to upload.')
           }
-          setIsSubmitting(false)
-          return
+          
+          if (!challengeId) {
+             // If we rolled back, stop here
+             setIsSubmitting(false)
+             return
+          }
         }
       }
 
@@ -304,23 +418,28 @@ export default function EditChallengeModal({ challengeId, isOpen, onClose, onUpd
       onClose()
       setNewFiles([])
     } catch (caught) {
-      setError('Unable to update challenge')
-      console.error('Update challenge failed', caught)
+      setError('Unable to save challenge')
+      console.error('Save challenge failed', caught)
     } finally {
       setIsSubmitting(false)
     }
   }
 
-  if (!isOpen || !challengeId) return null
+  if (!isOpen) return null
 
   return (
+    <>
     <div className="modal modal-open modal-bottom sm:modal-middle">
       <div className="modal-box w-full max-w-2xl p-0 max-h-[90vh] bg-base-100 border border-base-300">
-        <form onSubmit={submitUpdate} className="w-full h-full flex flex-col">
+        <form onSubmit={handleSubmit} className="w-full h-full flex flex-col">
           <div className="flex items-center justify-between border-b border-base-300 p-6">
             <div>
-              <h2 className="text-xl font-bold text-base-content">Edit Challenge</h2>
-              <p className="text-sm text-base-content/60">Update challenge details, files, and settings</p>
+              <h2 className="text-xl font-bold text-base-content">
+                {challengeId ? 'Edit Challenge' : 'Create Challenge'}
+              </h2>
+              <p className="text-sm text-base-content/60">
+                {challengeId ? 'Update challenge details, files, and settings' : 'Create a new challenge'}
+              </p>
             </div>
             <button type="button" onClick={onClose} className="btn btn-circle btn-ghost btn-sm text-base-content/60 hover:text-base-content">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-6 w-6">
@@ -379,101 +498,210 @@ export default function EditChallengeModal({ challengeId, isOpen, onClose, onUpd
                   <label className="label pb-2">
                     <span className="label-text font-bold text-base-content">Category *</span>
                   </label>
-                  <div className="flex gap-2">
-                    <select
-                      name="category_id"
-                      value={formData.category_id}
-                      onChange={handleChange}
-                      className="select select-bordered w-full bg-base-200"
-                      required
-                      disabled={isSubmitting}
+                  <div className="relative w-full">
+                    <div 
+                      className="select select-bordered w-full bg-base-200 focus:border-primary flex items-center justify-between cursor-pointer"
+                      onClick={() => !isSubmitting && setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
                     >
-                      <option value="">Select category</option>
-                      {categories.map(cat => (
-                        <option key={cat.id} value={cat.id}>{cat.name}</option>
-                      ))}
-                    </select>
-                    {formData.category_id && formData.category_id !== '' && (
-                      <>
-                        <button
-                          type="button"
-                          onClick={async () => {
-                            const cat = categories.find(c => c.id.toString() === formData.category_id)
-                            if (!cat) return
-                            const newName = prompt('Edit category name:', cat.name)
-                            if (newName && newName.trim()) {
-                              try {
-                                const response = await fetch(
-                                  `${import.meta.env.VITE_API_URL || ''}/api/v1/challenges/admin/categories/${cat.id}`,
-                                  {
-                                    method: 'PATCH',
-                                    headers: {
-                                      'Content-Type': 'application/json',
-                                      'Authorization': `Bearer ${token}`
-                                    },
-                                    body: JSON.stringify({ name: newName.trim() })
+                      <span className={formData.category_id ? "text-base-content" : "text-base-content/50"}>
+                        {formData.category_id 
+                          ? categories.find(c => c.id.toString() === formData.category_id)?.name 
+                          : "Select category"}
+                      </span>
+                    </div>
+                    
+                    {isCategoryDropdownOpen && (
+                      <div className="absolute top-full left-0 right-0 z-50 mt-1 max-h-60 overflow-y-auto rounded-box bg-base-200 shadow-lg border border-base-300">
+                        <ul className="menu p-2 w-full">
+                          {categories.map(cat => (
+                            <li key={cat.id} className="flex flex-row justify-between items-center hover:bg-base-300 rounded-lg">
+                              <a 
+                                className={`flex-grow py-2 ${!cat.is_active ? 'opacity-50 italic' : ''}`}
+                                onClick={() => {
+                                  if (cat.is_active) {
+                                    setFormData(prev => ({ ...prev, category_id: cat.id.toString() }))
+                                    setIsCategoryDropdownOpen(false)
                                   }
-                                )
-                                if (response.ok) {
-                                  await fetchCategories()
-                                  alert('Category updated successfully')
-                                } else {
-                                  const error = await response.json()
-                                  alert(error.detail || 'Failed to update category')
-                                }
-                              } catch (err) {
-                                alert('Error updating category')
-                                console.error(err)
-                              }
-                            }
-                          }}
-                          className="btn btn-square btn-ghost border border-white/10"
-                          disabled={isSubmitting}
-                          title="Edit category"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
-                          </svg>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={async () => {
-                            const cat = categories.find(c => c.id.toString() === formData.category_id)
-                            if (!cat) return
-                            if (window.confirm('Are you sure you want to delete this category? It can only be deleted if it has no challenges assigned.')) {
-                              try {
-                                const response = await fetch(
-                                  `${import.meta.env.VITE_API_URL || ''}/api/v1/challenges/admin/categories/${cat.id}`,
-                                  {
-                                    method: 'DELETE',
-                                    headers: {
-                                      'Authorization': `Bearer ${token}`
-                                    }
-                                  }
-                                )
-                                if (response.ok) {
-                                  await fetchCategories()
-                                  setFormData(prev => ({ ...prev, category_id: '' }))
-                                  alert('Category deleted successfully')
-                                } else {
-                                  const error = await response.json()
-                                  alert(error.detail || 'Failed to delete category')
-                                }
-                              } catch (err) {
-                                alert('Error deleting category')
-                                console.error(err)
-                              }
-                            }
-                          }}
-                          className="btn btn-square btn-ghost border border-red-500/30 hover:bg-red-500/10"
-                          disabled={isSubmitting}
-                          title="Delete category"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-red-500">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
-                          </svg>
-                        </button>
-                      </>
+                                }}
+                              >
+                                {cat.name} {!cat.is_active && '(Hidden)'}
+                              </a>
+                              <div className="flex gap-1 pr-2">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    setEditCategoryModal({
+                                      isOpen: true,
+                                      categoryId: cat.id,
+                                      currentName: cat.name,
+                                      currentDescription: cat.description || ''
+                                    })
+                                    setIsCategoryDropdownOpen(false)
+                                  }}
+                                  className="btn btn-ghost btn-xs btn-square"
+                                  title="Edit category"
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+                                  </svg>
+                                </button>
+                                
+                                {!cat.is_active ? (
+                                  <button
+                                    type="button"
+                                    onClick={async (e) => {
+                                      e.stopPropagation()
+                                      setConfirmationModal({
+                                        isOpen: true,
+                                        title: 'Unhide Category',
+                                        message: 'Do you want to unhide this category?',
+                                        type: 'info',
+                                        onConfirm: async () => {
+                                          try {
+                                            const response = await fetch(
+                                              `${import.meta.env.VITE_API_URL || ''}/api/v1/challenges/admin/categories/${cat.id}`,
+                                              {
+                                                method: 'PATCH',
+                                                headers: {
+                                                  'Content-Type': 'application/json',
+                                                  'Authorization': `Bearer ${token}`
+                                                },
+                                                body: JSON.stringify({ is_active: true })
+                                              }
+                                            )
+                                            if (response.ok) {
+                                              await fetchCategories()
+                                            } else {
+                                              console.error('Failed to unhide category')
+                                            }
+                                          } catch (err) {
+                                            console.error(err)
+                                          }
+                                          setConfirmationModal(prev => ({ ...prev, isOpen: false }))
+                                        }
+                                      })
+                                    }}
+                                    className="btn btn-ghost btn-xs btn-square text-info"
+                                    title="Unhide category"
+                                  >
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    </svg>
+                                  </button>
+                                ) : (cat.challenge_count && cat.challenge_count > 0) ? (
+                                  <button
+                                    type="button"
+                                    onClick={async (e) => {
+                                      e.stopPropagation()
+                                      setConfirmationModal({
+                                        isOpen: true,
+                                        title: 'Hide Category',
+                                        message: `This category has ${cat.challenge_count} challenges. Do you want to hide it?`,
+                                        type: 'warning',
+                                        onConfirm: async () => {
+                                          try {
+                                            const response = await fetch(
+                                              `${import.meta.env.VITE_API_URL || ''}/api/v1/challenges/admin/categories/${cat.id}`,
+                                              {
+                                                method: 'DELETE',
+                                                headers: {
+                                                  'Authorization': `Bearer ${token}`
+                                                }
+                                              }
+                                            )
+                                            if (response.ok) {
+                                              await fetchCategories()
+                                              if (formData.category_id === cat.id.toString()) {
+                                                setFormData(prev => ({ ...prev, category_id: '' }))
+                                              }
+                                            } else {
+                                              console.error('Failed to hide category')
+                                            }
+                                          } catch (err) {
+                                            console.error(err)
+                                          }
+                                          setConfirmationModal(prev => ({ ...prev, isOpen: false }))
+                                        }
+                                      })
+                                    }}
+                                    className="btn btn-ghost btn-xs btn-square text-warning"
+                                    title="Hide category"
+                                  >
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
+                                    </svg>
+                                  </button>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={async (e) => {
+                                      e.stopPropagation()
+                                      setConfirmationModal({
+                                        isOpen: true,
+                                        title: 'Delete Category',
+                                        message: 'Are you sure you want to delete this category?',
+                                        type: 'error',
+                                        onConfirm: async () => {
+                                          try {
+                                            const response = await fetch(
+                                              `${import.meta.env.VITE_API_URL || ''}/api/v1/challenges/admin/categories/${cat.id}`,
+                                              {
+                                                method: 'DELETE',
+                                                headers: {
+                                                  'Authorization': `Bearer ${token}`
+                                                }
+                                              }
+                                            )
+                                            if (response.ok) {
+                                              await fetchCategories()
+                                              if (formData.category_id === cat.id.toString()) {
+                                                setFormData(prev => ({ ...prev, category_id: '' }))
+                                              }
+                                            } else {
+                                              const error = await response.json()
+                                              console.error(error.detail || 'Failed to delete category')
+                                            }
+                                          } catch (err) {
+                                            console.error(err)
+                                          }
+                                          setConfirmationModal(prev => ({ ...prev, isOpen: false }))
+                                        }
+                                      })
+                                    }}
+                                    className="btn btn-ghost btn-xs btn-square text-error"
+                                    title="Delete category"
+                                  >
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                                    </svg>
+                                  </button>
+                                )}
+                              </div>
+                            </li>
+                          ))}
+                          <li className="mt-2 pt-2 border-t border-base-300">
+                            <a
+                              className="flex items-center gap-2 text-primary hover:bg-base-300 rounded-lg py-2"
+                              onClick={() => {
+                                setEditCategoryModal({
+                                  isOpen: true,
+                                  categoryId: null,
+                                  currentName: '',
+                                  currentDescription: ''
+                                })
+                                setIsCategoryDropdownOpen(false)
+                              }}
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                              </svg>
+                              Create New Category
+                            </a>
+                          </li>
+                        </ul>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -741,10 +969,10 @@ export default function EditChallengeModal({ challengeId, isOpen, onClose, onUpd
                 {isSubmitting ? (
                   <>
                     <span className="loading loading-spinner loading-sm"></span>
-                    Saving...
+                    {challengeId ? 'Saving...' : 'Creating...'}
                   </>
                 ) : (
-                  'Save Changes'
+                  challengeId ? 'Save Changes' : 'Create Challenge'
                 )}
               </button>
             </div>
@@ -775,5 +1003,124 @@ export default function EditChallengeModal({ challengeId, isOpen, onClose, onUpd
         }
       }}></div>
     </div>
+
+    {/* Edit Category Modal */}
+    {editCategoryModal.isOpen && (
+      <div className="modal modal-open" style={{ zIndex: 1002 }}>
+        <div className="modal-box bg-base-100 border border-base-300">
+          <h3 className="font-bold text-lg mb-4 text-base-content">
+            {editCategoryModal.categoryId ? 'Edit Category' : 'Create Category'}
+          </h3>
+          <div className="form-control w-full">
+            <label className="label">
+              <span className="label-text font-bold">Category Name</span>
+            </label>
+            <input
+              type="text"
+              value={editCategoryModal.currentName}
+              onChange={(e) => setEditCategoryModal(prev => ({ ...prev, currentName: e.target.value }))}
+              className="input input-bordered w-full bg-base-200"
+              autoFocus
+            />
+          </div>
+          <div className="form-control w-full mt-4">
+            <label className="label">
+              <span className="label-text font-bold">Description</span>
+            </label>
+            <textarea
+              value={editCategoryModal.currentDescription}
+              onChange={(e) => setEditCategoryModal(prev => ({ ...prev, currentDescription: e.target.value }))}
+              className="textarea textarea-bordered w-full bg-base-200 h-24"
+              placeholder="Optional description..."
+            />
+          </div>
+          <div className="modal-action">
+            <button
+              className="btn btn-ghost"
+              onClick={() => setEditCategoryModal(prev => ({ ...prev, isOpen: false }))}
+            >
+              Cancel
+            </button>
+            <button
+              className="btn btn-primary"
+              onClick={async () => {
+                if (editCategoryModal.currentName && editCategoryModal.currentName.trim()) {
+                  try {
+                    const isEditing = !!editCategoryModal.categoryId
+                    const url = isEditing
+                      ? `${import.meta.env.VITE_API_URL || ''}/api/v1/challenges/admin/categories/${editCategoryModal.categoryId}`
+                      : `${import.meta.env.VITE_API_URL || ''}/api/v1/challenges/admin/categories`
+                    
+                    const response = await fetch(url, {
+                      method: isEditing ? 'PATCH' : 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                      },
+                      body: JSON.stringify({ 
+                        name: editCategoryModal.currentName.trim(),
+                        description: editCategoryModal.currentDescription.trim(),
+                        is_active: true
+                      })
+                    })
+
+                    if (response.ok) {
+                      const newCat = await response.json()
+                      await fetchCategories()
+                      if (!isEditing) {
+                        setFormData(prev => ({ ...prev, category_id: newCat.id.toString() }))
+                      }
+                    } else {
+                      const error = await response.json()
+                      console.error(error.detail || 'Failed to save category')
+                    }
+                  } catch (err) {
+                    console.error(err)
+                  }
+                }
+                setEditCategoryModal(prev => ({ ...prev, isOpen: false }))
+              }}
+            >
+              Save
+            </button>
+          </div>
+        </div>
+        <div className="modal-backdrop bg-black/50" onClick={() => setEditCategoryModal(prev => ({ ...prev, isOpen: false }))}></div>
+      </div>
+    )}
+
+    {/* Confirmation Modal */}
+    {confirmationModal.isOpen && (
+      <div className="modal modal-open" style={{ zIndex: 1002 }}>
+        <div className="modal-box bg-base-100 border border-base-300">
+          <h3 className={`font-bold text-lg mb-4 ${
+            confirmationModal.type === 'error' ? 'text-error' : 
+            confirmationModal.type === 'warning' ? 'text-warning' : 'text-info'
+          }`}>
+            {confirmationModal.title}
+          </h3>
+          <p className="py-4 text-base-content">{confirmationModal.message}</p>
+          <div className="modal-action">
+            <button
+              className="btn btn-ghost"
+              onClick={() => setConfirmationModal(prev => ({ ...prev, isOpen: false }))}
+            >
+              Cancel
+            </button>
+            <button
+              className={`btn ${
+                confirmationModal.type === 'error' ? 'btn-error' : 
+                confirmationModal.type === 'warning' ? 'btn-warning' : 'btn-info'
+              }`}
+              onClick={confirmationModal.onConfirm}
+            >
+              Confirm
+            </button>
+          </div>
+        </div>
+        <div className="modal-backdrop bg-black/50" onClick={() => setConfirmationModal(prev => ({ ...prev, isOpen: false }))}></div>
+      </div>
+    )}
+  </>
   )
 }

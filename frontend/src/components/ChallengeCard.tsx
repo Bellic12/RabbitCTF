@@ -1,6 +1,6 @@
 import type { Challenge } from '../types/challenge'
 
-import { CategoryBadge, DifficultyBadge } from './Badges'
+import { DifficultyBadge } from './Badges'
 
 type ChallengeCardProps = {
   challenge: Challenge
@@ -12,7 +12,7 @@ export default function ChallengeCard({ challenge, onClick }: ChallengeCardProps
 
   return (
     <button
-      className={`cursor-pointer flex h-full flex-col rounded-box border p-6 text-left transition hover:shadow-[0_25px_65px_-45px_rgba(0,0,0,0.9)] ${
+      className={`cursor-pointer flex h-full flex-col rounded-box border p-4 text-left transition hover:shadow-[0_25px_65px_-45px_rgba(0,0,0,0.9)] ${
         isSolved
           ? 'border-emerald-500/40 bg-emerald-500/5 hover:border-emerald-500/60'
           : 'border-white/10 bg-black/20 hover:border-primary/40'
@@ -20,34 +20,35 @@ export default function ChallengeCard({ challenge, onClick }: ChallengeCardProps
       onClick={() => onClick(challenge)}
       type="button"
     >
-      <div className="flex items-start justify-between gap-4">
-        <div className="space-y-1">
+      <div className="flex items-center justify-between gap-4 w-full">
+        <div className="space-y-1 flex-1">
           <div className={`flex items-center gap-2 text-sm font-semibold ${isSolved ? 'text-emerald-400' : 'text-white/70'}`}>
             {isSolved ? <SolvedIcon /> : <UnsolvedIcon />}
-            {challenge.title}
-          </div>
-          <div className="flex items-center gap-2">
-            <CategoryBadge category={challenge.category} />
-            <DifficultyBadge difficulty={challenge.difficulty} />
+            <span className="truncate">{challenge.title}</span>
           </div>
         </div>
 
-        <div className="text-right text-2xl font-bold text-primary">
-          {challenge.points}
-          <p className="mt-1 text-xs font-medium text-white/40">{challenge.solves} solves</p>
+        <div className="flex flex-col items-center">
+          <div className="text-2xl font-bold text-primary leading-none mb-1">
+            {challenge.points}
+          </div>
+          <p className="text-xs font-medium text-white/40 mb-2">{challenge.solves} solves</p>
+          <DifficultyBadge difficulty={challenge.difficulty} />
         </div>
       </div>
 
-      <div className="mt-6 flex flex-wrap gap-2">
-        {challenge.tags.map(tag => (
-          <span
-            className="rounded border border-white/10 bg-black/30 px-3 py-1 text-xs text-white/60"
-            key={tag}
-          >
-            {tag}
-          </span>
-        ))}
-      </div>
+      {challenge.tags.length > 0 && (
+        <div className="mt-4 flex flex-wrap gap-2">
+          {challenge.tags.map(tag => (
+            <span
+              className="rounded border border-white/10 bg-black/30 px-2 py-0.5 text-[10px] text-white/60"
+              key={tag}
+            >
+              {tag}
+            </span>
+          ))}
+        </div>
+      )}
     </button>
   )
 }

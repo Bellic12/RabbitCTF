@@ -266,6 +266,10 @@ class ChallengeResponse(ChallengeBase):
         None,
         description="Username of the team member who solved the challenge",
     )
+    blocked_until: Optional[datetime] = Field(
+        None,
+        description="If user is blocked from submitting, this is the expiration time"
+    )
     created_at: datetime
     operational_data: Optional[str] = None
 

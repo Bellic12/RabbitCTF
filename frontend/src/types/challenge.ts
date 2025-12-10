@@ -28,4 +28,5 @@ export type Challenge = {
   files?: ChallengeFile[]
   solveHistory?: ChallengeSolve[]
   solvedBy?: string
+  blocked_until?: string
 }

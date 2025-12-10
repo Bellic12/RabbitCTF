@@ -36,12 +36,13 @@ class EventConfigUpdate(BaseModel):
     submission_time_window_seconds: Optional[int] = None
     submission_block_minutes: Optional[int] = None
 
-
 class EventConfigResponse(BaseModel):
     max_team_size: int
     max_submission_attempts: int
     submission_time_window_seconds: int
     submission_block_minutes: int
+    from_attributes = True 
+    
 class AdminSubmissionResponse(BaseModel):
     id: int
     user_id: int

@@ -67,10 +67,76 @@ export default function ChallengeModal({ challenge, onClose, onSolve }: Challeng
   const [files, setFiles] = useState<ChallengeFile[]>([])
   const [isLoadingFiles, setIsLoadingFiles] = useState(true)
   const [isCopied, setIsCopied] = useState(false)
+  const [blockedUntil, setBlockedUntil] = useState<Date | null>(null)
+  const [timeLeft, setTimeLeft] = useState<string>('')
 
   useEffect(() => {
     fetchChallengeFiles()
+    fetchChallengeStatus()
   }, [challenge.id])
+
+  useEffect(() => {
+    if (!blockedUntil) {
+      setTimeLeft('')
+      return
+    }
+
+    const updateTimer = () => {
+      const now = new Date()
+      const diff = blockedUntil.getTime() - now.getTime()
+
+      if (diff <= 0) {
+        setBlockedUntil(null)
+        setSubmissionResult(null)
+        setTimeLeft('')
+        return
+      }
+
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000)
+      setTimeLeft(`${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`)
+    }
+
+    updateTimer()
+    const timerId = setInterval(updateTimer, 1000)
+
+    return () => clearInterval(timerId)
+  }, [blockedUntil])
+
+  const fetchChallengeStatus = async () => {
+    try {
+      const token = localStorage.getItem('token')
+      if (!token) return
+
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL || ''}/api/v1/challenges/${challenge.id}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      )
+
+      if (response.ok) {
+        const data = await response.json()
+        if (data.blocked_until) {
+          const blockedDate = new Date(data.blocked_until)
+          if (blockedDate > new Date()) {
+            setBlockedUntil(blockedDate)
+            setSubmissionResult({
+              is_correct: false,
+              score_awarded: 0,
+              message: `You are blocked from submitting to this challenge until ${blockedDate.toLocaleTimeString()}`,
+              status: 'blocked',
+              is_first_blood: false
+            })
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch challenge status:', error)
+    }
+  }
 
   const fetchChallengeFiles = async () => {
     setIsLoadingFiles(true)
@@ -349,7 +415,11 @@ export default function ChallengeModal({ challenge, onClose, onSolve }: Challeng
                 {submissionResult && !submissionResult.is_correct && (
                   <div className="flex items-center gap-3 rounded-2xl border border-rose-500/50 bg-rose-500/10 px-4 py-3 text-sm text-rose-400">
                     <AlertIcon />
-                    <span>{submissionResult.message}</span>
+                    <span>
+                        {submissionResult.status === 'blocked' 
+                            ? `You are blocked from submitting. Try again in ${timeLeft}` 
+                            : submissionResult.message}
+                    </span>
                   </div>
                 )}
 
@@ -367,30 +437,32 @@ export default function ChallengeModal({ challenge, onClose, onSolve }: Challeng
                         ? 'border-emerald-500/50 bg-emerald-500/10 placeholder:text-emerald-400'
                         : 'border-white/15 bg-base-300 focus:border-primary disabled:opacity-50'
                     }`}
-                    disabled={isSubmitting || challenge.status === 'solved' || submissionResult?.is_correct}
+                    disabled={isSubmitting || challenge.status === 'solved' || submissionResult?.is_correct || submissionResult?.status === 'blocked'}
                     onChange={event => setFlagValue(event.target.value)}
                     placeholder={
                       challenge.status === 'solved'
                         ? `Solved by ${challenge.solvedBy || 'your team'}`
                         : submissionResult?.is_correct
                           ? 'Challenge solved!'
-                          : 'flag{...}'
+                          : submissionResult?.status === 'blocked'
+                            ? 'Submission blocked'
+                            : 'flag{...}'
                     }
                     type="text"
                     value={flagValue}
                     onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !isSubmitting && challenge.status !== 'solved' && !submissionResult?.is_correct) {
+                      if (e.key === 'Enter' && !isSubmitting && challenge.status !== 'solved' && !submissionResult?.is_correct && submissionResult?.status !== 'blocked') {
                         handleSubmitFlag(e as any)
                       }
                     }}
                   />
                   <button
                     className="btn btn-primary h-12 rounded-md border-none px-6 text-sm font-semibold text-primary-content hover:brightness-75 transition-all disabled:opacity-50 disabled:bg-neutral disabled:text-neutral-content disabled:cursor-not-allowed"
-                    disabled={isSubmitting || challenge.status === 'solved' || submissionResult?.is_correct}
+                    disabled={isSubmitting || challenge.status === 'solved' || submissionResult?.is_correct || submissionResult?.status === 'blocked'}
                     type="button"
                     onClick={(e) => handleSubmitFlag(e as any)}
                   >
-                    {isSubmitting ? 'Submitting...' : challenge.status === 'solved' || submissionResult?.is_correct ? 'Solved' : 'Submit'}
+                    {isSubmitting ? 'Submitting...' : challenge.status === 'solved' || submissionResult?.is_correct ? 'Solved' : submissionResult?.status === 'blocked' ? `Blocked (${timeLeft})` : 'Submit'}
                   </button>
                 </div>
               </section>

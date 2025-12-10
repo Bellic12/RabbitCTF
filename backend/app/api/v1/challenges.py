@@ -22,8 +22,10 @@ from app.models.challenge_visibility_config import ChallengeVisibilityConfig
 from app.models.challenge_flag import ChallengeFlag
 from app.models.challenge_file import ChallengeFile
 from app.models.submission import Submission
+from app.models.submission_block import SubmissionBlock
 from app.models.team_member import TeamMember
 from app.models.team import Team
+from datetime import datetime
 import os
 import uuid
 
@@ -45,19 +47,42 @@ def read_categories(
     db: Session = Depends(get_db),
     skip: int = 0,
     limit: int = 100,
+    include_hidden: bool = False,
     current_user=Depends(deps.get_current_active_user),
 ) -> Any:
     """
     Retrieve challenge categories.
     """
-    categories = (
-        db.query(ChallengeCategory)
-        .filter(ChallengeCategory.is_active)
+    query = (
+        db.query(
+            ChallengeCategory,
+            func.count(Challenge.id).label("challenge_count")
+        )
+        .outerjoin(Challenge, Challenge.category_id == ChallengeCategory.id)
+    )
+
+    if not include_hidden:
+        query = query.filter(ChallengeCategory.is_active)
+
+    results = (
+        query
+        .group_by(ChallengeCategory.id)
         .offset(skip)
         .limit(limit)
         .all()
     )
-    return categories
+    
+    return [
+        ChallengeCategoryResponse(
+            id=cat.id,
+            name=cat.name,
+            description=cat.description,
+            is_active=cat.is_active,
+            created_at=cat.created_at,
+            challenge_count=count
+        )
+        for cat, count in results
+    ]
 
 
 @router.get("/difficulties", response_model=List[dict])
@@ -92,6 +117,8 @@ def read_challenges(
         )
         .filter(~Challenge.is_draft)
         .filter(Challenge.visibility_config.has(is_visible=True))
+        .join(ChallengeCategory)
+        .filter(ChallengeCategory.is_active == True)
         .offset(skip)
         .limit(limit)
         .all()
@@ -132,6 +159,20 @@ def read_challenges(
                 is_solved = True
                 solved_by = submission.user.username
         
+        # Check if user is blocked
+        blocked_until = None
+        block = (
+            db.query(SubmissionBlock)
+            .filter(
+                SubmissionBlock.user_id == current_user.id,
+                SubmissionBlock.challenge_id == c.id,
+                SubmissionBlock.blocked_until > datetime.utcnow(),
+            )
+            .first()
+        )
+        if block:
+            blocked_until = block.blocked_until
+
         results.append(
             {
                 "id": c.id,
@@ -146,12 +187,105 @@ def read_challenges(
                 "solve_count": solve_counts_map.get(c.id, 0),
                 "is_solved": is_solved,
                 "solved_by": solved_by,
+                "blocked_until": blocked_until,
                 "created_at": c.created_at,
                 "operational_data": c.operational_data,
             }
         )
 
     return results
+
+
+@router.get("/{challenge_id}", response_model=ChallengeResponse)
+def read_challenge(
+    challenge_id: int,
+    db: Session = Depends(get_db),
+    current_user=Depends(deps.get_current_user),
+) -> Any:
+    """
+    Get a specific challenge by ID.
+    """
+    challenge = (
+        db.query(Challenge)
+        .options(
+            joinedload(Challenge.category),
+            joinedload(Challenge.difficulty),
+            joinedload(Challenge.score_config),
+            joinedload(Challenge.visibility_config),
+        )
+        .filter(Challenge.id == challenge_id)
+        .first()
+    )
+
+    if not challenge:
+        raise HTTPException(status_code=404, detail="Challenge not found")
+
+    if challenge.is_draft or (challenge.visibility_config and not challenge.visibility_config.is_visible):
+        if current_user.role.name != "admin":
+            raise HTTPException(status_code=404, detail="Challenge not found")
+
+    # Check if current user's team has solved this challenge
+    team_member = (
+        db.query(TeamMember)
+        .filter(TeamMember.user_id == current_user.id)
+        .first()
+    )
+    
+    is_solved = False
+    solved_by = None
+    if team_member:
+        submission = (
+            db.query(Submission)
+            .options(joinedload(Submission.user))
+            .filter(
+                Submission.challenge_id == challenge.id,
+                Submission.team_id == team_member.team_id,
+                Submission.is_correct == True
+            )
+            .first()
+        )
+        if submission:
+            is_solved = True
+            solved_by = submission.user.username
+
+    # Check if user is blocked
+    blocked_until = None
+    block = (
+        db.query(SubmissionBlock)
+        .filter(
+            SubmissionBlock.user_id == current_user.id,
+            SubmissionBlock.challenge_id == challenge.id,
+            SubmissionBlock.blocked_until > datetime.utcnow(),
+        )
+        .first()
+    )
+    if block:
+        blocked_until = block.blocked_until
+
+    # Get solve count
+    solve_count = (
+        db.query(Submission)
+        .filter(Submission.challenge_id == challenge.id, Submission.is_correct == True)
+        .count()
+    )
+
+    return {
+        "id": challenge.id,
+        "title": challenge.title,
+        "description": challenge.description,
+        "category_id": challenge.category_id,
+        "category_name": challenge.category.name if challenge.category else None,
+        "difficulty_id": challenge.difficulty_id,
+        "difficulty_name": challenge.difficulty.name if challenge.difficulty else None,
+        "base_score": challenge.score_config.base_score if challenge.score_config else 0,
+        "current_score": challenge.score_config.base_score if challenge.score_config else 0,
+        "solve_count": solve_count,
+        "is_solved": is_solved,
+        "solved_by": solved_by,
+        "blocked_until": blocked_until,
+        "created_at": challenge.created_at,
+        "operational_data": challenge.operational_data,
+    }
 
 
 @router.get("/{challenge_id}/solves", response_model=List[dict])
@@ -281,6 +415,13 @@ def create_challenge(
     """
     Create a new challenge (admin only).
     """
+    # Validate category is active
+    category = db.query(ChallengeCategory).filter(ChallengeCategory.id == challenge_data.category_id).first()
+    if not category:
+        raise HTTPException(status_code=404, detail="Category not found")
+    if not category.is_active:
+        raise HTTPException(status_code=400, detail="Cannot assign challenge to an inactive category")
+
     # Create the challenge
     new_challenge = Challenge(
         title=challenge_data.title,
@@ -529,6 +670,12 @@ def update_challenge_admin(
     ]:
         value = getattr(payload, field)
         if value is not None:
+            if field == "category_id":
+                category = db.query(ChallengeCategory).filter(ChallengeCategory.id == value).first()
+                if not category:
+                    raise HTTPException(status_code=404, detail="Category not found")
+                if not category.is_active:
+                    raise HTTPException(status_code=400, detail="Cannot assign challenge to an inactive category")
             setattr(challenge, field, value)
 
     if payload.connection_info is not None:
@@ -758,10 +905,20 @@ def delete_category(
     ).count()
     
     if challenge_count > 0:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Cannot delete category with {challenge_count} challenge(s) assigned"
+        # Hide category instead of deleting
+        category.is_active = False
+        db.commit()
+        
+        log_audit(
+            db=db,
+            user_id=current_user.id,
+            action="UPDATE",
+            resource_type="category",
+            details={"action": "hide_category", "category_name": category.name, "reason": "has_challenges"},
+            request=request
         )
+        
+        return {"message": f"Category '{category.name}' has been hidden because it has {challenge_count} challenges."}
     
     db.delete(category)
     db.commit()
