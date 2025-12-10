@@ -1200,3 +1200,35 @@ INSERT INTO submission_block (user_id, challenge_id, blocked_until, reason) VALU
 ((SELECT id FROM "user" WHERE username = 'ivy'), (SELECT id FROM challenge WHERE title = 'Social Media Hunt'), NOW() + INTERVAL '8 minutes', 'Too many incorrect attempts')
 ON CONFLICT DO NOTHING;
 
+
+-- ===============================
+-- 12. UPDATE TEAM TOTAL SCORES
+-- ===============================
+-- Ensures consistency between submission records and team totals
+
+UPDATE team t
+SET total_score = COALESCE(
+    (SELECT SUM(s.awarded_score)
+     FROM submission s
+     WHERE s.team_id = t.id
+       AND s.is_correct = TRUE),
+    0
+);
+
+-- Logs
+DO $$
+DECLARE
+    team_count INTEGER;
+    total_points INTEGER;
+BEGIN
+    SELECT COUNT(*), COALESCE(SUM(total_score), 0) 
+    INTO team_count, total_points
+    FROM team 
+    WHERE total_score > 0;
+    
+    RAISE NOTICE '========================================';
+    RAISE NOTICE 'Team scores updated successfully!';
+    RAISE NOTICE 'Teams with points: %', team_count;
+    RAISE NOTICE 'Total points awarded: %', total_points;
+    RAISE NOTICE '========================================';
+END $$;
