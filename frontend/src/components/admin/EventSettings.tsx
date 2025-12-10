@@ -19,6 +19,15 @@ export default function EventSettings() {
   const [showPreview, setShowPreview] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
 
+  // Config state
+  const [config, setConfig] = useState({
+    max_submission_attempts: 5,
+    submission_time_window_seconds: 60,
+    submission_block_minutes: 5
+  })
+  const [configLoading, setConfigLoading] = useState(false)
+  const [configMessage, setConfigMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
+
   useEffect(() => {
     const fetchRules = async () => {
       try {
@@ -31,8 +40,53 @@ export default function EventSettings() {
         console.error('Failed to fetch rules:', error)
       }
     }
+    
+    const fetchConfig = async () => {
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/v1/admin/config`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        })
+        if (response.ok) {
+          const data = await response.json()
+          setConfig({
+            max_submission_attempts: data.max_submission_attempts,
+            submission_time_window_seconds: data.submission_time_window_seconds,
+            submission_block_minutes: data.submission_block_minutes
+          })
+        }
+      } catch (error) {
+        console.error('Failed to fetch config:', error)
+      }
+    }
+
     fetchRules()
-  }, [])
+    if (token) fetchConfig()
+  }, [token])
+
+  const handleSaveConfig = async () => {
+    setConfigLoading(true)
+    setConfigMessage(null)
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/v1/admin/config`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(config)
+      })
+
+      if (response.ok) {
+        setConfigMessage({ type: 'success', text: 'Configuration updated successfully' })
+      } else {
+        setConfigMessage({ type: 'error', text: 'Failed to update configuration' })
+      }
+    } catch (error) {
+      setConfigMessage({ type: 'error', text: 'An error occurred' })
+    } finally {
+      setConfigLoading(false)
+    }
+  }
 
   const handleSaveRules = async () => {
     setLoading(true)
@@ -99,6 +153,64 @@ export default function EventSettings() {
           </label>
         </div>
         <button className="btn btn-primary mt-6">Update Event Timing</button>
+      </div>
+
+      <div className="divider"></div>
+
+      <div>
+        <h3 className="text-lg font-bold mb-4">Submission Rate Limiting</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <label className="form-control w-full">
+            <div className="label">
+              <span className="label-text">Max Attempts</span>
+              <span className="label-text-alt text-white/50">per window</span>
+            </div>
+            <input
+              type="number"
+              className="input input-bordered w-full"
+              value={config.max_submission_attempts}
+              onChange={(e) => setConfig({...config, max_submission_attempts: parseInt(e.target.value)})}
+            />
+          </label>
+          <label className="form-control w-full">
+            <div className="label">
+              <span className="label-text">Time Window</span>
+              <span className="label-text-alt text-white/50">seconds</span>
+            </div>
+            <input
+              type="number"
+              className="input input-bordered w-full"
+              value={config.submission_time_window_seconds}
+              onChange={(e) => setConfig({...config, submission_time_window_seconds: parseInt(e.target.value)})}
+            />
+          </label>
+          <label className="form-control w-full">
+            <div className="label">
+              <span className="label-text">Block Duration</span>
+              <span className="label-text-alt text-white/50">minutes</span>
+            </div>
+            <input
+              type="number"
+              className="input input-bordered w-full"
+              value={config.submission_block_minutes}
+              onChange={(e) => setConfig({...config, submission_block_minutes: parseInt(e.target.value)})}
+            />
+          </label>
+        </div>
+        <div className="flex items-center mt-6">
+            <button 
+                className="btn btn-primary h-12 rounded-md border-none px-6 text-sm font-semibold text-primary-content hover:brightness-75 transition-all disabled:opacity-50 disabled:bg-neutral disabled:text-neutral-content disabled:cursor-not-allowed"
+                onClick={handleSaveConfig}
+                disabled={configLoading}
+            >
+                {configLoading ? 'Saving...' : 'Update Rate Limits'}
+            </button>
+            {configMessage && (
+                <span className={`ml-4 text-sm ${configMessage.type === 'success' ? 'text-success' : 'text-error'}`}>
+                {configMessage.text}
+                </span>
+            )}
+        </div>
       </div>
 
       <div className="divider"></div>

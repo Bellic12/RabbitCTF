@@ -28,3 +28,20 @@ class ChallengeStatsResponse(BaseModel):
     average_attempts: float
     challenges_stats: List[ChallengeStatItem]
 
+
+class EventConfigBase(BaseModel):
+    max_submission_attempts: int
+    submission_time_window_seconds: int
+    submission_block_minutes: int
+
+
+class EventConfigUpdate(EventConfigBase):
+    pass
+
+
+class EventConfigResponse(EventConfigBase):
+    id: int
+    
+    class Config:
+        from_attributes = True
+

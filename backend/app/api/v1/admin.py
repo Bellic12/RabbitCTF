@@ -16,7 +16,14 @@ from app.models.user import User
 from app.models.team import Team
 from app.models.challenge import Challenge
 from app.models.submission import Submission
-from app.schemas.admin import AdminStatsResponse, ChallengeStatsResponse, ChallengeStatItem
+from app.models.event_config import EventConfig
+from app.schemas.admin import (
+    AdminStatsResponse, 
+    ChallengeStatsResponse, 
+    ChallengeStatItem,
+    EventConfigResponse,
+    EventConfigUpdate
+)
 
 router = APIRouter()
 
@@ -211,3 +218,48 @@ async def get_challenge_stats(
         average_attempts=average_attempts,
         challenges_stats=challenges_stats
     )
+
+
+@router.get("/config", response_model=EventConfigResponse)
+async def get_event_config(
+    current_user: User = Depends(get_current_admin), db: Session = Depends(get_db)
+):
+    """
+    Get event configuration (admin only).
+    """
+    config = db.query(EventConfig).first()
+    if not config:
+        # Create default config if not exists
+        config = EventConfig(
+            event_name="RabbitCTF",
+            max_submission_attempts=5,
+            submission_time_window_seconds=60,
+            submission_block_minutes=5
+        )
+        db.add(config)
+        db.commit()
+        db.refresh(config)
+    return config
+
+
+@router.put("/config", response_model=EventConfigResponse)
+async def update_event_config(
+    config_in: EventConfigUpdate,
+    current_user: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+):
+    """
+    Update event configuration (admin only).
+    """
+    config = db.query(EventConfig).first()
+    if not config:
+        config = EventConfig(event_name="RabbitCTF")
+        db.add(config)
+    
+    config.max_submission_attempts = config_in.max_submission_attempts
+    config.submission_time_window_seconds = config_in.submission_time_window_seconds
+    config.submission_block_minutes = config_in.submission_block_minutes
+    
+    db.commit()
+    db.refresh(config)
+    return config

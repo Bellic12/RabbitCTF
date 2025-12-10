@@ -22,8 +22,10 @@ from app.models.challenge_visibility_config import ChallengeVisibilityConfig
 from app.models.challenge_flag import ChallengeFlag
 from app.models.challenge_file import ChallengeFile
 from app.models.submission import Submission
+from app.models.submission_block import SubmissionBlock
 from app.models.team_member import TeamMember
 from app.models.team import Team
+from datetime import datetime
 import os
 import uuid
 
@@ -132,6 +134,20 @@ def read_challenges(
                 is_solved = True
                 solved_by = submission.user.username
         
+        # Check if user is blocked
+        blocked_until = None
+        block = (
+            db.query(SubmissionBlock)
+            .filter(
+                SubmissionBlock.user_id == current_user.id,
+                SubmissionBlock.challenge_id == c.id,
+                SubmissionBlock.blocked_until > datetime.utcnow(),
+            )
+            .first()
+        )
+        if block:
+            blocked_until = block.blocked_until
+
         results.append(
             {
                 "id": c.id,
@@ -146,12 +162,105 @@ def read_challenges(
                 "solve_count": solve_counts_map.get(c.id, 0),
                 "is_solved": is_solved,
                 "solved_by": solved_by,
+                "blocked_until": blocked_until,
                 "created_at": c.created_at,
                 "operational_data": c.operational_data,
             }
         )
 
     return results
+
+
+@router.get("/{challenge_id}", response_model=ChallengeResponse)
+def read_challenge(
+    challenge_id: int,
+    db: Session = Depends(get_db),
+    current_user=Depends(deps.get_current_user),
+) -> Any:
+    """
+    Get a specific challenge by ID.
+    """
+    challenge = (
+        db.query(Challenge)
+        .options(
+            joinedload(Challenge.category),
+            joinedload(Challenge.difficulty),
+            joinedload(Challenge.score_config),
+            joinedload(Challenge.visibility_config),
+        )
+        .filter(Challenge.id == challenge_id)
+        .first()
+    )
+
+    if not challenge:
+        raise HTTPException(status_code=404, detail="Challenge not found")
+
+    if challenge.is_draft or (challenge.visibility_config and not challenge.visibility_config.is_visible):
+        if current_user.role.name != "admin":
+            raise HTTPException(status_code=404, detail="Challenge not found")
+
+    # Check if current user's team has solved this challenge
+    team_member = (
+        db.query(TeamMember)
+        .filter(TeamMember.user_id == current_user.id)
+        .first()
+    )
+    
+    is_solved = False
+    solved_by = None
+    if team_member:
+        submission = (
+            db.query(Submission)
+            .options(joinedload(Submission.user))
+            .filter(
+                Submission.challenge_id == challenge.id,
+                Submission.team_id == team_member.team_id,
+                Submission.is_correct == True
+            )
+            .first()
+        )
+        if submission:
+            is_solved = True
+            solved_by = submission.user.username
+
+    # Check if user is blocked
+    blocked_until = None
+    block = (
+        db.query(SubmissionBlock)
+        .filter(
+            SubmissionBlock.user_id == current_user.id,
+            SubmissionBlock.challenge_id == challenge.id,
+            SubmissionBlock.blocked_until > datetime.utcnow(),
+        )
+        .first()
+    )
+    if block:
+        blocked_until = block.blocked_until
+
+    # Get solve count
+    solve_count = (
+        db.query(Submission)
+        .filter(Submission.challenge_id == challenge.id, Submission.is_correct == True)
+        .count()
+    )
+
+    return {
+        "id": challenge.id,
+        "title": challenge.title,
+        "description": challenge.description,
+        "category_id": challenge.category_id,
+        "category_name": challenge.category.name if challenge.category else None,
+        "difficulty_id": challenge.difficulty_id,
+        "difficulty_name": challenge.difficulty.name if challenge.difficulty else None,
+        "base_score": challenge.score_config.base_score if challenge.score_config else 0,
+        "current_score": challenge.score_config.base_score if challenge.score_config else 0,
+        "solve_count": solve_count,
+        "is_solved": is_solved,
+        "solved_by": solved_by,
+        "blocked_until": blocked_until,
+        "created_at": challenge.created_at,
+        "operational_data": challenge.operational_data,
+    }
 
 
 @router.get("/{challenge_id}/solves", response_model=List[dict])
