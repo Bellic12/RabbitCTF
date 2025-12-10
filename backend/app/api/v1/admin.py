@@ -15,8 +15,14 @@ from app.schemas.teams import TeamResponse
 from app.models.user import User
 from app.models.team import Team
 from app.models.challenge import Challenge
+from app.models.challenge_category import ChallengeCategory
 from app.models.submission import Submission
-from app.schemas.admin import AdminStatsResponse, ChallengeStatsResponse, ChallengeStatItem
+from app.schemas.admin import (
+    AdminStatsResponse,
+    ChallengeStatsResponse,
+    ChallengeStatItem,
+    AdminSubmissionResponse,
+)
 
 router = APIRouter()
 
@@ -211,3 +217,54 @@ async def get_challenge_stats(
         average_attempts=average_attempts,
         challenges_stats=challenges_stats
     )
+
+
+@router.get("/submissions", response_model=List[AdminSubmissionResponse])
+async def get_admin_submissions(
+    challenge_id: Optional[int] = None,
+    team_id: Optional[int] = None,
+    skip: int = 0,
+    limit: int = 100,
+    current_user: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+):
+    """
+    Get all submissions with details (admin only).
+    """
+    query = (
+        db.query(Submission)
+        .join(User, Submission.user_id == User.id)
+        .join(Team, Submission.team_id == Team.id)
+        .join(Challenge, Submission.challenge_id == Challenge.id)
+        .outerjoin(ChallengeCategory, Challenge.category_id == ChallengeCategory.id)
+    )
+
+    if challenge_id:
+        query = query.filter(Submission.challenge_id == challenge_id)
+
+    if team_id:
+        query = query.filter(Submission.team_id == team_id)
+
+    submissions = (
+        query.order_by(Submission.submitted_at.desc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+
+    return [
+        AdminSubmissionResponse(
+            id=sub.id,
+            user_id=sub.user_id,
+            username=sub.user.username,
+            team_id=sub.team_id,
+            team_name=sub.team.name,
+            challenge_id=sub.challenge_id,
+            challenge_title=sub.challenge.title,
+            category_name=sub.challenge.category.name if sub.challenge.category else "Unknown",
+            submitted_flag=sub.submitted_flag,
+            is_correct=sub.is_correct,
+            submitted_at=sub.submitted_at,
+        )
+        for sub in submissions
+    ]
