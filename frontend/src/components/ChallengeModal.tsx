@@ -6,7 +6,6 @@ import type { Challenge } from '../types/challenge'
 type ChallengeModalProps = {
   challenge: Challenge
   onClose: () => void
-  onSuccess: () => void
 }
 
 type SubmissionResponse = {
@@ -52,7 +51,7 @@ const buildDownload = async (fileUrl: string, fileName: string) => {
   window.URL.revokeObjectURL(url)
 }
 
-export default function ChallengeModal({ challenge, onClose, onSuccess }: ChallengeModalProps) {
+export default function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
   const [tab, setTab] = useState<'details' | 'history'>('details')
   const [flagValue, setFlagValue] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -139,7 +138,6 @@ export default function ChallengeModal({ challenge, onClose, onSuccess }: Challe
 
       if (data.is_correct) {
         setFlagValue('')
-        onSuccess()
       }
     } catch (caught) {
       setError('Unable to reach the submission service')
@@ -306,72 +304,55 @@ export default function ChallengeModal({ challenge, onClose, onSuccess }: Challe
                   Submit Flag
                 </h3>
 
-                {challenge.status === 'solved' ? (
-                  <div className="flex items-center gap-6 rounded-2xl border border-emerald-500/50 bg-emerald-500/10 px-6 py-6 text-emerald-400">
-                    <div className="flex-1">
-                      <h4 className="text-xl font-bold">Challenge Solved!</h4>
-                      <p className="mt-1 text-base opacity-90">
-                        {challenge.solvedBy 
-                          ? `Solved by ${challenge.solvedBy}` 
-                          : 'Your team has already solved this challenge.'}
-                      </p>
+                {submissionResult?.is_correct && (
+                  <div className="flex items-center gap-3 rounded-2xl border border-emerald-500/50 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-400">
+                    <SuccessIcon />
+                    <div>
+                      <p className="font-semibold">{submissionResult.message}</p>
+                      {submissionResult.is_first_blood && (
+                        <p className="text-xs mt-1">🩸 First Blood!</p>
+                      )}
                     </div>
                   </div>
-                ) : (
-                  <>
-                    {submissionResult?.is_correct && (
-                      <div className="flex items-center gap-3 rounded-2xl border border-emerald-500/50 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-400">
-                        <SuccessIcon />
-                        <div>
-                          <p className="font-semibold">{submissionResult.message}</p>
-                          {submissionResult.is_first_blood && (
-                            <p className="text-xs mt-1">🩸 First Blood!</p>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    {submissionResult && !submissionResult.is_correct && (
-                      <div className="flex items-center gap-3 rounded-2xl border border-rose-500/50 bg-rose-500/10 px-4 py-3 text-sm text-rose-400">
-                        <AlertIcon />
-                        <span>{submissionResult.message}</span>
-                      </div>
-                    )}
-
-                    {error.length > 0 && (
-                      <div className="flex items-center gap-3 rounded-2xl border border-error-content bg-error px-4 py-3 text-sm text-error-content">
-                        <AlertIcon />
-                        <span>{error}</span>
-                      </div>
-                    )}
-
-                    {!submissionResult?.is_correct && (
-                      <div className="flex flex-col gap-3 md:flex-row">
-                        <input
-                          className="h-12 flex-1 rounded-2xl border border-white/15 bg-base-300 px-4 text-sm text-white focus:border-primary focus:outline-none disabled:opacity-50"
-                          disabled={isSubmitting}
-                          onChange={event => setFlagValue(event.target.value)}
-                          placeholder="flag{...}"
-                          type="text"
-                          value={flagValue}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' && !isSubmitting) {
-                              handleSubmitFlag(e as any)
-                            }
-                          }}
-                        />
-                        <button
-                          className="btn h-12 rounded-full border-none bg-primary px-6 text-sm font-semibold text-black hover:bg-secondary disabled:opacity-50"
-                          disabled={isSubmitting}
-                          type="button"
-                          onClick={(e) => handleSubmitFlag(e as any)}
-                        >
-                          {isSubmitting ? 'Submitting...' : 'Submit'}
-                        </button>
-                      </div>
-                    )}
-                  </>
                 )}
+
+                {submissionResult && !submissionResult.is_correct && (
+                  <div className="flex items-center gap-3 rounded-2xl border border-rose-500/50 bg-rose-500/10 px-4 py-3 text-sm text-rose-400">
+                    <AlertIcon />
+                    <span>{submissionResult.message}</span>
+                  </div>
+                )}
+
+                {error.length > 0 && (
+                  <div className="flex items-center gap-3 rounded-2xl border border-error-content bg-error px-4 py-3 text-sm text-error-content">
+                    <AlertIcon />
+                    <span>{error}</span>
+                  </div>
+                )}
+
+                <div className="flex flex-col gap-3 md:flex-row">
+                  <input
+                    className="h-12 flex-1 rounded-2xl border border-white/15 bg-base-300 px-4 text-sm text-white focus:border-primary focus:outline-none disabled:opacity-50"
+                    disabled={isSubmitting}
+                    onChange={event => setFlagValue(event.target.value)}
+                    placeholder="flag{...}"
+                    type="text"
+                    value={flagValue}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !isSubmitting) {
+                        handleSubmitFlag(e as any)
+                      }
+                    }}
+                  />
+                  <button
+                    className="btn h-12 rounded-full border-none bg-primary px-6 text-sm font-semibold text-black hover:bg-secondary disabled:opacity-50"
+                    disabled={isSubmitting}
+                    type="button"
+                    onClick={(e) => handleSubmitFlag(e as any)}
+                  >
+                    {isSubmitting ? 'Submitting...' : 'Submit'}
+                  </button>
+                </div>
               </section>
             </div>
           ) : (
@@ -425,21 +406,21 @@ function AlertIcon() {
   )
 }
 
-function SuccessIcon({ className = "h-5 w-5" }: { className?: string }) {
+function SuccessIcon() {
   return (
     <svg
       aria-hidden="true"
-      className={className}
+      className="h-5 w-5"
       fill="none"
       viewBox="0 0 24 24"
       xmlns="http://www.w3.org/2000/svg"
-      stroke="currentColor"
     >
       <path
+        className="stroke-current"
+        d="M9 12l2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
         strokeLinecap="round"
         strokeLinejoin="round"
-        strokeWidth={2}
-        d="M9 12l2 4 4-6m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+        strokeWidth={1.6}
       />
     </svg>
   )

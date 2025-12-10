@@ -262,10 +262,6 @@ class ChallengeResponse(ChallengeBase):
         default=False,
         description="Whether current user's team has solved this challenge",
     )
-    solved_by: Optional[str] = Field(
-        None,
-        description="Username of the team member who solved the challenge",
-    )
     created_at: datetime
     operational_data: Optional[str] = None
 
