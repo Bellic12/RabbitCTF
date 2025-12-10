@@ -4,8 +4,11 @@ Main FastAPI application for RabbitCTF.
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
 from app.core.config import settings
 from app.api.v1.router import api_router
+from app.core.database import Base, engine, SessionLocal
+import app.models  # noqa: F401 ensure models are registered
 
 # Create FastAPI app
 app = FastAPI(
@@ -28,6 +31,31 @@ app.add_middleware(
 
 # Include API router
 app.include_router(api_router, prefix="/api/v1")
+
+
+# Ensure DB tables exist on startup (idempotent)
+@app.on_event("startup")
+def startup_event():
+    # Create all tables if missing
+    Base.metadata.create_all(bind=engine, checkfirst=True)
+
+    # Optionally seed core reference data if empty
+    with SessionLocal() as db:
+        try:
+            count = db.execute(text("SELECT COUNT(*) FROM role")).scalar()
+            if count == 0:
+                db.execute(text(
+                    """
+                    INSERT INTO role (name, description) VALUES
+                    ('admin', 'System administrator with full access'),
+                    ('captain', 'Team captain with team management permissions'),
+                    ('user', 'Regular user/competitor')
+                    ON CONFLICT (name) DO NOTHING
+                    """
+                ))
+                db.commit()
+        except Exception:
+            db.rollback()
 
 
 # Root endpoint
