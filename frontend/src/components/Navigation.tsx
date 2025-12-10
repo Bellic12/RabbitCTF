@@ -3,6 +3,7 @@ import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
 import { ADMIN_ROLE_ID } from './ProtectedRoute'
+import EventTimer from './EventTimer'
 
 export default function Navigation() {
   const { user, logout, isAuthenticated, isLoading } = useAuth()
@@ -93,6 +94,7 @@ export default function Navigation() {
         </nav>
 
         <div className="flex items-center gap-3">
+          <EventTimer />
           {isLoading ? (
             <div className="h-8 w-20 animate-pulse rounded-full bg-white/5"></div>
           ) : isAuthenticated && user ? (

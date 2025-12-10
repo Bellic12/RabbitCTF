@@ -14,9 +14,142 @@ from app.models.user import User
 from app.models.team import Team
 from app.models.challenge import Challenge
 from app.models.submission import Submission
+from app.models.event_config import EventConfig
 from app.schemas.admin import AdminStatsResponse
+from app.schemas.event import EventConfigResponse, EventConfigUpdate
+from app.core.enum import EventStatus
+from datetime import datetime, timezone
 
 router = APIRouter()
+
+
+@router.get("/event/config", response_model=EventConfigResponse)
+async def get_event_config(
+    current_user: User = Depends(get_current_admin), db: Session = Depends(get_db)
+):
+    """
+    Get event configuration.
+    Automatically updates status based on current time.
+    """
+    config = db.query(EventConfig).first()
+    if not config:
+        # Create default config if not exists
+        config = EventConfig(event_name="RabbitCTF Event")
+        db.add(config)
+        db.commit()
+        db.refresh(config)
+    
+    # Auto-update status based on time
+    now = datetime.now(timezone.utc)
+    changed = False
+    
+    if config.start_time and config.end_time:
+        # Ensure datetimes are timezone-aware for comparison
+        start_time = config.start_time
+        if start_time.tzinfo is None:
+            start_time = start_time.replace(tzinfo=timezone.utc)
+            
+        end_time = config.end_time
+        if end_time.tzinfo is None:
+            end_time = end_time.replace(tzinfo=timezone.utc)
+
+        # Check if we should start
+        if config.status == EventStatus.NOT_STARTED and now >= start_time:
+            if now < end_time:
+                config.status = EventStatus.ACTIVE
+                changed = True
+            elif now >= end_time:
+                config.status = EventStatus.FINISHED
+                changed = True
+        
+        # Check if we should finish
+        elif config.status == EventStatus.ACTIVE and now >= end_time:
+            config.status = EventStatus.FINISHED
+            changed = True
+            
+    if changed:
+        db.commit()
+        db.refresh(config)
+        
+    return config
+
+
+@router.put("/event/config", response_model=EventConfigResponse)
+async def update_event_config(
+    config_in: EventConfigUpdate,
+    current_user: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    Update event configuration with validations.
+    """
+    config = db.query(EventConfig).first()
+    if not config:
+        config = EventConfig(event_name="RabbitCTF Event")
+        db.add(config)
+        db.commit()
+        db.refresh(config)
+    
+    now = datetime.now(timezone.utc)
+    update_data = config_in.dict(exclude_unset=True)
+    
+    # Validation 1: Check if trying to update start_time when event has already started
+    if 'start_time' in update_data and update_data['start_time']:
+        if config.start_time:
+            # Ensure config.start_time is timezone-aware
+            current_start_time = config.start_time
+            if current_start_time.tzinfo is None:
+                current_start_time = current_start_time.replace(tzinfo=timezone.utc)
+                
+            if now >= current_start_time:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Cannot modify start time after the event has already started"
+                )
+    
+    # Validation 2: Ensure end_time is after start_time
+    new_start_time = update_data.get('start_time', config.start_time)
+    new_end_time = update_data.get('end_time', config.end_time)
+    
+    # Ensure comparisons use timezone-aware datetimes
+    if new_start_time and new_start_time.tzinfo is None:
+        new_start_time = new_start_time.replace(tzinfo=timezone.utc)
+        
+    if new_end_time and new_end_time.tzinfo is None:
+        new_end_time = new_end_time.replace(tzinfo=timezone.utc)
+    
+    if new_start_time and new_end_time:
+        if new_end_time <= new_start_time:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="End time must be after start time"
+            )
+    
+    # Apply updates
+    for field, value in update_data.items():
+        setattr(config, field, value)
+    
+    # Auto-update status based on new times
+    if config.start_time and config.end_time:
+        # Ensure datetimes are timezone-aware for comparison
+        check_start = config.start_time
+        if check_start.tzinfo is None:
+            check_start = check_start.replace(tzinfo=timezone.utc)
+            
+        check_end = config.end_time
+        if check_end.tzinfo is None:
+            check_end = check_end.replace(tzinfo=timezone.utc)
+            
+        if now >= check_end:
+            config.status = EventStatus.FINISHED
+        elif now >= check_start:
+            config.status = EventStatus.ACTIVE
+        else:
+            config.status = EventStatus.NOT_STARTED
+    
+    db.commit()
+    db.refresh(config)
+    return config
 
 
 @router.get("/stats", response_model=AdminStatsResponse)

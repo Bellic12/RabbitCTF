@@ -3,13 +3,16 @@ Main API router that includes all endpoint routers.
 """
 
 from fastapi import APIRouter
-from app.api.v1 import auth, challenges, scoreboard, rules, admin, submissions, teams
+from app.api.v1 import auth, challenges, scoreboard, rules, admin, submissions, teams, event
 
 # Create main API router
 api_router = APIRouter()
 
 # Include authentication router
 api_router.include_router(auth.router, prefix="/auth", tags=["Authentication"])
+
+# Include event router (Public)
+api_router.include_router(event.router, prefix="/event", tags=["Event"])
 
 # Include admin router
 api_router.include_router(admin.router, prefix="/admin", tags=["Admin"])
