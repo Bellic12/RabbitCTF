@@ -43,6 +43,7 @@ export default function TeamPage() {
   const { token, user } = useAuth()
   const { id } = useParams<{ id: string }>()
   const [team, setTeam] = useState<TeamDetail | null>(null)
+  const [totalChallenges, setTotalChallenges] = useState(0)
   const [loading, setLoading] = useState(true)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [isJoinModalOpen, setIsJoinModalOpen] = useState(false)
@@ -68,8 +69,18 @@ export default function TeamPage() {
     }
   }
 
+  const fetchTotalChallenges = async () => {
+    try {
+      const count = await api.challenges.count()
+      setTotalChallenges(count)
+    } catch (error) {
+      console.error('Failed to fetch challenge count:', error)
+    }
+  }
+
   useEffect(() => {
     fetchTeam()
+    fetchTotalChallenges()
   }, [token, id])
 
   if (loading) {
@@ -182,7 +193,7 @@ export default function TeamPage() {
             {team.solved_challenges && team.solved_challenges.length > 0 && (
               <div className="space-y-4">
                 <h2 className="text-2xl font-bold px-1">Team Statistics</h2>
-                <TeamStats solvedChallenges={team.solved_challenges} />
+                <TeamStats solvedChallenges={team.solved_challenges} totalChallenges={totalChallenges} />
               </div>
             )}
 
