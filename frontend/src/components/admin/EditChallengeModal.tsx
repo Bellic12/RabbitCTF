@@ -735,7 +735,7 @@ export default function EditChallengeModal({ challengeId, isOpen, onClose, onUpd
 
               <button
                 type="submit"
-                className="btn btn-primary w-full text-primary-content"
+                className="btn btn-primary w-full text-primary-content rounded-md hover:brightness-75 transition-all border-none"
                 disabled={isSubmitting}
               >
                 {isSubmitting ? (
@@ -759,7 +759,7 @@ export default function EditChallengeModal({ challengeId, isOpen, onClose, onUpd
                   setNewFiles([])
                 }
               }}
-              className="btn btn-ghost hover:bg-base-200"
+              className="btn btn-error text-error-content rounded-md hover:brightness-75 transition-all border-none"
               disabled={isSubmitting}
             >
               Cancel

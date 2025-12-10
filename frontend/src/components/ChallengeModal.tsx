@@ -4,6 +4,7 @@ import type { FormEvent } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../services/api'
 import type { Challenge } from '../types/challenge'
+import { CategoryBadge, DifficultyBadge } from './Badges'
 
 type ChallengeModalProps = {
   challenge: Challenge
@@ -186,20 +187,8 @@ export default function ChallengeModal({ challenge, onClose, onSolve }: Challeng
 
           <div className="space-y-3">
             <div className="flex items-center gap-3 text-sm font-semibold text-white/70">
-              <span
-                className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                  challenge.difficulty === 'Easy'
-                    ? 'bg-emerald-500/10 text-emerald-400'
-                    : challenge.difficulty === 'Medium'
-                      ? 'bg-amber-500/10 text-amber-400'
-                      : 'bg-rose-500/10 text-rose-400'
-                }`}
-              >
-                {challenge.difficulty}
-              </span>
-              <span className="rounded-full border border-white/10 bg-black/30 px-3 py-1 text-xs uppercase tracking-wide text-white/60">
-                {challenge.category}
-              </span>
+              <DifficultyBadge difficulty={challenge.difficulty} />
+              <CategoryBadge category={challenge.category} />
               <span className="text-primary">{challenge.points} points</span>
               <span className="text-white/40">{challenge.solves} solves</span>
             </div>
@@ -396,7 +385,7 @@ export default function ChallengeModal({ challenge, onClose, onSolve }: Challeng
                     }}
                   />
                   <button
-                    className="btn h-12 rounded-full border-none bg-primary px-6 text-sm font-semibold text-black hover:bg-secondary disabled:opacity-50 disabled:bg-neutral disabled:text-neutral-content disabled:cursor-not-allowed"
+                    className="btn btn-primary h-12 rounded-md border-none px-6 text-sm font-semibold text-primary-content hover:brightness-75 transition-all disabled:opacity-50 disabled:bg-neutral disabled:text-neutral-content disabled:cursor-not-allowed"
                     disabled={isSubmitting || challenge.status === 'solved' || submissionResult?.is_correct}
                     type="button"
                     onClick={(e) => handleSubmitFlag(e as any)}

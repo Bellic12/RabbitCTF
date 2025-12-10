@@ -5,6 +5,7 @@ import ChallengeModal from '../components/ChallengeModal'
 import Footer from '../components/Footer'
 import MultiSelect from '../components/MultiSelect'
 import Navigation from '../components/Navigation'
+import SearchBar from '../components/SearchBar'
 import { useAuth } from '../context/AuthContext'
 import { useChallenges } from '../hooks/useChallenges'
 import type { Challenge } from '../types/challenge'
@@ -61,16 +62,11 @@ export default function ChallengesPage() {
           <section className="space-y-6">
             <div className="rounded-box border border-white/10 bg-base-200 p-6 shadow-[0_25px_65px_-50px_rgba(0,0,0,0.9)]">
               <div className="mb-4">
-                <label className="input input-bordered flex w-full items-center gap-2 bg-base-300">
-                  <SearchIcon className="h-5 w-5 opacity-50" />
-                  <input
-                    className="grow"
-                    onChange={event => setSearchTerm(event.target.value)}
-                    placeholder="Search challenges..."
-                    type="text"
-                    value={searchTerm}
-                  />
-                </label>
+                <SearchBar
+                  value={searchTerm}
+                  onChange={setSearchTerm}
+                  placeholder="Search challenges..."
+                />
               </div>
 
               <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -161,20 +157,3 @@ export default function ChallengesPage() {
   )
 }
 
-type IconProps = {
-  className?: string
-}
-
-function SearchIcon({ className }: IconProps) {
-  return (
-    <svg aria-hidden="true" className={className} fill="none" viewBox="0 0 24 24">
-      <path
-        className="stroke-current"
-        d="M11 5a6 6 0 014.472 9.992l3.27 3.27a1 1 0 01-1.414 1.414l-3.27-3.27A6 6 0 1111 5z"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={1.4}
-      />
-    </svg>
-  )
-}

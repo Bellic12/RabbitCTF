@@ -15,7 +15,7 @@ export default function ChallengeCard({ challenge, onClick }: ChallengeCardProps
       className={`cursor-pointer flex h-full flex-col rounded-box border p-6 text-left transition hover:shadow-[0_25px_65px_-45px_rgba(0,0,0,0.9)] ${
         isSolved
           ? 'border-emerald-500/40 bg-emerald-500/5 hover:border-emerald-500/60'
-          : 'border-white/10 bg-base-200 hover:border-primary/40'
+          : 'border-white/10 bg-black/20 hover:border-primary/40'
       }`}
       onClick={() => onClick(challenge)}
       type="button"
