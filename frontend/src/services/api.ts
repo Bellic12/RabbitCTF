@@ -153,6 +153,8 @@ export const api = {
         body: JSON.stringify(data),
       })
       if (!res.ok) throw new Error('Failed to update config')
+      return res.json()
+    },
     getSubmissions: async (token: string, params?: any) => {
       const query = new URLSearchParams(params).toString()
       const res = await fetch(`${API_URL}/admin/submissions?${query}`, {
