@@ -5,16 +5,18 @@ Admin-only endpoints for RabbitCTF.
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from typing import List
+from typing import List, Optional
+from datetime import datetime
 
 from app.core.database import get_db
 from app.api.deps import get_current_admin
 from app.schemas.auth import UserResponse
+from app.schemas.teams import TeamResponse
 from app.models.user import User
 from app.models.team import Team
 from app.models.challenge import Challenge
 from app.models.submission import Submission
-from app.schemas.admin import AdminStatsResponse
+from app.schemas.admin import AdminStatsResponse, ChallengeStatsResponse, ChallengeStatItem
 
 router = APIRouter()
 
@@ -55,6 +57,17 @@ async def list_all_users(
     """
     users = db.query(User).all()
     return users
+
+
+@router.get("/teams", response_model=List[TeamResponse])
+async def list_all_teams(
+    current_user: User = Depends(get_current_admin), db: Session = Depends(get_db)
+):
+    """
+    List all teams (admin only).
+    """
+    teams = db.query(Team).all()
+    return teams
 
 
 @router.delete("/users/{user_id}")
@@ -114,3 +127,87 @@ async def get_statistics(
         "total_challenges": total_challenges,
         "total_submissions": total_submissions,
     }
+
+
+@router.get("/stats/challenges", response_model=ChallengeStatsResponse)
+async def get_challenge_stats(
+    category_id: Optional[int] = None,
+    difficulty_id: Optional[int] = None,
+    team_id: Optional[int] = None,
+    start_date: Optional[datetime] = None,
+    end_date: Optional[datetime] = None,
+    current_user: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+):
+    """
+    Get detailed challenge statistics with filtering.
+    """
+    # Base query for submissions
+    query = db.query(Submission).join(Challenge)
+
+    if category_id:
+        query = query.filter(Challenge.category_id == category_id)
+    if difficulty_id:
+        query = query.filter(Challenge.difficulty_id == difficulty_id)
+    if team_id:
+        query = query.filter(Submission.team_id == team_id)
+    if start_date:
+        query = query.filter(Submission.submitted_at >= start_date)
+    if end_date:
+        query = query.filter(Submission.submitted_at <= end_date)
+
+    total_attempts = query.count()
+    successful_attempts = query.filter(Submission.is_correct == True).count()
+    
+    general_success_rate = 0.0
+    if total_attempts > 0:
+        general_success_rate = (successful_attempts / total_attempts) * 100
+
+    average_attempts = 0.0
+    if successful_attempts > 0:
+        average_attempts = total_attempts / successful_attempts
+
+    # Per challenge stats
+    challenges_query = db.query(Challenge)
+    if category_id:
+        challenges_query = challenges_query.filter(Challenge.category_id == category_id)
+    if difficulty_id:
+        challenges_query = challenges_query.filter(Challenge.difficulty_id == difficulty_id)
+        
+    challenges = challenges_query.all()
+    
+    challenges_stats = []
+    for challenge in challenges:
+        c_query = db.query(Submission).filter(Submission.challenge_id == challenge.id)
+        
+        if team_id:
+            c_query = c_query.filter(Submission.team_id == team_id)
+        if start_date:
+            c_query = c_query.filter(Submission.submitted_at >= start_date)
+        if end_date:
+            c_query = c_query.filter(Submission.submitted_at <= end_date)
+            
+        c_attempts = c_query.count()
+        c_solves = c_query.filter(Submission.is_correct == True).count()
+        
+        c_success_rate = 0.0
+        if c_attempts > 0:
+            c_success_rate = (c_solves / c_attempts) * 100
+            
+        challenges_stats.append(ChallengeStatItem(
+            id=challenge.id,
+            title=challenge.title,
+            category=challenge.category.name if challenge.category else "Unknown",
+            difficulty=challenge.difficulty.name if challenge.difficulty else "Unknown",
+            success_rate=c_success_rate,
+            attempts=c_attempts,
+            solves=c_solves
+        ))
+        
+    return ChallengeStatsResponse(
+        general_success_rate=general_success_rate,
+        total_attempts=total_attempts,
+        successful_attempts=successful_attempts,
+        average_attempts=average_attempts,
+        challenges_stats=challenges_stats
+    )
