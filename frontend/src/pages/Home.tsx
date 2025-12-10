@@ -34,7 +34,7 @@ export default function HomePage() {
               </div>
               <div className="mt-8 flex flex-wrap justify-center gap-4">
                 <Link
-                  className="btn h-12 w-48 border border-white/20 bg-transparent text-base font-semibold text-white hover:bg-white/5"
+                  className="btn h-12 w-48 border border-white/20 bg-transparent text-base font-semibold text-white hover:bg-white/5 rounded-md transition-all"
                   to="/leaderboard"
                 >
                   View Leaderboard

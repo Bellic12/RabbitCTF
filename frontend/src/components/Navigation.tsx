@@ -104,7 +104,7 @@ export default function Navigation() {
               <div
                 tabIndex={0}
                 role="button"
-                className="btn btn-ghost btn-sm gap-2 rounded-full border border-white/10 font-normal text-white hover:bg-white/5"
+                className="btn btn-ghost btn-sm gap-2 rounded-md border border-white/10 font-normal text-white hover:bg-white/5"
               >
                 <span>{user.username}</span>
                 <svg
@@ -141,13 +141,13 @@ export default function Navigation() {
           ) : (
             <>
               <Link
-                className="btn btn-sm rounded-full border border-white/20 bg-transparent text-white hover:bg-white/5"
+                className="btn btn-sm rounded-md border border-white/20 bg-transparent text-white hover:bg-white/5 transition-all"
                 to="/login"
               >
                 Login
               </Link>
               <Link
-                className="btn btn-sm rounded-full border-none bg-primary text-black hover:bg-secondary"
+                className="btn btn-sm btn-primary text-primary-content rounded-md hover:brightness-75 transition-all border-none"
                 to="/register"
               >
                 Register

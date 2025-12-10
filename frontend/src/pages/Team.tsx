@@ -278,7 +278,7 @@ export default function TeamPage() {
                   <p className="text-white/60">Start a new team and invite your friends</p>
                 </div>
                 <button
-                  className="btn btn-primary w-full mt-4"
+                  className="btn btn-primary w-full mt-4 text-primary-content rounded-md hover:brightness-75 transition-all border-none"
                   onClick={() => setIsCreateModalOpen(true)}
                 >
                   <svg
@@ -322,7 +322,7 @@ export default function TeamPage() {
                   <p className="text-white/60">Join an existing team with a password</p>
                 </div>
                 <button
-                  className="btn btn-outline w-full mt-4"
+                  className="btn btn-outline w-full mt-4 rounded-md transition-all"
                   onClick={() => setIsJoinModalOpen(true)}
                 >
                   <svg

@@ -108,13 +108,13 @@ export default function TeamCreateModal({ isOpen, onClose, onSuccess }: TeamCrea
 
         <div className="mt-8 flex gap-3">
           <button
-            className="btn btn-outline flex-1 border-white/10 text-white hover:bg-white/5 hover:border-white/20"
+            className="btn btn-outline flex-1 border-white/10 text-white hover:bg-white/5 hover:border-white/20 rounded-md transition-all"
             onClick={onClose}
           >
             Cancel
           </button>
           <button
-            className="btn btn-primary flex-1 text-black"
+            className="btn btn-primary flex-1 text-primary-content rounded-md hover:brightness-75 transition-all border-none"
             onClick={handleSubmit}
             disabled={isLoading}
           >

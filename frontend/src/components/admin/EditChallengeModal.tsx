@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import type { FormEvent } from 'react'
 import { useAuth } from '../../context/AuthContext'
 
@@ -74,6 +74,7 @@ export default function EditChallengeModal({ challengeId, isOpen, onClose, onUpd
   const [loading, setLoading] = useState(false)
   const [scoringLocked, setScoringLocked] = useState(false)
   const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Edit Category Modal State
   const [editCategoryModal, setEditCategoryModal] = useState<{
@@ -918,13 +919,28 @@ export default function EditChallengeModal({ challengeId, isOpen, onClose, onUpd
                   <span className="label-text font-bold text-base-content">Add Files</span>
                   <span className="label-text-alt text-base-content/60">Multiple files allowed</span>
                 </label>
+                
                 <input
                   type="file"
+                  ref={fileInputRef}
                   onChange={handleFileChange}
                   multiple
-                  className="file-input file-input-bordered file-input-primary w-full bg-base-200"
+                  className="hidden"
                   disabled={isSubmitting}
                 />
+                
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="btn btn-outline w-full border-dashed border-2 border-base-content/20 hover:border-primary hover:bg-base-200 hover:text-primary transition-all normal-case h-24 flex flex-col gap-2"
+                  disabled={isSubmitting}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                  </svg>
+                  <span>Click to upload files</span>
+                  <span className="text-xs opacity-60 font-normal">Max 100MB per file</span>
+                </button>
 
                 {uploadError && (
                   <div className="alert alert-warning mt-2">

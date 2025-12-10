@@ -743,14 +743,14 @@ export default function EventSettings() {
         </div>
         <div className="flex gap-2 mt-4 items-center">
           <button 
-            className="btn btn-primary" 
+            className="btn btn-primary text-primary-content rounded-md hover:brightness-75 transition-all border-none" 
             onClick={handleSaveRules}
             disabled={loading}
           >
             {loading ? 'Saving...' : 'Save Rules'}
           </button>
           <button 
-            className="btn btn-outline"
+            className="btn btn-outline rounded-md transition-all"
             onClick={() => setShowPreview(true)}
           >
             Preview
