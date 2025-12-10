@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Navigate } from 'react-router-dom'
+import { Navigate, useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../services/api'
 import Footer from '../components/Footer'
@@ -41,19 +41,25 @@ type TeamDetail = {
 
 export default function TeamPage() {
   const { token, user } = useAuth()
+  const { id } = useParams<{ id: string }>()
   const [team, setTeam] = useState<TeamDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [isJoinModalOpen, setIsJoinModalOpen] = useState(false)
 
-  if (user?.role_id === ADMIN_ROLE_ID) {
+  if (!id && user?.role_id === ADMIN_ROLE_ID) {
     return <Navigate to="/admin" replace />
   }
 
   const fetchTeam = async () => {
     if (!token) return
     try {
-      const data = await api.teams.me(token)
+      let data
+      if (id) {
+        data = await api.teams.getById(token, parseInt(id))
+      } else {
+        data = await api.teams.me(token)
+      }
       setTeam(data)
     } catch (error) {
       console.error('Failed to fetch team:', error)
@@ -64,7 +70,7 @@ export default function TeamPage() {
 
   useEffect(() => {
     fetchTeam()
-  }, [token])
+  }, [token, id])
 
   if (loading) {
     return (
@@ -216,6 +222,21 @@ export default function TeamPage() {
                 )}
               </div>
             </div>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    )
+  }
+
+  if (id) {
+    return (
+      <div className="flex min-h-screen flex-col bg-base-100 text-white">
+        <Navigation />
+        <main className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <h1 className="text-4xl font-bold mb-4">Team Not Found</h1>
+            <p className="text-white/60">The team you are looking for does not exist.</p>
           </div>
         </main>
         <Footer />

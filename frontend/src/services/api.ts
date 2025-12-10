@@ -93,6 +93,13 @@ export const api = {
       if (!res.ok) throw new Error('Failed to fetch team')
       return res.json()
     },
+    getById: async (token: string, teamId: number) => {
+      const res = await fetch(`${API_URL}/teams/${teamId}`, {
+        headers: getHeaders(token),
+      })
+      if (!res.ok) throw new Error('Failed to fetch team details')
+      return res.json()
+    },
     create: async (token: string, data: any) => {
       const res = await fetch(`${API_URL}/teams/`, {
         method: 'POST',
