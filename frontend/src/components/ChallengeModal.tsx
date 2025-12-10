@@ -332,25 +332,25 @@ export default function ChallengeModal({ challenge, onClose }: ChallengeModalPro
 
                 <div className="flex flex-col gap-3 md:flex-row">
                   <input
-                    className="h-12 flex-1 rounded-2xl border border-white/15 bg-base-300 px-4 text-sm text-white focus:border-primary focus:outline-none disabled:opacity-50"
-                    disabled={isSubmitting}
+                    className="h-12 flex-1 rounded-2xl border border-white/15 bg-base-300 px-4 text-sm text-white focus:border-primary focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={isSubmitting || challenge.status === 'solved' || submissionResult?.is_correct}
                     onChange={event => setFlagValue(event.target.value)}
-                    placeholder="flag{...}"
+                    placeholder={challenge.status === 'solved' || submissionResult?.is_correct ? 'Challenge already solved' : 'flag{...}'}
                     type="text"
                     value={flagValue}
                     onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !isSubmitting) {
+                      if (e.key === 'Enter' && !isSubmitting && challenge.status !== 'solved' && !submissionResult?.is_correct) {
                         handleSubmitFlag(e as any)
                       }
                     }}
                   />
                   <button
-                    className="btn h-12 rounded-full border-none bg-primary px-6 text-sm font-semibold text-black hover:bg-secondary disabled:opacity-50"
-                    disabled={isSubmitting}
+                    className="btn h-12 rounded-full border-none bg-primary px-6 text-sm font-semibold text-black hover:bg-secondary disabled:opacity-50 disabled:bg-neutral disabled:text-neutral-content disabled:cursor-not-allowed"
+                    disabled={isSubmitting || challenge.status === 'solved' || submissionResult?.is_correct}
                     type="button"
                     onClick={(e) => handleSubmitFlag(e as any)}
                   >
-                    {isSubmitting ? 'Submitting...' : 'Submit'}
+                    {isSubmitting ? 'Submitting...' : challenge.status === 'solved' || submissionResult?.is_correct ? 'Solved' : 'Submit'}
                   </button>
                 </div>
               </section>

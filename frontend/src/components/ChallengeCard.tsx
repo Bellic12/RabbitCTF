@@ -8,16 +8,22 @@ type ChallengeCardProps = {
 }
 
 export default function ChallengeCard({ challenge, onClick }: ChallengeCardProps) {
+  const isSolved = challenge.status === 'solved'
+
   return (
     <button
-      className="cursor-pointer flex h-full flex-col rounded-box border border-white/10 bg-base-200 p-6 text-left transition hover:border-primary/40 hover:shadow-[0_25px_65px_-45px_rgba(0,0,0,0.9)]"
+      className={`cursor-pointer flex h-full flex-col rounded-box border p-6 text-left transition hover:shadow-[0_25px_65px_-45px_rgba(0,0,0,0.9)] ${
+        isSolved
+          ? 'border-emerald-500/40 bg-emerald-500/5 hover:border-emerald-500/60'
+          : 'border-white/10 bg-base-200 hover:border-primary/40'
+      }`}
       onClick={() => onClick(challenge)}
       type="button"
     >
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-1">
-          <div className="flex items-center gap-2 text-sm font-semibold text-white/70">
-            {challenge.status === 'solved' ? <SolvedIcon /> : <UnsolvedIcon />}
+          <div className={`flex items-center gap-2 text-sm font-semibold ${isSolved ? 'text-emerald-400' : 'text-white/70'}`}>
+            {isSolved ? <SolvedIcon /> : <UnsolvedIcon />}
             {challenge.title}
           </div>
           <div className="flex items-center gap-2">
