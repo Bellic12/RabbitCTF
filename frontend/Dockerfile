@@ -1,4 +1,4 @@
-# Multi-stage build: build static assets with pnpm (Vite), serve with Nginx.
+# Multi-stage build: build static assets with pnpm (Vite), serve with Node.js (serve).
 
 # --- Build stage ---
 FROM node:20-alpine AS build
@@ -6,6 +6,10 @@ WORKDIR /app
 
 # Install Corepack (not bundled in Alpine variant)
 RUN npm install -g corepack && corepack enable && corepack prepare pnpm@latest --activate
+
+# Build arguments
+ARG VITE_API_URL
+ENV VITE_API_URL=$VITE_API_URL
 
 # Copy only manifest files first for better layer caching.
 COPY package.json pnpm-lock.yaml ./
@@ -19,12 +23,17 @@ COPY . .
 RUN pnpm run build
 
 # --- Runtime stage ---
-FROM nginx:alpine
-# Copy build output to Nginx web root.
-COPY --from=build /app/dist /usr/share/nginx/html
+FROM node:20-alpine AS runner
+WORKDIR /app
 
-# Copy custom Nginx configuration
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Install serve to serve static files
+RUN npm install -g serve
 
-# Expose HTTP
-EXPOSE 80
+# Copy build output from build stage
+COPY --from=build /app/dist ./dist
+
+# Expose port 3000
+EXPOSE 3000
+
+# Start the server
+CMD ["serve", "-s", "dist", "-l", "3000"]

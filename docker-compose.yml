@@ -18,9 +18,11 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=http://localhost:8000/api/v1
     container_name: rabbitctf_frontend
     ports:
-      - "8080:80"       # host:container
+      - "8080:3000"       # host:container
     depends_on:
       - backend
     networks:
