@@ -116,8 +116,16 @@ class SubmissionService:
                 detail="Challenge flag not configured",
             )
 
-        # Validate flag (exact match)
-        is_correct = flag_value == flag.flag_value
+        # Validate flag (considering case sensitivity from rule_config)
+        is_case_sensitive = True  # Default to case-sensitive
+        
+        if challenge.rule_config and hasattr(challenge.rule_config, 'is_case_sensitive'):
+            is_case_sensitive = challenge.rule_config.is_case_sensitive
+        
+        # Compare flags with case sensitivity consideration
+        submitted_flag = flag_value if is_case_sensitive else flag_value.lower()
+        stored_flag = flag.flag_value if is_case_sensitive else flag.flag_value.lower()
+        is_correct = submitted_flag == stored_flag
 
         # Check if already solved by this team
         already_solved = (
