@@ -18,7 +18,7 @@ from app.models.event_config import EventConfig
 from app.schemas.admin import AdminStatsResponse
 from app.schemas.event import EventConfigResponse, EventConfigUpdate
 from app.core.enum import EventStatus
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 router = APIRouter()
 
@@ -93,6 +93,49 @@ async def update_event_config(
     now = datetime.now(timezone.utc)
     update_data = config_in.dict(exclude_unset=True)
     
+    # Handle manual status override - Adjust times to match requested status
+    if 'status' in update_data:
+        new_status = update_data['status']
+        
+        # Get working copies of times
+        w_start = update_data.get('start_time', config.start_time)
+        w_end = update_data.get('end_time', config.end_time)
+        
+        # Ensure timezone awareness
+        if w_start and w_start.tzinfo is None:
+            w_start = w_start.replace(tzinfo=timezone.utc)
+        if w_end and w_end.tzinfo is None:
+            w_end = w_end.replace(tzinfo=timezone.utc)
+            
+        # Default times if missing
+        if not w_start: w_start = now + timedelta(hours=1)
+        if not w_end: w_end = w_start + timedelta(hours=1)
+
+        if new_status == EventStatus.ACTIVE:
+            # Must have started and not ended
+            if w_start > now:
+                w_start = now
+            if w_end <= now:
+                w_end = now + timedelta(hours=1)
+                
+        elif new_status == EventStatus.FINISHED:
+            # Must have ended
+            if w_end > now:
+                w_end = now
+            if w_start > w_end:
+                w_start = w_end - timedelta(minutes=5)
+                
+        elif new_status == EventStatus.NOT_STARTED:
+            # Must not have started
+            if w_start <= now:
+                w_start = now + timedelta(hours=1)
+            if w_end <= w_start:
+                w_end = w_start + timedelta(hours=1)
+        
+        # Update the update_data with adjusted times
+        update_data['start_time'] = w_start
+        update_data['end_time'] = w_end
+
     # Validation 1: Removed to allow admins to reschedule events even if they started
     # if 'start_time' in update_data and update_data['start_time']:
     #     if config.start_time:

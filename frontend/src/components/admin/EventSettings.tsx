@@ -27,13 +27,21 @@ const formatDateForInput = (dateString: string): string => {
     const date = new Date(dateString)
     if (isNaN(date.getTime())) return ''
     
-    const year = date.getFullYear()
-    const month = String(date.getMonth() + 1).padStart(2, '0')
-    const day = String(date.getDate()).padStart(2, '0')
-    const hours = String(date.getHours()).padStart(2, '0')
-    const minutes = String(date.getMinutes()).padStart(2, '0')
+    // Convert to Colombia time (UTC-5)
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Bogota',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    })
     
-    return `${year}-${month}-${day}T${hours}:${minutes}`
+    const parts = formatter.formatToParts(date)
+    const getPart = (type: string) => parts.find(p => p.type === type)?.value
+    
+    return `${getPart('year')}-${getPart('month')}-${getPart('day')}T${getPart('hour')}:${getPart('minute')}`
   } catch (e) {
     return ''
   }
@@ -94,7 +102,8 @@ export default function EventSettings() {
   const [eventConfig, setEventConfig] = useState({
     start_time: '',
     end_time: '',
-    event_timezone: 'UTC'
+    event_timezone: 'UTC',
+    status: 'not_started'
   })
   
   const [validationErrors, setValidationErrors] = useState<{
@@ -186,7 +195,8 @@ export default function EventSettings() {
             setEventConfig({
               start_time: data.start_time || '',
               end_time: data.end_time || '',
-              event_timezone: data.event_timezone || 'UTC'
+              event_timezone: data.event_timezone || 'UTC',
+              status: data.status || 'not_started'
             })
             setSavedEventConfig({
               start_time: data.start_time || '',
@@ -243,8 +253,8 @@ export default function EventSettings() {
           start_time: eventConfig.start_time,
           end_time: eventConfig.end_time,
           event_timezone: eventConfig.event_timezone,
-          // Status se calcula automáticamente en el backend también
-          status: calculatedStatus
+          // Send the manually selected status if it differs from calculated
+          status: eventConfig.status
         })
       })
 
@@ -341,19 +351,41 @@ export default function EventSettings() {
       <div className="card bg-base-200 p-6">
         <h3 className="text-lg font-bold mb-4">Event Status & Timing</h3>
         
-        {/* Status Indicator */}
-        <div className="mb-6">
-          <div className="flex items-center gap-3 mb-2">
-            <div className={`badge ${currentStatus.color} ${currentStatus.textColor} text-lg font-bold px-4 py-2`}>
-              {currentStatus.label}
+        {/* Status Indicator & Manual Override */}
+        <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <div className={`badge ${currentStatus.color} ${currentStatus.textColor} text-lg font-bold px-4 py-2`}>
+                {currentStatus.label}
+              </div>
+              <span className="text-sm text-white/60">
+                (Current DB Status)
+              </span>
             </div>
-            <span className="text-sm text-white/60">
-              (Current status in database)
-            </span>
+            <p className="text-white/70 text-sm mb-4">
+              {currentStatus.description}
+            </p>
           </div>
-          <p className="text-white/70 text-sm">
-            {currentStatus.description}
-          </p>
+
+          <div className="form-control">
+            <label className="label">
+              <span className="label-text font-semibold">Manual Status Override</span>
+            </label>
+            <select 
+              className="select select-bordered w-full"
+              value={eventConfig.status}
+              onChange={(e) => setEventConfig({...eventConfig, status: e.target.value})}
+            >
+              <option value="not_started">Not Started</option>
+              <option value="active">Active</option>
+              <option value="finished">Finished</option>
+            </select>
+            <div className="label">
+              <span className="label-text-alt text-warning">
+                ⚠️ Changing this will automatically adjust start/end times
+              </span>
+            </div>
+          </div>
         </div>
         
         {/* Current Database Configuration */}
@@ -396,7 +428,8 @@ export default function EventSettings() {
                 value={formatDateForInput(eventConfig.start_time)}
                 onChange={(e) => {
                   const value = e.target.value
-                  const date = value ? new Date(value).toISOString() : ''
+                  // Append -05:00 to treat input as Colombia time
+                  const date = value ? new Date(`${value}-05:00`).toISOString() : ''
                   setEventConfig({...eventConfig, start_time: date})
                 }}
                 min={new Date().toISOString().slice(0, 16)} // No fechas pasadas
@@ -422,7 +455,8 @@ export default function EventSettings() {
                 value={formatDateForInput(eventConfig.end_time)}
                 onChange={(e) => {
                   const value = e.target.value
-                  const date = value ? new Date(value).toISOString() : ''
+                  // Append -05:00 to treat input as Colombia time
+                  const date = value ? new Date(`${value}-05:00`).toISOString() : ''
                   setEventConfig({...eventConfig, end_time: date})
                 }}
                 min={eventConfig.start_time ? 
