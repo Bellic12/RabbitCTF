@@ -123,6 +123,9 @@ class SubmissionService:
             is_case_sensitive = challenge.rule_config.is_case_sensitive
         
         # Compare flags directly (plain text comparison)
+        # Strip whitespace from submitted flag
+        flag_value = flag_value.strip()
+        
         submitted_flag = flag_value if is_case_sensitive else flag_value.lower()
         stored_flag = flag.flag_value if is_case_sensitive else flag.flag_value.lower()
         is_correct = (submitted_flag == stored_flag)
@@ -133,7 +136,7 @@ class SubmissionService:
             .filter(
                 Submission.challenge_id == challenge_id,
                 Submission.team_id == team_id,
-                Submission.is_correct is True,
+                Submission.is_correct == True,
             )
             .first()
             is not None
@@ -163,7 +166,7 @@ class SubmissionService:
                 self.db.query(Submission)
                 .filter(
                     Submission.challenge_id == challenge_id,
-                    Submission.is_correct is True,
+                    Submission.is_correct == True,
                 )
                 .first()
             )
@@ -308,7 +311,7 @@ class SubmissionService:
         )
 
         if correct_only:
-            query = query.filter(Submission.is_correct is True)
+            query = query.filter(Submission.is_correct == True)
 
         return (
             query.order_by(Submission.submitted_at.desc())

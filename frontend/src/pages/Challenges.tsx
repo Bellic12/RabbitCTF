@@ -4,6 +4,7 @@ import ChallengeCard from '../components/ChallengeCard'
 import ChallengeModal from '../components/ChallengeModal'
 import Footer from '../components/Footer'
 import Navigation from '../components/Navigation'
+import { useAuth } from '../context/AuthContext'
 import { useChallenges } from '../hooks/useChallenges'
 import type {
   Challenge,
@@ -13,7 +14,8 @@ import type {
 } from '../types/challenge'
 
 export default function ChallengesPage() {
-  const { challenges, categories, isLoading } = useChallenges()
+  const { challenges, categories, isLoading, updateChallenge } = useChallenges()
+  const { user } = useAuth()
   const [searchTerm, setSearchTerm] = useState('')
 
   const [categoryFilter, setCategoryFilter] = useState<'All' | ChallengeCategory>('All')
@@ -119,7 +121,28 @@ export default function ChallengesPage() {
 
       <Footer />
 
-      {selected && <ChallengeModal challenge={selected} onClose={() => setSelected(null)} />}
+      {selected && (
+        <ChallengeModal
+          challenge={selected}
+          onClose={() => setSelected(null)}
+          onSolve={() => {
+            const updatedChallenge = {
+              ...selected,
+              status: 'solved',
+              solvedBy: user?.username || 'you',
+              solves: (selected.solves || 0) + 1
+            } as Challenge
+            
+            updateChallenge(selected.id, {
+              status: 'solved',
+              solvedBy: user?.username || 'you',
+              solves: (selected.solves || 0) + 1
+            })
+            
+            setSelected(updatedChallenge)
+          }}
+        />
+      )}
     </div>
   )
 }

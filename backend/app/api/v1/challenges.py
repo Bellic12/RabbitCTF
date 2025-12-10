@@ -2,6 +2,7 @@ from typing import List, Any
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Request
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import func
 from app.api import deps
 from app.core.database import get_db
 from app.core.audit import log_audit
@@ -22,6 +23,7 @@ from app.models.challenge_flag import ChallengeFlag
 from app.models.challenge_file import ChallengeFile
 from app.models.submission import Submission
 from app.models.team_member import TeamMember
+from app.models.team import Team
 import os
 import uuid
 
@@ -95,6 +97,15 @@ def read_challenges(
         .all()
     )
 
+    # Get solve counts
+    solve_counts = (
+        db.query(Submission.challenge_id, func.count(Submission.id))
+        .filter(Submission.is_correct == True)
+        .group_by(Submission.challenge_id)
+        .all()
+    )
+    solve_counts_map = {sc[0]: sc[1] for sc in solve_counts}
+
     results = []
     for c in challenges:
         # Check if current user's team has solved this challenge
@@ -105,9 +116,11 @@ def read_challenges(
         )
         
         is_solved = False
+        solved_by = None
         if team_member:
             submission = (
                 db.query(Submission)
+                .options(joinedload(Submission.user))
                 .filter(
                     Submission.challenge_id == c.id,
                     Submission.team_id == team_member.team_id,
@@ -115,7 +128,9 @@ def read_challenges(
                 )
                 .first()
             )
-            is_solved = submission is not None
+            if submission:
+                is_solved = True
+                solved_by = submission.user.username
         
         results.append(
             {
@@ -128,14 +143,63 @@ def read_challenges(
                 "difficulty_name": c.difficulty.name if c.difficulty else None,
                 "base_score": c.score_config.base_score if c.score_config else 0,
                 "current_score": c.score_config.base_score if c.score_config else 0,
-                "solve_count": 0,
+                "solve_count": solve_counts_map.get(c.id, 0),
                 "is_solved": is_solved,
+                "solved_by": solved_by,
                 "created_at": c.created_at,
                 "operational_data": c.operational_data,
             }
         )
 
     return results
+
+
+@router.get("/{challenge_id}/solves", response_model=List[dict])
+def get_challenge_solves(
+    challenge_id: int,
+    db: Session = Depends(get_db),
+    current_user=Depends(deps.get_current_user),
+):
+    """
+    Get list of teams that solved the challenge.
+    """
+    # Check if challenge exists and is visible
+    challenge = (
+        db.query(Challenge)
+        .options(joinedload(Challenge.visibility_config))
+        .filter(Challenge.id == challenge_id)
+        .first()
+    )
+    
+    if not challenge:
+        raise HTTPException(status_code=404, detail="Challenge not found")
+        
+    if not challenge.visibility_config.is_visible:
+         # We need to check if user is admin. 
+         # Assuming User model has role relationship and we can check role name
+         if current_user.role.name != "admin":
+             raise HTTPException(status_code=404, detail="Challenge not found")
+
+    solves = (
+        db.query(Submission)
+        .join(Team)
+        .filter(
+            Submission.challenge_id == challenge_id,
+            Submission.is_correct == True
+        )
+        .order_by(Submission.submitted_at.asc())
+        .all()
+    )
+    
+    return [
+        {
+            "team_id": s.team_id,
+            "team_name": s.team.name,
+            "submitted_at": s.submitted_at,
+            "score": s.awarded_score
+        }
+        for s in solves
+    ]
 
 
 @router.get("/admin/all", response_model=List[ChallengeDetailResponse])

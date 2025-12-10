@@ -54,8 +54,8 @@ export default function ChallengeCard({ challenge, onClick }: ChallengeCardProps
 
 function SolvedIcon() {
   return (
-    <span className="flex h-6 w-6 items-center justify-center rounded bg-emerald-500/15 text-emerald-400">
-      <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
+    <span className="flex h-8 w-8 items-center justify-center rounded bg-emerald-500/15 text-emerald-400">
+      <svg aria-hidden="true" className="h-10 w-10" fill="none" viewBox="0 0 24 24">
         <path
           className="stroke-current"
           d="M9 12l2 2 4-4"
@@ -70,8 +70,8 @@ function SolvedIcon() {
 
 function UnsolvedIcon() {
   return (
-    <span className="flex h-6 w-6 items-center justify-center rounded border border-white/20 text-white/40">
-      <svg aria-hidden="true" className="h-3 w-3" fill="none" viewBox="0 0 24 24">
+    <span className="flex h-8 w-8 items-center justify-center rounded border border-white/20 text-white/40">
+      <svg aria-hidden="true" className="h-5 w-5" fill="none" viewBox="0 0 24 24">
         <circle className="stroke-current" cx="12" cy="12" r="8" strokeWidth={1.6} />
       </svg>
     </span>

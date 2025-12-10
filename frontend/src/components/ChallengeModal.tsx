@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react'
 import type { FormEvent } from 'react'
 
+import { useAuth } from '../context/AuthContext'
+import { api } from '../services/api'
 import type { Challenge } from '../types/challenge'
 
 type ChallengeModalProps = {
   challenge: Challenge
   onClose: () => void
+  onSolve?: () => void
 }
 
 type SubmissionResponse = {
@@ -51,11 +54,14 @@ const buildDownload = async (fileUrl: string, fileName: string) => {
   window.URL.revokeObjectURL(url)
 }
 
-export default function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
+export default function ChallengeModal({ challenge, onClose, onSolve }: ChallengeModalProps) {
+  const { token } = useAuth()
   const [tab, setTab] = useState<'details' | 'history'>('details')
   const [flagValue, setFlagValue] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submissionResult, setSubmissionResult] = useState<SubmissionResponse | null>(null)
+  const [solveHistory, setSolveHistory] = useState<any[]>([])
+  const [isLoadingSolves, setIsLoadingSolves] = useState(false)
   const [error, setError] = useState('')
   const [files, setFiles] = useState<ChallengeFile[]>([])
   const [isLoadingFiles, setIsLoadingFiles] = useState(true)
@@ -90,6 +96,22 @@ export default function ChallengeModal({ challenge, onClose }: ChallengeModalPro
       setIsLoadingFiles(false)
     }
   }
+
+  useEffect(() => {
+    if (tab === 'history' && token) {
+      setIsLoadingSolves(true)
+      api.challenges.getSolves(token, challenge.id)
+        .then((data: any) => {
+          setSolveHistory(data.map((s: any) => ({
+            team: s.team_name,
+            submittedAt: new Date(s.submitted_at).toLocaleString(),
+            points: s.score
+          })))
+        })
+        .catch((err: any) => console.error(err))
+        .finally(() => setIsLoadingSolves(false))
+    }
+  }, [tab, challenge.id, token])
 
   const handleSubmitFlag = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -139,6 +161,7 @@ export default function ChallengeModal({ challenge, onClose }: ChallengeModalPro
 
       if (data.is_correct) {
         setFlagValue('')
+        if (onSolve) onSolve()
       }
     } catch (caught) {
       setError('Unable to reach the submission service')
@@ -197,7 +220,7 @@ export default function ChallengeModal({ challenge, onClose }: ChallengeModalPro
               onClick={() => setTab('history')}
               type="button"
             >
-              Solve History ({challenge.solveHistory?.length ?? 0})
+              Solve History ({challenge.solves})
             </button>
           </div>
         </div>
@@ -350,10 +373,20 @@ export default function ChallengeModal({ challenge, onClose }: ChallengeModalPro
 
                 <div className="flex flex-col gap-3 md:flex-row">
                   <input
-                    className="h-12 flex-1 rounded-2xl border border-white/15 bg-base-300 px-4 text-sm text-white focus:border-primary focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+                    className={`h-12 flex-1 rounded-2xl border px-4 text-sm text-white focus:outline-none disabled:cursor-not-allowed ${
+                      challenge.status === 'solved' || submissionResult?.is_correct
+                        ? 'border-emerald-500/50 bg-emerald-500/10 placeholder:text-emerald-400'
+                        : 'border-white/15 bg-base-300 focus:border-primary disabled:opacity-50'
+                    }`}
                     disabled={isSubmitting || challenge.status === 'solved' || submissionResult?.is_correct}
                     onChange={event => setFlagValue(event.target.value)}
-                    placeholder={challenge.status === 'solved' || submissionResult?.is_correct ? 'Challenge already solved' : 'flag{...}'}
+                    placeholder={
+                      challenge.status === 'solved'
+                        ? `Solved by ${challenge.solvedBy || 'your team'}`
+                        : submissionResult?.is_correct
+                          ? 'Challenge solved!'
+                          : 'flag{...}'
+                    }
                     type="text"
                     value={flagValue}
                     onKeyDown={(e) => {
@@ -375,9 +408,11 @@ export default function ChallengeModal({ challenge, onClose }: ChallengeModalPro
             </div>
           ) : (
             <div className="mt-6 space-y-3">
-              {challenge.solveHistory && challenge.solveHistory.length > 0 ? (
-                <div className="space-y-3">
-                  {challenge.solveHistory.map((entry, index) => (
+              {isLoadingSolves ? (
+                <div className="text-center text-white/50">Loading solves...</div>
+              ) : solveHistory && solveHistory.length > 0 ? (
+                <div className="space-y-3 max-h-96 overflow-y-auto pr-2 custom-scrollbar">
+                  {solveHistory.map((entry, index) => (
                     <div
                       className="flex items-center justify-between rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white/70"
                       key={`${entry.team}-${index}`}
@@ -428,7 +463,7 @@ function SuccessIcon() {
   return (
     <svg
       aria-hidden="true"
-      className="h-5 w-5"
+      className="h-8 w-8"
       fill="none"
       viewBox="0 0 24 24"
       xmlns="http://www.w3.org/2000/svg"

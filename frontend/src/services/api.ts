@@ -67,6 +67,13 @@ export const api = {
       if (!res.ok) throw new Error('Failed to fetch challenge count')
       return res.json()
     },
+    getSolves: async (token: string, challengeId: string) => {
+      const res = await fetch(`${API_URL}/challenges/${challengeId}/solves`, {
+        headers: getHeaders(token),
+      })
+      if (!res.ok) throw new Error('Failed to fetch solves')
+      return res.json()
+    },
   },
   scoreboard: {
     get: async (token?: string) => {
