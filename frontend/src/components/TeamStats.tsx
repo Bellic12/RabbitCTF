@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import { useMemo } from 'react'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'
 
 type SolvedChallenge = {
@@ -57,7 +57,7 @@ export default function TeamStats({ solvedChallenges }: TeamStatsProps) {
                   paddingAngle={0}
                   dataKey="value"
                 >
-                  {stats.map((entry, index) => (
+                  {stats.map((_, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke="rgba(255,255,255,0.2)" strokeWidth={2} />
                   ))}
                 </Pie>

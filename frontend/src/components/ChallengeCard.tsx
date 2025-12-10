@@ -1,6 +1,6 @@
 import type { Challenge } from '../types/challenge'
 
-import { CategoryBadge, DifficultyBadge } from './Badges'
+import { DifficultyBadge } from './Badges'
 
 type ChallengeCardProps = {
   challenge: Challenge
