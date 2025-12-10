@@ -1,5 +1,3 @@
-import React from 'react'
-
 type SearchBarProps = {
   value: string
   onChange: (value: string) => void
