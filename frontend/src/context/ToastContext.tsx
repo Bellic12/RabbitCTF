@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useCallback } from 'react'
 
-import { Toast, ToastMessage, ToastType } from '../components/Toast'
+import { Toast, type ToastMessage, type ToastType } from '../components/Toast'
 
 type ToastContextType = {
   showToast: (message: string, type: ToastType, duration?: number) => void

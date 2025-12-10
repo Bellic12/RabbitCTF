@@ -391,3 +391,92 @@ class ChallengeListResponse(BaseModel):
     categories: List[ChallengeCategoryResponse] = Field(default_factory=list)
 
     model_config = ConfigDict(from_attributes=True)
+
+
+# =============================================
+# CHALLENGE CREATION REQUEST (NEW API FORMAT)
+# =============================================
+
+
+class ScoreConfigCreate(BaseModel):
+    """Schema for score configuration."""
+    base_score: int = Field(..., ge=10, le=1000)
+    scoring_mode: str = Field(default="static", pattern=r"^(static|dynamic)$")
+    decay_factor: Optional[float] = Field(None, ge=0.1, le=1.0)
+    min_score: Optional[int] = Field(None, ge=10)
+
+
+class RuleConfigCreate(BaseModel):
+    """Schema for rule configuration."""
+    attempt_limit: int = Field(default=5, ge=1, le=100)
+    is_case_sensitive: bool = Field(default=True)
+
+
+class VisibilityConfigCreate(BaseModel):
+    """Schema for visibility configuration."""
+    is_visible: bool = Field(default=False)
+
+
+class ScoreConfigUpdate(BaseModel):
+    """Schema for updating score configuration."""
+    base_score: Optional[int] = Field(None, ge=10, le=1000)
+    scoring_mode: Optional[str] = Field(None, pattern=r"^(static|dynamic)$")
+    decay_factor: Optional[float] = Field(None, ge=0.1, le=1.0)
+    min_score: Optional[int] = Field(None, ge=10)
+
+
+class RuleConfigUpdate(BaseModel):
+    """Schema for updating rule configuration."""
+    attempt_limit: Optional[int] = Field(None, ge=1, le=100)
+    is_case_sensitive: Optional[bool] = None
+
+
+class VisibilityConfigUpdate(BaseModel):
+    """Schema for updating visibility configuration."""
+    is_visible: Optional[bool] = None
+
+
+class ChallengeCreateRequest(BaseModel):
+    """Schema for creating a challenge with nested configurations."""
+    title: str = Field(..., min_length=3, max_length=100)
+    description: str = Field(..., min_length=10, max_length=5000)
+    category_id: int = Field(..., gt=0)
+    difficulty_id: int = Field(..., gt=0)
+    is_draft: bool = Field(default=True)
+    connection_info: Optional[str] = Field(None, max_length=1000)
+    flag_value: str = Field(..., min_length=5, max_length=255)
+    score_config: ScoreConfigCreate
+    rule_config: RuleConfigCreate
+    visibility_config: VisibilityConfigCreate
+
+    @field_validator("flag_value")
+    @classmethod
+    def validate_flag_not_empty(cls, v: str) -> str:
+        """Validate flag is not empty."""
+        if not v.strip():
+            raise ValueError("Flag cannot be empty")
+        return v.strip()
+
+
+class ChallengeUpdateRequest(BaseModel):
+    """Schema for updating a challenge with nested configurations (admin only)."""
+
+    title: Optional[str] = Field(None, min_length=3, max_length=100)
+    description: Optional[str] = Field(None, min_length=10, max_length=5000)
+    category_id: Optional[int] = Field(None, gt=0)
+    difficulty_id: Optional[int] = Field(None, gt=0)
+    is_draft: Optional[bool] = None
+    connection_info: Optional[str] = Field(None, max_length=1000)
+    flag_value: Optional[str] = Field(None, min_length=5, max_length=255)
+    score_config: Optional[ScoreConfigUpdate] = None
+    rule_config: Optional[RuleConfigUpdate] = None
+    visibility_config: Optional[VisibilityConfigUpdate] = None
+
+    @field_validator("flag_value")
+    @classmethod
+    def validate_flag_not_empty(cls, v: Optional[str]) -> Optional[str]:
+        """Validate flag is not empty when provided."""
+        if v is not None and not v.strip():
+            raise ValueError("Flag cannot be empty")
+        return v.strip() if v is not None else v
+
