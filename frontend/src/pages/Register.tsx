@@ -1,8 +1,12 @@
-import { useState } from 'react'
-import type { FormEvent } from 'react'
+import { type FormEvent, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import Navigation from '../components/Navigation'
+
 import Footer from '../components/Footer'
+import Navigation from '../components/Navigation'
+
+type ErrorResponse = {
+  detail?: string
+}
 
 export default function RegisterPage() {
   const [username, setUsername] = useState('')
@@ -17,23 +21,23 @@ export default function RegisterPage() {
     setError('')
 
     if (username.length < 3) {
-      setError('Username must be at least 3 characters long');
-      return;
+      setError('Username must be at least 3 characters long')
+      return
     }
 
     if (password.length < 8) {
-      setError('Password must be at least 8 characters long');
-      return;
+      setError('Password must be at least 8 characters long')
+      return
     }
 
     if (!/[A-Z]/.test(password)) {
-      setError('Password must contain at least one uppercase letter');
-      return;
+      setError('Password must contain at least one uppercase letter')
+      return
     }
 
     if (!/[0-9]/.test(password)) {
-      setError('Password must contain at least one digit');
-      return;
+      setError('Password must contain at least one digit')
+      return
     }
 
     if (password !== confirmPassword) {
@@ -51,15 +55,14 @@ export default function RegisterPage() {
       })
 
       if (!response.ok) {
-        const payload = await response.json().catch(() => ({}))
+        const payload = (await response.json().catch(() => ({}))) as ErrorResponse
         setError(payload.detail ?? 'Unable to create the account')
         return
       }
 
-      navigate('/login')
-    } catch (caught) {
+      void navigate('/login', { state: { registrationSuccess: true } })
+    } catch {
       setError('Unable to reach the registration service')
-      console.error('Register request failed', caught)
     }
   }
 
@@ -78,7 +81,7 @@ export default function RegisterPage() {
             <p className="mt-2 text-sm text-white/60">Create an account to join the competition</p>
           </div>
 
-          <form className="mt-10 space-y-6" onSubmit={handleSubmit}>
+          <form className="mt-10 space-y-6" onSubmit={e => void handleSubmit(e)}>
             <div className="text-left">
               <label className="text-sm font-semibold text-white/70" htmlFor="username">
                 Username

@@ -3,7 +3,7 @@ Leaderboard service for rankings and statistics.
 """
 
 from sqlalchemy.orm import Session
-from sqlalchemy import func, desc
+from sqlalchemy import desc
 from typing import List, Dict, Any
 
 from app.models.team import Team
@@ -45,7 +45,7 @@ class LeaderboardService:
             # Get solve count
             solve_count = (
                 self.db.query(Submission)
-                .filter(Submission.team_id == team.id, Submission.is_correct == True)
+                .filter(Submission.team_id == team.id, Submission.is_correct is True)
                 .distinct(Submission.challenge_id)
                 .count()
             )
@@ -58,7 +58,7 @@ class LeaderboardService:
             # Get last solve time
             last_solve = (
                 self.db.query(Submission.submitted_at)
-                .filter(Submission.team_id == team.id, Submission.is_correct == True)
+                .filter(Submission.team_id == team.id, Submission.is_correct is True)
                 .order_by(desc(Submission.submitted_at))
                 .first()
             )
@@ -120,7 +120,7 @@ class LeaderboardService:
 
         correct_submissions = (
             self.db.query(Submission)
-            .filter(Submission.user_id == user_id, Submission.is_correct == True)
+            .filter(Submission.user_id == user_id, Submission.is_correct is True)
             .distinct(Submission.challenge_id)
             .count()
         )
@@ -131,7 +131,7 @@ class LeaderboardService:
             # Count challenges where this user's team was first
             user_submissions = (
                 self.db.query(Submission)
-                .filter(Submission.user_id == user_id, Submission.is_correct == True)
+                .filter(Submission.user_id == user_id, Submission.is_correct is True)
                 .all()
             )
 
@@ -140,7 +140,7 @@ class LeaderboardService:
                     self.db.query(Submission)
                     .filter(
                         Submission.challenge_id == sub.challenge_id,
-                        Submission.is_correct == True,
+                        Submission.is_correct is True,
                     )
                     .order_by(Submission.submitted_at.asc())
                     .first()
@@ -188,7 +188,7 @@ class LeaderboardService:
         # Get solve count
         solves = (
             self.db.query(Submission)
-            .filter(Submission.team_id == team_id, Submission.is_correct == True)
+            .filter(Submission.team_id == team_id, Submission.is_correct is True)
             .distinct(Submission.challenge_id)
             .count()
         )
@@ -213,7 +213,7 @@ class LeaderboardService:
         first_bloods = 0
         team_submissions = (
             self.db.query(Submission)
-            .filter(Submission.team_id == team_id, Submission.is_correct == True)
+            .filter(Submission.team_id == team_id, Submission.is_correct is True)
             .all()
         )
 
@@ -222,7 +222,7 @@ class LeaderboardService:
                 self.db.query(Submission)
                 .filter(
                     Submission.challenge_id == sub.challenge_id,
-                    Submission.is_correct == True,
+                    Submission.is_correct is True,
                 )
                 .order_by(Submission.submitted_at.asc())
                 .first()
@@ -267,7 +267,7 @@ class LeaderboardService:
         solves = (
             self.db.query(Submission)
             .filter(
-                Submission.challenge_id == challenge_id, Submission.is_correct == True
+                Submission.challenge_id == challenge_id, Submission.is_correct is True
             )
             .distinct(Submission.team_id)
             .count()
@@ -284,7 +284,7 @@ class LeaderboardService:
         first_blood = (
             self.db.query(Submission)
             .filter(
-                Submission.challenge_id == challenge_id, Submission.is_correct == True
+                Submission.challenge_id == challenge_id, Submission.is_correct is True
             )
             .order_by(Submission.submitted_at.asc())
             .first()
@@ -317,10 +317,10 @@ class LeaderboardService:
             "total_teams": self.db.query(Team).count(),
             "total_users": self.db.query(User).count(),
             "total_challenges": self.db.query(Challenge)
-            .filter(Challenge.is_visible == True)
+            .filter(Challenge.is_visible is True)
             .count(),
             "total_submissions": self.db.query(Submission).count(),
             "correct_submissions": self.db.query(Submission)
-            .filter(Submission.is_correct == True)
+            .filter(Submission.is_correct is True)
             .count(),
         }

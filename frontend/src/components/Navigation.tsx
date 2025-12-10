@@ -1,47 +1,62 @@
-import { Link, NavLink } from 'react-router-dom'
+import { Link, NavLink, useNavigate } from 'react-router-dom'
+
 import { useAuth } from '../context/AuthContext'
+import { useToast } from '../context/ToastContext'
+import { ADMIN_ROLE_ID } from './ProtectedRoute'
 
 export default function Navigation() {
   const { user, logout, isAuthenticated, isLoading } = useAuth()
+  const navigate = useNavigate()
+  const { showToast } = useToast()
+
+  const handleLogout = () => {
+    logout()
+    showToast('Logged out successfully', 'success')
+    navigate('/')
+  }
+
   const links = [
-    { label: 'Home', to: '/' },
-    { label: 'Challenges', to: '/challenges' },
-    { label: 'Leaderboard', to: '/leaderboard' },
-    { label: 'Team', to: '/team' },
-    { label: 'Rules', to: '/rules' },
-    { label: 'Admin', to: '/admin' },
+    { label: 'Home', to: '/', public: true },
+    { label: 'Rules', to: '/rules', public: true },
+    { label: 'Leaderboard', to: '/leaderboard', public: true },
+    { label: 'Challenges', to: '/challenges', public: false },
+    { label: 'Team', to: '/team', public: false },
+    { label: 'Admin', to: '/admin', adminOnly: true },
   ]
+
+  const visibleLinks = links.filter(link => {
+    if (link.public) return true
+    if (!isAuthenticated) return false
+    if (link.adminOnly) return user?.role_id === ADMIN_ROLE_ID
+    return true
+  })
 
   return (
     <header className="border-b border-white/5 bg-base-100/95 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
         <div className="flex items-center gap-2 text-lg font-semibold text-white">
           <div className="dropdown md:hidden">
-            <div
-              tabIndex={0}
-              role="button"
-              className="btn btn-ghost btn-circle btn-sm text-white"
-            >
-              <svg 
-                xmlns="http://www.w3.org/2000/svg" 
-                className="h-5 w-5" 
-                fill="none" viewBox="0 0 24 24" 
+            <div tabIndex={0} role="button" className="btn btn-ghost btn-circle btn-sm text-white">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
                 stroke="currentColor"
-                > 
-
-                <path 
-                strokeLinecap="round" 
-                strokeLinejoin="round" 
-                strokeWidth="2" 
-                d="M4 6h16M4 12h16M4 18h7" 
-                /> 
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M4 6h16M4 12h16M4 18h7"
+                />
               </svg>
             </div>
             <ul
               tabIndex={0}
               className="menu menu-sm dropdown-content bg-base-100 rounded-box z-10 mt-3 w-52 p-2 shadow"
             >
-              {links.map(link => (
+              {visibleLinks.map(link => (
                 <li key={`mobile-${link.to}`}>
                   <NavLink
                     className={({ isActive }) =>
@@ -61,7 +76,7 @@ export default function Navigation() {
         </div>
 
         <nav className="hidden items-center gap-6 md:flex">
-          {links.map(link => (
+          {visibleLinks.map(link => (
             <NavLink
               className={({ isActive }) =>
                 `text-sm font-medium transition-colors ${
@@ -113,7 +128,7 @@ export default function Navigation() {
                   </Link>
                 </li>
                 <li>
-                  <button onClick={logout} className="text-error hover:bg-error/10">
+                  <button onClick={handleLogout} className="text-error hover:bg-error/10">
                     Logout
                   </button>
                 </li>

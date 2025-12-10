@@ -1,6 +1,6 @@
 import type { ChallengeDifficulty } from '../types/challenge'
 
-interface DifficultyBadgeProps {
+type DifficultyBadgeProps = {
   difficulty: ChallengeDifficulty | string
   className?: string
 }
@@ -30,7 +30,7 @@ export function DifficultyBadge({ difficulty, className = '' }: DifficultyBadgeP
   )
 }
 
-interface CategoryBadgeProps {
+type CategoryBadgeProps = {
   category: string
   className?: string
 }

@@ -20,17 +20,14 @@ def test_models():
 
     try:
         # Importar después de ajustar el path
-        from app.core.database import engine, SessionLocal, Base
+        from app.core.database import SessionLocal, Base
         from app.models import (
             Role,
             Difficulty,
             User,
-            UserCredential,
             Team,
-            TeamMember,
             ChallengeCategory,
             Challenge,
-            ChallengeScoreConfig,
             Submission,
             Notification,
             AuditLog,
@@ -142,8 +139,8 @@ def test_models():
         print(" ¡Todos los tests pasaron exitosamente!")
         print("\n Resumen:")
         print(f"   - {len(tables)} modelos importados correctamente")
-        print(f"   - Conexión a base de datos funcional")
-        print(f"   - Relaciones entre modelos funcionando")
+        print("   - Conexión a base de datos funcional")
+        print("   - Relaciones entre modelos funcionando")
         print(f"   - Total de registros: {sum(counts.values())}")
 
         return True

@@ -1,8 +1,9 @@
 import { useState } from 'react'
+
 import { useAuth } from '../context/AuthContext'
 import { api } from '../services/api'
 
-interface TeamCreateModalProps {
+type TeamCreateModalProps = {
   isOpen: boolean
   onClose: () => void
 }
@@ -40,7 +41,7 @@ export default function TeamCreateModal({ isOpen, onClose }: TeamCreateModalProp
         >
           ✕
         </button>
-        
+
         <h3 className="text-xl font-bold text-white">Create New Team</h3>
         <p className="mt-2 text-sm text-white/60">
           Fill in the details below to create your team. You'll be set as the team captain.
@@ -58,7 +59,7 @@ export default function TeamCreateModal({ isOpen, onClose }: TeamCreateModalProp
               placeholder="Enter your team name"
               className="input input-bordered w-full border-white/10 bg-base-300 text-white focus:border-primary focus:outline-none"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={e => setName(e.target.value)}
             />
             <label className="label">
               <span className="label-text-alt text-xs text-white/40">3-50 characters</span>
@@ -73,7 +74,7 @@ export default function TeamCreateModal({ isOpen, onClose }: TeamCreateModalProp
               className="textarea textarea-bordered h-24 w-full border-white/10 bg-base-300 text-white focus:border-primary focus:outline-none"
               placeholder="Brief description of your team's focus area"
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              onChange={e => setDescription(e.target.value)}
             ></textarea>
             <label className="label">
               <span className="label-text-alt text-xs text-white/40">Optional</span>
@@ -89,26 +90,40 @@ export default function TeamCreateModal({ isOpen, onClose }: TeamCreateModalProp
               placeholder="Create a secure team password"
               className="input input-bordered w-full border-white/10 bg-base-300 text-white focus:border-primary focus:outline-none"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={e => setPassword(e.target.value)}
             />
             <label className="label">
-              <span className="label-text-alt text-xs text-white/40">Required - Share this with team members to join</span>
+              <span className="label-text-alt text-xs text-white/40">
+                Required - Share this with team members to join
+              </span>
             </label>
           </div>
         </div>
 
         <div className="mt-8 flex gap-3">
-          <button className="btn btn-outline flex-1 border-white/10 text-white hover:bg-white/5 hover:border-white/20" onClick={onClose}>
+          <button
+            className="btn btn-outline flex-1 border-white/10 text-white hover:bg-white/5 hover:border-white/20"
+            onClick={onClose}
+          >
             Cancel
           </button>
-          <button 
+          <button
             className="btn btn-primary flex-1 text-black"
             onClick={handleSubmit}
             disabled={isLoading}
           >
-            {isLoading ? <span className="loading loading-spinner"></span> : (
+            {isLoading ? (
+              <span className="loading loading-spinner"></span>
+            ) : (
               <>
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 mr-1">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={2}
+                  stroke="currentColor"
+                  className="w-5 h-5 mr-1"
+                >
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                 </svg>
                 Create Team

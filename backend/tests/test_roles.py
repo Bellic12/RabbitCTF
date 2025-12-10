@@ -41,16 +41,16 @@ def test_role_based_access():
             algorithms=[settings.ALGORITHM],
         )
 
-        print(f"   Token generado exitosamente")
+        print("   Token generado exitosamente")
         print(f"   User ID (sub): {payload.get('sub')}")
         print(f"   Username: {payload.get('username')}")
         print(f"   Role: {payload.get('role')}")
         print(f"   Expires (exp): {payload.get('exp')}")
 
         if payload.get("role") == "user":
-            print(f"  Usuario normal - rol correcto")
+            print("  Usuario normal - rol correcto")
         else:
-            print(f"  Error: se esperaba rol 'user'")
+            print("  Error: se esperaba rol 'user'")
 
         # Test 2: Login con moderador
         print("\n Test 2: Login con moderador")
@@ -64,15 +64,15 @@ def test_role_based_access():
             algorithms=[settings.ALGORITHM],
         )
 
-        print(f"   Token generado exitosamente")
+        print("   Token generado exitosamente")
         print(f"   User ID (sub): {payload.get('sub')}")
         print(f"   Username: {payload.get('username')}")
         print(f"   Role: {payload.get('role')}")
 
         if payload.get("role") == "moderator":
-            print(f"  Moderador - rol correcto")
+            print("  Moderador - rol correcto")
         else:
-            print(f"  Error: se esperaba rol 'moderator'")
+            print("  Error: se esperaba rol 'moderator'")
 
         # Test 3: Login con admin
         print("\n Test 3: Login con admin")
@@ -86,15 +86,15 @@ def test_role_based_access():
             algorithms=[settings.ALGORITHM],
         )
 
-        print(f"   Token generado exitosamente")
+        print("   Token generado exitosamente")
         print(f"   User ID (sub): {payload.get('sub')}")
         print(f"   Username: {payload.get('username')}")
         print(f"   Role: {payload.get('role')}")
 
         if payload.get("role") == "admin":
-            print(f" Admin - rol correcto")
+            print(" Admin - rol correcto")
         else:
-            print(f" Error: se esperaba rol 'admin'")
+            print(" Error: se esperaba rol 'admin'")
 
         # print("\n" + "=" * 50)
         # print(" Todos los tests pasaron correctamente!")
