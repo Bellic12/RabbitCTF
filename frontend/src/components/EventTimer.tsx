@@ -20,10 +20,15 @@ export default function EventTimer({ variant = 'navbar' }: EventTimerProps) {
 
   const fetchConfig = async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/v1/event/status`)
+      // Add timestamp to prevent caching
+      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/v1/event/status?t=${Date.now()}`)
       if (response.ok) {
         const data = await response.json()
-        setConfig(data)
+        // Only update state if values actually changed to prevent effect re-runs
+        setConfig(prev => {
+          if (JSON.stringify(prev) === JSON.stringify(data)) return prev
+          return data
+        })
       }
     } catch (error) {
       console.error('Failed to fetch event status', error)
@@ -32,8 +37,8 @@ export default function EventTimer({ variant = 'navbar' }: EventTimerProps) {
 
   useEffect(() => {
     fetchConfig()
-    // Poll every minute to sync with server
-    const pollInterval = setInterval(fetchConfig, 60000)
+    // Poll every 5 seconds to sync with server
+    const pollInterval = setInterval(fetchConfig, 5000)
     return () => clearInterval(pollInterval)
   }, [])
 

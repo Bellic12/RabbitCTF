@@ -53,7 +53,8 @@ const formatDateForDisplay = (dateString: string): string => {
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
-      timeZoneName: 'short'
+      timeZoneName: 'short',
+      timeZone: 'America/Bogota'
     })
   } catch (e) {
     return 'Invalid date'
@@ -154,7 +155,7 @@ export default function EventSettings() {
         }
         
         // Validar que start no sea en el pasado si el evento no ha comenzado
-        if (calculatedStatus === 'not_started' && start < now) {
+        if (savedEventConfig.status === 'not_started' && start < now) {
           errors.start_time = 'Start time cannot be in the past'
         }
       }
@@ -450,7 +451,7 @@ export default function EventSettings() {
             <div className="p-3 bg-base-300 rounded-lg border border-base-400">
               <div className="text-white font-mono">{eventConfig.event_timezone}</div>
               <div className="text-xs text-white/60 mt-1">
-                All times are converted to your local timezone: {Intl.DateTimeFormat().resolvedOptions().timeZone}
+                All times are converted to Colombia time (UTC-5).
               </div>
             </div>
           </label>
