@@ -181,12 +181,66 @@ class ChallengeUpdate(BaseModel):
     )
     category_id: Optional[int] = Field(None, gt=0)
     difficulty_id: Optional[int] = Field(None, gt=0)
-    base_score: Optional[int] = Field(None, ge=10, le=1000)
+    flag: Optional[str] = Field(
+        None,
+        min_length=5,
+        max_length=255,
+        description="The correct flag (stored in plain text)",
+        examples=["RabbitCTF{upd4t3d_fl4g}"],
+    )
+    base_score: Optional[int] = Field(
+        None, 
+        ge=10, 
+        le=1000,
+        description="Base score (cannot be changed if challenge has submissions)"
+    )
+    scoring_mode: Optional[str] = Field(
+        None,
+        pattern=r"^(STATIC|DYNAMIC)$",
+        description="Scoring mode (cannot be changed if challenge has submissions)",
+    )
+    decay_factor: Optional[float] = Field(
+        None,
+        ge=0.1,
+        le=1.0,
+        description="Decay factor for dynamic scoring (cannot be changed if challenge has submissions)",
+    )
+    min_score: Optional[int] = Field(
+        None, 
+        ge=10, 
+        description="Minimum score (cannot be changed if challenge has submissions)"
+    )
     is_draft: Optional[bool] = None
     is_visible: Optional[bool] = None
     visible_from: Optional[datetime] = None
     visible_until: Optional[datetime] = None
     operational_data: Optional[str] = Field(None, max_length=1000)
+    is_case_sensitive: Optional[bool] = Field(
+        None,
+        description="Whether flag validation is case-sensitive",
+    )
+
+    @field_validator("flag")
+    @classmethod
+    def validate_flag_format(cls, v: Optional[str]) -> Optional[str]:
+        """Validate flag format."""
+        if v is None:
+            return v
+        if not v.startswith("RabbitCTF{") or not v.endswith("}"):
+            raise ValueError("Flag must be in format: RabbitCTF{...}")
+        if len(v) < 15:
+            raise ValueError("Flag content too short")
+        return v
+
+    @field_validator("scoring_mode")
+    @classmethod
+    def validate_scoring_mode(cls, v: Optional[str]) -> Optional[str]:
+        """Validate scoring mode."""
+        if v is None:
+            return v
+        if v not in ["STATIC", "DYNAMIC"]:
+            raise ValueError("Scoring mode must be STATIC or DYNAMIC")
+        return v
 
 
 class ChallengeResponse(ChallengeBase):

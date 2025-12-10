@@ -86,8 +86,27 @@ class ChallengeService:
                 status_code=status.HTTP_404_NOT_FOUND, detail="Challenge not found"
             )
 
+        # Check if challenge has submissions
+        has_submissions = (
+            self.db.query(Submission)
+            .filter(Submission.challenge_id == challenge_id)
+            .first()
+            is not None
+        )
+
         # Update fields if provided
         update_data = challenge_data.dict(exclude_unset=True)
+
+        # Prevent scoring-related changes if challenge has submissions
+        scoring_fields = {"base_score", "scoring_mode", "decay_factor", "min_score"}
+        attempted_scoring_changes = scoring_fields & set(update_data.keys())
+        
+        if has_submissions and attempted_scoring_changes:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Cannot modify scoring configuration ({', '.join(attempted_scoring_changes)}) "
+                       f"for challenges with existing submissions. This ensures fairness and score integrity."
+            )
 
         for field, value in update_data.items():
             if field == "flag" and value:
@@ -99,6 +118,39 @@ class ChallengeService:
                 )
                 if flag:
                     flag.flag_value = value
+            elif field == "is_case_sensitive" and value is not None:
+                # Update flag case sensitivity
+                flag = (
+                    self.db.query(ChallengeFlag)
+                    .filter(ChallengeFlag.challenge_id == challenge_id)
+                    .first()
+                )
+                if flag:
+                    flag.is_case_sensitive = value
+            elif field in {"scoring_mode", "decay_factor", "min_score"}:
+                # Update scoring config
+                score_config = (
+                    self.db.query(ChallengeScoreConfig)
+                    .filter(ChallengeScoreConfig.challenge_id == challenge_id)
+                    .first()
+                )
+                if score_config:
+                    if field == "scoring_mode":
+                        score_config.scoring_mode = value
+                    elif field == "decay_factor":
+                        score_config.decay_factor = value
+                    elif field == "min_score":
+                        score_config.min_score = value
+            elif field == "base_score":
+                # Update base_score in both challenge and score_config
+                challenge.base_score = value
+                score_config = (
+                    self.db.query(ChallengeScoreConfig)
+                    .filter(ChallengeScoreConfig.challenge_id == challenge_id)
+                    .first()
+                )
+                if score_config:
+                    score_config.base_score = value
             elif hasattr(challenge, field):
                 setattr(challenge, field, value)
 
