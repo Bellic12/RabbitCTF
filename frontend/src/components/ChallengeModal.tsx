@@ -4,6 +4,8 @@ import type { FormEvent } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../services/api'
 import type { Challenge } from '../types/challenge'
+import { useEventStatus } from '../hooks/useEventStatus'
+import { useToast } from '../context/ToastContext'
 import { CategoryBadge, DifficultyBadge } from './Badges'
 
 type ChallengeModalProps = {
@@ -66,6 +68,8 @@ export default function ChallengeModal({ challenge, onClose, onSolve }: Challeng
   const [error, setError] = useState('')
   const [files, setFiles] = useState<ChallengeFile[]>([])
   const [isLoadingFiles, setIsLoadingFiles] = useState(true)
+  const eventConfig = useEventStatus()
+  const { showToast } = useToast()
   const [isCopied, setIsCopied] = useState(false)
   const [blockedUntil, setBlockedUntil] = useState<Date | null>(null)
   const [timeLeft, setTimeLeft] = useState<string>('')
@@ -184,6 +188,15 @@ export default function ChallengeModal({ challenge, onClose, onSolve }: Challeng
     event.preventDefault()
     setError('')
     setSubmissionResult(null)
+
+    if (eventConfig?.status && eventConfig.status !== 'active') {
+      showToast(
+        `Flag submission is disabled because the event is ${eventConfig.status.replace('_', ' ')}`,
+        'info',
+        5000
+      )
+      return
+    }
 
     if (!flagValue.trim()) {
       setError('Please enter a flag')

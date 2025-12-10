@@ -3,13 +3,86 @@ import ReactMarkdown from 'react-markdown'
 import { useAuth } from '../../context/AuthContext'
 
 const markdownComponents = {
-  h1: ({node, ...props}: any) => <h1 className="mb-4 mt-8 text-2xl font-bold text-white" {...props} />,
-  h2: ({node, ...props}: any) => <h2 className="mb-4 mt-8 text-xl font-bold text-white" {...props} />,
-  h3: ({node, ...props}: any) => <h3 className="mb-3 mt-6 text-lg font-bold text-white" {...props} />,
-  ul: ({node, ...props}: any) => <ul className="list-disc space-y-3 pl-5 text-white/70" {...props} />,
-  li: ({node, ...props}: any) => <li className="pl-1 leading-relaxed" {...props} />,
-  p: ({node, ...props}: any) => <p className="mb-4 text-white/70" {...props} />,
-  strong: ({node, ...props}: any) => <strong className="font-bold text-white" {...props} />,
+  h1: ({node, ...props}: any) => 
+    <h1 className="mb-4 mt-8 text-2xl font-bold text-white" {...props} />,
+  h2: ({node, ...props}: any) => 
+    <h2 className="mb-4 mt-8 text-xl font-bold text-white" {...props} />,
+  h3: ({node, ...props}: any) => 
+    <h3 className="mb-3 mt-6 text-lg font-bold text-white" {...props} />,
+  ul: ({node, ...props}: any) => 
+    <ul className="list-disc space-y-3 pl-5 text-white/70" {...props} />,
+  li: ({node, ...props}: any) => 
+    <li className="pl-1 leading-relaxed" {...props} />,
+  p: ({node, ...props}: any) => 
+    <p className="mb-4 text-white/70" {...props} />,
+  strong: ({node, ...props}: any) => 
+    <strong className="font-bold text-white" {...props} />,
+}
+
+// Helper functions
+const formatDateForInput = (dateString: string): string => {
+  if (!dateString) return ''
+  
+  try {
+    const date = new Date(dateString)
+    if (isNaN(date.getTime())) return ''
+    
+    // Convert to Colombia time (UTC-5)
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Bogota',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    })
+    
+    const parts = formatter.formatToParts(date)
+    const getPart = (type: string) => parts.find(p => p.type === type)?.value
+    
+    return `${getPart('year')}-${getPart('month')}-${getPart('day')}T${getPart('hour')}:${getPart('minute')}`
+  } catch (e) {
+    return ''
+  }
+}
+
+const formatDateForDisplay = (dateString: string): string => {
+  if (!dateString) return 'Not set'
+  
+  try {
+    const date = new Date(dateString)
+    if (isNaN(date.getTime())) return 'Invalid date'
+    
+    return date.toLocaleString('en-US', {
+      weekday: 'short',
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZoneName: 'short',
+      timeZone: 'America/Bogota'
+    })
+  } catch (e) {
+    return 'Invalid date'
+  }
+}
+
+const calculateEventStatus = (startTime: string, endTime: string): string => {
+  if (!startTime || !endTime) return 'not_started'
+  
+  const now = new Date()
+  const start = new Date(startTime)
+  const end = new Date(endTime)
+  
+  if (isNaN(start.getTime()) || isNaN(end.getTime())) return 'not_started'
+  
+  if (now < start) return 'not_started'
+  if (now >= start && now <= end) return 'active'
+  if (now > end) return 'finished'
+  
+  return 'not_started'
 }
 
 export default function EventSettings() {
@@ -18,8 +91,31 @@ export default function EventSettings() {
   const [loading, setLoading] = useState(false)
   const [showPreview, setShowPreview] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
+  
+  const [savedEventConfig, setSavedEventConfig] = useState({
+    start_time: '',
+    end_time: '',
+    event_timezone: 'UTC',
+    status: 'not_started'
+  })
 
-  // Config state
+  const [eventConfig, setEventConfig] = useState({
+    start_time: '',
+    end_time: '',
+    event_timezone: 'UTC',
+    status: 'not_started'
+  })
+  
+  const [validationErrors, setValidationErrors] = useState<{
+    start_time?: string
+    end_time?: string
+    general?: string
+  }>({})
+  
+  // Estado calculado automáticamente
+  const [calculatedStatus, setCalculatedStatus] = useState('not_started')
+
+    // Config state
   const [config, setConfig] = useState({
     max_submission_attempts: 5,
     submission_time_window_seconds: 60,
@@ -28,40 +124,201 @@ export default function EventSettings() {
   const [configLoading, setConfigLoading] = useState(false)
   const [configMessage, setConfigMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
 
+
+  // Calcular status automáticamente cuando cambian las fechas
   useEffect(() => {
-    const fetchRules = async () => {
-      try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/v1/rules/`)
-        if (response.ok) {
-          const data = await response.json()
-          setRules(data.content_md)
+    const status = calculateEventStatus(eventConfig.start_time, eventConfig.end_time)
+    setCalculatedStatus(status)
+    
+    // Validar fechas
+    validateDates()
+  }, [eventConfig.start_time, eventConfig.end_time])
+
+  const validateDates = (): boolean => {
+    const errors: typeof validationErrors = {}
+    
+    // Validar que ambas fechas estén presentes
+    if (!eventConfig.start_time) {
+      errors.start_time = 'Start time is required'
+    }
+    
+    if (!eventConfig.end_time) {
+      errors.end_time = 'End time is required'
+    }
+    
+    // Si ambas fechas existen, validar lógica
+    if (eventConfig.start_time && eventConfig.end_time) {
+      const start = new Date(eventConfig.start_time)
+      const end = new Date(eventConfig.end_time)
+      const now = new Date()
+      
+      if (isNaN(start.getTime())) {
+        errors.start_time = 'Invalid start date format'
+      }
+      
+      if (isNaN(end.getTime())) {
+        errors.end_time = 'Invalid end date format'
+      }
+      
+      if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
+        // Validar que end > start
+        if (end <= start) {
+          errors.end_time = 'End time must be after start time'
         }
-      } catch (error) {
-        console.error('Failed to fetch rules:', error)
+        
+        // Validar duración mínima (1 hora)
+        // const minDuration = 60 * 60 * 1000 // 1 hora
+        const minDuration = 5 * 60 * 1000 // 5 minutos para pruebas
+        if ((end.getTime() - start.getTime()) < minDuration) {
+          errors.general = 'Event must be at least 1 hour long'
+        }
+        
+        // Validar que start no sea en el pasado si el evento no ha comenzado
+        if (savedEventConfig.status === 'not_started' && start < now) {
+          errors.start_time = 'Start time cannot be in the past'
+        }
       }
     }
     
-    const fetchConfig = async () => {
+    setValidationErrors(errors)
+    return Object.keys(errors).length === 0
+  }
+
+  useEffect(() => {
+    const fetchData = async () => {
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/v1/admin/config`, {
+        // Fetch Rules
+        const rulesResponse = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/v1/rules/`)
+        if (rulesResponse.ok) {
+          const data = await rulesResponse.json()
+          setRules(data.content_md)
+        }
+
+        if (token) {
+          // Fetch Event Config
+          const configResponse = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/v1/admin/event/config`, {
             headers: { 'Authorization': `Bearer ${token}` }
-        })
-        if (response.ok) {
-          const data = await response.json()
-          setConfig({
-            max_submission_attempts: data.max_submission_attempts,
-            submission_time_window_seconds: data.submission_time_window_seconds,
-            submission_block_minutes: data.submission_block_minutes
           })
+          
+          if (configResponse.ok) {
+            const data = await configResponse.json()
+            setEventConfig({
+              start_time: data.start_time || '',
+              end_time: data.end_time || '',
+              event_timezone: data.event_timezone || 'UTC',
+              status: data.status || 'not_started'
+            })
+            setSavedEventConfig({
+              start_time: data.start_time || '',
+              end_time: data.end_time || '',
+              event_timezone: data.event_timezone || 'UTC',
+              status: data.status || 'not_started'
+            })
+          }
+
+          // Fetch General Config
+          const generalConfigResponse = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/v1/admin/config`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          })
+          if (generalConfigResponse.ok) {
+            const data = await generalConfigResponse.json()
+            setConfig({
+              max_submission_attempts: data.max_submission_attempts,
+              submission_time_window_seconds: data.submission_time_window_seconds,
+              submission_block_minutes: data.submission_block_minutes
+            })
+          }
         }
       } catch (error) {
-        console.error('Failed to fetch config:', error)
+        console.error('Failed to fetch data:', error)
+        setMessage({ 
+          type: 'error', 
+          text: 'Failed to load configuration. Please refresh.' 
+        })
       }
     }
-
-    fetchRules()
-    if (token) fetchConfig()
+    
+    fetchData()
+    
+    // Intervalo para verificar cambios de status (cada minuto)
+    const interval = setInterval(() => {
+      const newStatus = calculateEventStatus(eventConfig.start_time, eventConfig.end_time)
+      if (newStatus !== calculatedStatus) {
+        setCalculatedStatus(newStatus)
+      }
+    }, 60000) // Check every minute
+    
+    return () => clearInterval(interval)
   }, [token])
+
+  const handleUpdateEventConfig = async () => {
+    setMessage(null)
+    
+    // Validar antes de enviar
+    if (!validateDates()) {
+      setMessage({ 
+        type: 'error', 
+        text: 'Please fix validation errors before saving' 
+      })
+      return
+    }
+    
+    setLoading(true)
+    
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/v1/admin/event/config`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          start_time: eventConfig.start_time,
+          end_time: eventConfig.end_time,
+          event_timezone: eventConfig.event_timezone,
+          // Send the manually selected status if it differs from calculated
+          status: eventConfig.status
+        })
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        
+        // Actualizar con la respuesta del servidor
+        setEventConfig({
+          start_time: data.start_time || '',
+          end_time: data.end_time || '',
+          event_timezone: data.event_timezone || 'UTC',
+          status: data.status || 'not_started'
+        })
+        setSavedEventConfig({
+          start_time: data.start_time || '',
+          end_time: data.end_time || '',
+          event_timezone: data.event_timezone || 'UTC',
+          status: data.status || 'not_started'
+        })
+        
+        setMessage({ 
+          type: 'success', 
+          text: 'Event configuration updated successfully!' 
+        })
+      } else {
+        const errorData = await response.json()
+        setMessage({ 
+          type: 'error', 
+          text: errorData.detail || 'Failed to update event configuration' 
+        })
+      }
+    } catch (error) {
+      console.error('Update error:', error)
+      setMessage({ 
+        type: 'error', 
+        text: 'Network error. Please check your connection.' 
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleSaveConfig = async () => {
     setConfigLoading(true)
@@ -91,6 +348,7 @@ export default function EventSettings() {
   const handleSaveRules = async () => {
     setLoading(true)
     setMessage(null)
+    
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/v1/rules/`, {
         method: 'POST',
@@ -107,56 +365,237 @@ export default function EventSettings() {
         setMessage({ type: 'error', text: 'Failed to update rules' })
       }
     } catch (error) {
-      setMessage({ type: 'error', text: 'An error occurred' })
+      setMessage({ type: 'error', text: 'Network error saving rules' })
     } finally {
       setLoading(false)
     }
   }
 
+  const statusConfig = {
+    not_started: {
+      label: 'NOT STARTED',
+      color: 'bg-gray-500',
+      textColor: 'white',
+      description: 'Event has not started yet. Participants cannot submit flags.'
+    },
+    active: {
+      label: ' ACTIVE',
+      color: 'bg-green-500',
+      textColor: 'text-green-300',
+      description: 'Event is currently running. Participants can submit flags.'
+    },
+    finished: {
+      label: ' FINISHED',
+      color: 'bg-red-500',
+      textColor: 'text-red-300',
+      description: 'Event has ended. No more flag submissions allowed.'
+    }
+  }
+
+  const currentStatus = statusConfig[(savedEventConfig.status || 'not_started') as keyof typeof statusConfig]
+
   return (
     <div className="space-y-8">
-      <div>
-        <h3 className="text-lg font-bold mb-4">Event Status</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <label className="form-control w-full">
-            <div className="label">
-              <span className="label-text">Current Status</span>
+      {/* Event Status Section */}
+      <div className="card bg-base-200 p-6">
+        <h3 className="text-lg font-bold mb-4">Event Status & Timing</h3>
+        
+        {/* Status Indicator & Manual Override */}
+        <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <div className={`badge ${currentStatus.color} ${currentStatus.textColor} text-lg font-bold px-4 py-2`}>
+                {currentStatus.label}
+              </div>
+              <span className="text-sm text-white/60">
+                (Current DB Status)
+              </span>
             </div>
-            <select className="select select-bordered w-full">
-              <option>Not Started</option>
-              <option>Running</option>
-              <option>Paused</option>
-              <option>Ended</option>
+            <p className="text-white/70 text-sm mb-4">
+              {currentStatus.description}
+            </p>
+          </div>
+
+          <div className="form-control">
+            <label className="label">
+              <span className="label-text font-semibold">Manual Status Override</span>
+            </label>
+            <select 
+              className="select select-bordered w-full"
+              value={eventConfig.status}
+              onChange={(e) => setEventConfig({...eventConfig, status: e.target.value})}
+            >
+              <option value="not_started">Not Started</option>
+              <option value="active">Active</option>
+              <option value="finished">Finished</option>
             </select>
-          </label>
+            <div className="label">
+              <span className="label-text-alt text-warning">
+                ⚠️ Changing this will automatically adjust start/end times
+              </span>
+            </div>
+          </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+        
+        {/* Current Database Configuration */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <div className="bg-base-300 p-4 rounded-lg">
+            <div className="text-sm text-white/60 mb-1">Start Date & Time</div>
+            <div className="text-white font-mono text-lg">
+              {formatDateForDisplay(savedEventConfig.start_time)}
+            </div>
+            {savedEventConfig.start_time && (
+              <div className="text-xs text-white/40 mt-1">
+                {formatDateForInput(savedEventConfig.start_time)}
+              </div>
+            )}
+          </div>
+          
+          <div className="bg-base-300 p-4 rounded-lg">
+            <div className="text-sm text-white/60 mb-1">End Date & Time</div>
+            <div className="text-white font-mono text-lg">
+              {formatDateForDisplay(savedEventConfig.end_time)}
+            </div>
+            {savedEventConfig.end_time && (
+              <div className="text-xs text-white/40 mt-1">
+                {formatDateForInput(savedEventConfig.end_time)}
+              </div>
+            )}
+          </div>
+        </div>
+        
+        {/* Date Inputs */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="form-control w-full">
+              <div className="label">
+                <span className="label-text font-semibold">Set Start Date & Time</span>
+              </div>
+              <input
+                type="datetime-local"
+                className={`input input-bordered w-full ${validationErrors.start_time ? 'input-error' : ''}`}
+                value={formatDateForInput(eventConfig.start_time)}
+                onChange={(e) => {
+                  const value = e.target.value
+                  // Append -05:00 to treat input as Colombia time
+                  const date = value ? new Date(`${value}-05:00`).toISOString() : ''
+                  setEventConfig({...eventConfig, start_time: date})
+                }}
+                min={new Date().toISOString().slice(0, 16)} // No fechas pasadas
+              />
+              {validationErrors.start_time && (
+                <div className="label">
+                  <span className="label-text-alt text-error">
+                    ⚠️ {validationErrors.start_time}
+                  </span>
+                </div>
+              )}
+            </label>
+          </div>
+          
+          <div>
+            <label className="form-control w-full">
+              <div className="label">
+                <span className="label-text font-semibold">Set End Date & Time</span>
+              </div>
+              <input
+                type="datetime-local"
+                className={`input input-bordered w-full ${validationErrors.end_time ? 'input-error' : ''}`}
+                value={formatDateForInput(eventConfig.end_time)}
+                onChange={(e) => {
+                  const value = e.target.value
+                  // Append -05:00 to treat input as Colombia time
+                  const date = value ? new Date(`${value}-05:00`).toISOString() : ''
+                  setEventConfig({...eventConfig, end_time: date})
+                }}
+                min={eventConfig.start_time ? 
+                  // new Date(new Date(eventConfig.start_time).getTime() + 3600000).toISOString().slice(0, 16) 
+                  new Date(new Date(eventConfig.start_time).getTime() + 300000).toISOString().slice(0, 16) :  // 5 min (prueba)
+                  new Date().toISOString().slice(0, 16)
+                } // Mínimo 1 hora después del inicio
+              />
+              {validationErrors.end_time && (
+                <div className="label">
+                  <span className="label-text-alt text-error">
+                    ⚠️ {validationErrors.end_time}
+                  </span>
+                </div>
+              )}
+            </label>
+          </div>
+        </div>
+        
+        {/* Timezone Info */}
+        <div className="mt-4">
           <label className="form-control w-full">
             <div className="label">
-              <span className="label-text">Start Date & Time</span>
+              <span className="label-text">Event Timezone</span>
             </div>
-            <input
-              type="datetime-local"
-              className="input input-bordered w-full"
-              defaultValue="2025-02-01T10:00"
-            />
-          </label>
-          <label className="form-control w-full">
-            <div className="label">
-              <span className="label-text">End Date & Time</span>
+            <div className="p-3 bg-base-300 rounded-lg border border-base-400">
+              <div className="text-white font-mono">{eventConfig.event_timezone}</div>
+              <div className="text-xs text-white/60 mt-1">
+                All times are converted to Colombia time (UTC-5).
+              </div>
             </div>
-            <input
-              type="datetime-local"
-              className="input input-bordered w-full"
-              defaultValue="2025-02-03T18:00"
-            />
           </label>
         </div>
-        <button className="btn btn-primary mt-6">Update Event Timing</button>
+        
+        {/* Validation Summary */}
+        {validationErrors.general && (
+          <div className="alert alert-error mt-4">
+            <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>{validationErrors.general}</span>
+          </div>
+        )}
+        
+        {/* Update Button */}
+        <button 
+          className="btn btn-primary mt-6 w-full md:w-auto"
+          onClick={handleUpdateEventConfig}
+          disabled={loading || Object.keys(validationErrors).length > 0}
+        >
+          {loading ? (
+            <>
+              <span className="loading loading-spinner loading-sm"></span>
+              Updating...
+            </>
+          ) : 'Update Event Configuration'}
+        </button>
+        
+        {/* Status Change Info
+        <div className="mt-4 text-sm text-white/60">
+          <p className="font-semibold mb-1">How status changes work:</p>
+          <ul className="list-disc pl-5 space-y-1">
+            <li><span className="font-medium">NOT STARTED → ACTIVE:</span> Automatically when current time ≥ Start Time</li>
+            <li><span className="font-medium">ACTIVE → ENDED:</span> Automatically when current time ≥ End Time</li>
+            <li>Status updates every minute based on system time</li>
+          </ul>
+        </div> */}
       </div>
+      
+      {/* Message Display */}
+      {message && (
+        <div className={`alert ${message.type === 'success' ? 'alert-success' : 'alert-error'} shadow-lg`}>
+          <div>
+            {message.type === 'success' ? (
+              <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current flex-shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current flex-shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            )}
+            <span>{message.text}</span>
+          </div>
+        </div>
+      )}
 
       <div className="divider"></div>
 
+      {/* Rules Section (sin cambios) */}
       <div>
         <h3 className="text-lg font-bold mb-4">Submission Rate Limiting</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -250,11 +689,6 @@ export default function EventSettings() {
           >
             Preview
           </button>
-          {message && (
-            <span className={`text-sm ${message.type === 'success' ? 'text-success' : 'text-error'}`}>
-              {message.text}
-            </span>
-          )}
         </div>
       </div>
 

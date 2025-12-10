@@ -28,7 +28,6 @@ class EventStatus(str, Enum):
     NOT_STARTED = "not_started"
     ACTIVE = "active"
     FINISHED = "finished"
-    PAUSED = "paused"
 
 
 class NotificationType(str, Enum):

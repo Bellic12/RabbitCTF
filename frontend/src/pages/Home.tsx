@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 
 import Footer from '../components/Footer'
 import Navigation from '../components/Navigation'
+import EventTimer from '../components/EventTimer'
 import { useStats } from '../hooks/useStats'
 
 export default function HomePage() {
@@ -28,10 +29,8 @@ export default function HomePage() {
             </p>
 
             <div className="w-full rounded-box border border-white/10 bg-base-200 px-6 py-12 shadow-[0_35px_80px_-45px_rgba(0,0,0,0.9)] md:px-12">
-              <div className="flex justify-center">
-                <span className="rounded-full border border-white/10 bg-black/30 px-6 py-1 text-sm font-semibold text-white/70">
-                  • Event Finished
-                </span>
+              <div className="flex justify-center min-h-[32px]">
+                <EventTimer variant="hero" />
               </div>
               <div className="mt-8 flex flex-wrap justify-center gap-4">
                 <Link

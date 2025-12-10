@@ -16,7 +16,7 @@ type ToastProps = {
 
 export const Toast: React.FC<ToastProps> = ({ toasts }) => {
   return (
-    <div className="toast toast-end toast-bottom z-50">
+    <div className="toast toast-end toast-bottom z-[9999]">
       {toasts.map(toast => (
         <div
           key={toast.id}
