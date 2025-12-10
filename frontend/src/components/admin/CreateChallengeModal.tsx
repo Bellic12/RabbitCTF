@@ -28,6 +28,7 @@ export default function CreateChallengeModal({ isOpen, onClose, onCreate }: Crea
   
   // Estado para el modal de nueva categoría
   const [showCategoryModal, setShowCategoryModal] = useState(false)
+  const [editingCategoryId, setEditingCategoryId] = useState<number | null>(null)
   const [newCategory, setNewCategory] = useState({
     name: '',
     description: ''
@@ -168,27 +169,38 @@ export default function CreateChallengeModal({ isOpen, onClose, onCreate }: Crea
     return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i]
   }
 
+  const handleEditCategory = (categoryId: number, categoryName: string, categoryDescription?: string) => {
+    setEditingCategoryId(categoryId)
+    setNewCategory({
+      name: categoryName,
+      description: categoryDescription || ''
+    })
+    setShowCategoryModal(true)
+  }
+
   const handleCreateCategory = async (e: React.FormEvent) => {
     e.preventDefault()
     setCategoryError('')
     setIsCreatingCategory(true)
 
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL || ''}/api/v1/challenges/admin/categories`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            name: newCategory.name,
-            description: newCategory.description || null,
-            is_active: true
-          })
-        }
-      )
+      const isEditing = editingCategoryId !== null
+      const url = isEditing 
+        ? `${import.meta.env.VITE_API_URL || ''}/api/v1/challenges/admin/categories/${editingCategoryId}`
+        : `${import.meta.env.VITE_API_URL || ''}/api/v1/challenges/admin/categories`
+      
+      const response = await fetch(url, {
+        method: isEditing ? 'PATCH' : 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          name: newCategory.name,
+          description: newCategory.description || null,
+          is_active: true
+        })
+      })
 
       if (!response.ok) {
         const payload = await response.json().catch(() => ({}))
@@ -205,21 +217,24 @@ export default function CreateChallengeModal({ isOpen, onClose, onCreate }: Crea
         } else if (typeof payload.detail === 'string') {
           setCategoryError(payload.detail)
         } else {
-          setCategoryError('Failed to create category')
+          setCategoryError(isEditing ? 'Failed to update category' : 'Failed to create category')
         }
         
         setIsCreatingCategory(false)
         return
       }
 
-      const createdCategory = await response.json()
+      const resultCategory = await response.json()
       await fetchCategories()
-      setFormData(prev => ({ ...prev, category_id: createdCategory.id.toString() }))
+      if (!isEditing) {
+        setFormData(prev => ({ ...prev, category_id: resultCategory.id.toString() }))
+      }
       setShowCategoryModal(false)
+      setEditingCategoryId(null)
       setNewCategory({ name: '', description: '' })
     } catch (caught) {
-      setCategoryError('Unable to create category. Check console for details.')
-      console.error('Create category failed:', caught)
+      setCategoryError('Unable to save category. Check console for details.')
+      console.error('Save category failed:', caught)
     } finally {
       setIsCreatingCategory(false)
     }
@@ -404,20 +419,78 @@ export default function CreateChallengeModal({ isOpen, onClose, onCreate }: Crea
                   <label className="label pb-2">
                     <span className="label-text font-bold text-base-content">Category *</span>
                   </label>
-                  <select
-                    name="category_id"
-                    value={formData.category_id}
-                    onChange={handleChange}
-                    className="select select-bordered w-full bg-base-200 focus:border-primary"
-                    required
-                    disabled={isSubmitting}
-                  >
-                    <option value="">Select category</option>
-                    {categories.map(cat => (
-                      <option key={cat.id} value={cat.id}>{cat.name}</option>
-                    ))}
-                    <option value="add_new" className="font-bold text-primary">+ Add New Category</option>
-                  </select>
+                  <div className="flex gap-2">
+                    <select
+                      name="category_id"
+                      value={formData.category_id}
+                      onChange={handleChange}
+                      className="select select-bordered w-full bg-base-200 focus:border-primary"
+                      required
+                      disabled={isSubmitting}
+                    >
+                      <option value="">Select category</option>
+                      {categories.map(cat => (
+                        <option key={cat.id} value={cat.id}>{cat.name}</option>
+                      ))}
+                      <option value="add_new" className="font-bold text-primary">+ Add New Category</option>
+                    </select>
+                    {formData.category_id && formData.category_id !== 'add_new' && formData.category_id !== '' && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const selectedCategory = categories.find(c => c.id.toString() === formData.category_id)
+                            if (selectedCategory) {
+                              handleEditCategory(selectedCategory.id, selectedCategory.name, selectedCategory.description)
+                            }
+                          }}
+                          className="btn btn-square btn-ghost border border-white/10"
+                          disabled={isSubmitting}
+                          title="Edit category"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+                          </svg>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            if (window.confirm('Are you sure you want to delete this category? It can only be deleted if it has no challenges assigned.')) {
+                              try {
+                                const response = await fetch(
+                                  `${import.meta.env.VITE_API_URL || ''}/api/v1/challenges/admin/categories/${formData.category_id}`,
+                                  {
+                                    method: 'DELETE',
+                                    headers: {
+                                      'Authorization': `Bearer ${token}`
+                                    }
+                                  }
+                                )
+                                if (response.ok) {
+                                  fetchCategories()
+                                  setFormData(prev => ({ ...prev, category_id: '' }))
+                                  alert('Category deleted successfully')
+                                } else {
+                                  const error = await response.json()
+                                  alert(error.detail || 'Failed to delete category')
+                                }
+                              } catch (err) {
+                                alert('Error deleting category')
+                                console.error(err)
+                              }
+                            }
+                          }}
+                          className="btn btn-square btn-ghost border border-red-500/30 hover:bg-red-500/10"
+                          disabled={isSubmitting}
+                          title="Delete category"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-red-500">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                          </svg>
+                        </button>
+                      </>
+                    )}
+                  </div>
                   {categories.length === 0 && (
                     <label className="label">
                       <span className="label-text-alt text-warning">No categories loaded. Check console for errors.</span>
@@ -688,7 +761,9 @@ export default function CreateChallengeModal({ isOpen, onClose, onCreate }: Crea
       {showCategoryModal && (
         <div className="modal modal-open" style={{ zIndex: 1001 }}>
           <div className="modal-box bg-base-100 border border-base-300">
-            <h3 className="font-bold text-lg text-base-content mb-4">Add New Category</h3>
+            <h3 className="font-bold text-lg text-base-content mb-4">
+              {editingCategoryId ? 'Edit Category' : 'Add New Category'}
+            </h3>
             
             {categoryError && (
               <div className="alert alert-warning mb-4">
@@ -733,6 +808,7 @@ export default function CreateChallengeModal({ isOpen, onClose, onCreate }: Crea
                   type="button"
                   onClick={() => {
                     setShowCategoryModal(false)
+                    setEditingCategoryId(null)
                     setNewCategory({ name: '', description: '' })
                     setCategoryError('')
                   }}
@@ -750,10 +826,10 @@ export default function CreateChallengeModal({ isOpen, onClose, onCreate }: Crea
                   {isCreatingCategory ? (
                     <>
                       <span className="loading loading-spinner loading-sm"></span>
-                      Creating...
+                      {editingCategoryId ? 'Updating...' : 'Creating...'}
                     </>
                   ) : (
-                    'Create Category'
+                    editingCategoryId ? 'Update Category' : 'Create Category'
                   )}
                 </button>
               </div>
