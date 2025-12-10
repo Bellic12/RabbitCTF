@@ -119,10 +119,14 @@ export default function EventSettings() {
   const [config, setConfig] = useState({
     max_submission_attempts: 5,
     submission_time_window_seconds: 60,
-    submission_block_minutes: 5
+    submission_block_minutes: 5,
+    max_team_size: 4
   })
   const [configLoading, setConfigLoading] = useState(false)
   const [configMessage, setConfigMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
+  
+  const [teamConfigLoading, setTeamConfigLoading] = useState(false)
+  const [teamConfigMessage, setTeamConfigMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
 
 
   // Calcular status automáticamente cuando cambian las fechas
@@ -225,7 +229,8 @@ export default function EventSettings() {
             setConfig({
               max_submission_attempts: data.max_submission_attempts,
               submission_time_window_seconds: data.submission_time_window_seconds,
-              submission_block_minutes: data.submission_block_minutes
+              submission_block_minutes: data.submission_block_minutes,
+              max_team_size: data.max_team_size
             })
           }
         }
@@ -320,7 +325,32 @@ export default function EventSettings() {
     }
   }
 
-  const handleSaveConfig = async () => {
+  const handleSaveTeamConfig = async () => {
+    setTeamConfigLoading(true)
+    setTeamConfigMessage(null)
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/v1/admin/config`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ max_team_size: config.max_team_size })
+      })
+
+      if (response.ok) {
+        setTeamConfigMessage({ type: 'success', text: 'Team size updated successfully' })
+      } else {
+        setTeamConfigMessage({ type: 'error', text: 'Failed to update team size' })
+      }
+    } catch (error) {
+      setTeamConfigMessage({ type: 'error', text: 'An error occurred' })
+    } finally {
+      setTeamConfigLoading(false)
+    }
+  }
+
+  const handleSaveRateLimits = async () => {
     setConfigLoading(true)
     setConfigMessage(null)
     try {
@@ -330,13 +360,17 @@ export default function EventSettings() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(config)
+        body: JSON.stringify({
+          max_submission_attempts: config.max_submission_attempts,
+          submission_time_window_seconds: config.submission_time_window_seconds,
+          submission_block_minutes: config.submission_block_minutes
+        })
       })
 
       if (response.ok) {
-        setConfigMessage({ type: 'success', text: 'Configuration updated successfully' })
+        setConfigMessage({ type: 'success', text: 'Rate limits updated successfully' })
       } else {
-        setConfigMessage({ type: 'error', text: 'Failed to update configuration' })
+        setConfigMessage({ type: 'error', text: 'Failed to update rate limits' })
       }
     } catch (error) {
       setConfigMessage({ type: 'error', text: 'An error occurred' })
@@ -595,6 +629,38 @@ export default function EventSettings() {
 
       <div className="divider"></div>
 
+      {/* Team Configuration Section */}
+      <div>
+        <h3 className="text-lg font-bold mb-4">Team Configuration</h3>
+        <div className="flex items-end gap-4">
+          <label className="form-control w-full max-w-xs">
+            <div className="label">
+              <span className="label-text">Maximum Team Size</span>
+            </div>
+            <input 
+              type="number" 
+              className="input input-bordered w-full" 
+              value={config.max_team_size}
+              onChange={(e) => setConfig({...config, max_team_size: parseInt(e.target.value)})}
+            />
+          </label>
+          <button 
+            className="btn btn-primary btn-sm gap-2 text-primary-content rounded-md hover:brightness-75 transition-all border-none h-12 px-6 text-sm font-semibold"
+            onClick={handleSaveTeamConfig}
+            disabled={teamConfigLoading}
+          >
+            {teamConfigLoading ? 'Saving...' : 'Update Team Size'}
+          </button>
+          {teamConfigMessage && (
+            <span className={`ml-4 text-sm ${teamConfigMessage.type === 'success' ? 'text-success' : 'text-error'}`}>
+              {teamConfigMessage.text}
+            </span>
+          )}
+        </div>
+      </div>
+
+      <div className="divider"></div>
+
       {/* Rules Section (sin cambios) */}
       <div>
         <h3 className="text-lg font-bold mb-4">Submission Rate Limiting</h3>
@@ -639,7 +705,7 @@ export default function EventSettings() {
         <div className="flex items-center mt-6">
             <button 
                 className="btn btn-primary h-12 rounded-md border-none px-6 text-sm font-semibold text-primary-content hover:brightness-75 transition-all disabled:opacity-50 disabled:bg-neutral disabled:text-neutral-content disabled:cursor-not-allowed"
-                onClick={handleSaveConfig}
+                onClick={handleSaveRateLimits}
                 disabled={configLoading}
             >
                 {configLoading ? 'Saving...' : 'Update Rate Limits'}

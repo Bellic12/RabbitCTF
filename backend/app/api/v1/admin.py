@@ -477,7 +477,8 @@ async def get_event_config(
             event_name="RabbitCTF",
             max_submission_attempts=5,
             submission_time_window_seconds=60,
-            submission_block_minutes=5
+            submission_block_minutes=5,
+            max_team_size=4
         )
         db.add(config)
         db.commit()
@@ -499,9 +500,14 @@ async def update_event_config(
         config = EventConfig(event_name="RabbitCTF")
         db.add(config)
     
-    config.max_submission_attempts = config_in.max_submission_attempts
-    config.submission_time_window_seconds = config_in.submission_time_window_seconds
-    config.submission_block_minutes = config_in.submission_block_minutes
+    if config_in.max_submission_attempts is not None:
+        config.max_submission_attempts = config_in.max_submission_attempts
+    if config_in.submission_time_window_seconds is not None:
+        config.submission_time_window_seconds = config_in.submission_time_window_seconds
+    if config_in.submission_block_minutes is not None:
+        config.submission_block_minutes = config_in.submission_block_minutes
+    if config_in.max_team_size is not None:
+        config.max_team_size = config_in.max_team_size
     
     db.commit()
     db.refresh(config)

@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 
 import ActivityLog from '../components/admin/ActivityLog'
 import ChallengeManagement from '../components/admin/ChallengeManagement'
-import Configuration from '../components/admin/Configuration'
 import EventSettings from '../components/admin/EventSettings'
 import UserManagement from '../components/admin/UserManagement'
 import ValidationStats from '../components/admin/ValidationStats'
@@ -94,14 +93,13 @@ export default function AdminPage() {
         </div>
 
         {/* Tabs */}
-        <div role="tablist" className="tabs tabs-boxed mb-6 bg-base-300 p-1 grid grid-cols-6">
+        <div role="tablist" className="tabs tabs-boxed mb-6 bg-base-300 p-1 grid grid-cols-5">
           {[
             { id: 'event', label: 'Event Settings' },
             { id: 'challenges', label: 'Challenges' },
             { id: 'users', label: 'Users & Teams' },
             { id: 'activity', label: 'Activity Log' },
             { id: 'stats', label: 'Validation Stats' },
-            { id: 'config', label: 'Configuration' },
           ].map(tab => (
             <a
               key={tab.id}
@@ -121,7 +119,6 @@ export default function AdminPage() {
           {activeTab === 'users' && <UserManagement />}
           {activeTab === 'activity' && <ActivityLog />}
           {activeTab === 'stats' && <ValidationStats />}
-          {activeTab === 'config' && <Configuration />}
         </div>
       </main>
       <Footer />
