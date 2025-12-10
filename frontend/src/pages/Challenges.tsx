@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react'
-import Navigation from '../components/Navigation'
-import Footer from '../components/Footer'
+
 import ChallengeCard from '../components/ChallengeCard'
 import ChallengeModal from '../components/ChallengeModal'
+import Footer from '../components/Footer'
+import Navigation from '../components/Navigation'
 import { useChallenges } from '../hooks/useChallenges'
 import type {
   Challenge,
@@ -59,7 +60,7 @@ export default function ChallengesPage() {
             <div className="flex flex-wrap items-center gap-3 md:flex-nowrap md:gap-4">
               <select
                 className="select select-bordered w-full bg-base-300 md:w-auto"
-                onChange={event => setCategoryFilter(event.target.value as typeof categoryFilter)}
+                onChange={event => setCategoryFilter(event.target.value)}
                 value={categoryFilter}
               >
                 <option value="All">All</option>
@@ -123,7 +124,7 @@ export default function ChallengesPage() {
   )
 }
 
-interface IconProps {
+type IconProps = {
   className?: string
 }
 

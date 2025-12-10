@@ -5,11 +5,9 @@ Submission service for flag validation and scoring.
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 from datetime import datetime, timedelta
-from typing import Optional
 from dataclasses import dataclass
 
 from app.models.submission import Submission
-from app.models.challenge import Challenge
 from app.models.challenge_flag import ChallengeFlag
 from app.models.user import User
 from app.models.team import Team
@@ -134,7 +132,7 @@ class SubmissionService:
             .filter(
                 Submission.challenge_id == challenge_id,
                 Submission.team_id == team_id,
-                Submission.is_correct == True,
+                Submission.is_correct is True,
             )
             .first()
             is not None
@@ -152,7 +150,7 @@ class SubmissionService:
                 self.db.query(Submission)
                 .filter(
                     Submission.challenge_id == challenge_id,
-                    Submission.is_correct == True,
+                    Submission.is_correct is True,
                 )
                 .first()
             )
@@ -284,7 +282,7 @@ class SubmissionService:
         )
 
         if correct_only:
-            query = query.filter(Submission.is_correct == True)
+            query = query.filter(Submission.is_correct is True)
 
         return (
             query.order_by(Submission.submitted_at.desc())

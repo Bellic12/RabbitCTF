@@ -10,6 +10,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.api import deps
 from app.models.challenge_score_config import ChallengeScoreConfig
 from app.models.event_config import EventConfig
 from app.models.submission import Submission
@@ -44,7 +45,10 @@ class LeaderboardResponse(BaseModel):
 
 
 @router.get("/", response_model=LeaderboardResponse)
-def get_leaderboard(db: Session = Depends(get_db)) -> LeaderboardResponse:
+def get_leaderboard(
+    db: Session = Depends(get_db),
+    current_user=Depends(deps.get_current_user)
+) -> LeaderboardResponse:
     """Return leaderboard data sourced from real submissions."""
 
     teams = (
@@ -81,13 +85,7 @@ def get_leaderboard(db: Session = Depends(get_db)) -> LeaderboardResponse:
         db.query(
             Submission.team_id,
             Submission.submitted_at,
-            func.coalesce(Submission.awarded_score, ChallengeScoreConfig.base_score, 0).label(
-                "points"
-            ),
-        )
-        .outerjoin(
-            ChallengeScoreConfig,
-            ChallengeScoreConfig.challenge_id == Submission.challenge_id,
+            Submission.awarded_score.label("points"),
         )
         .filter(Submission.is_correct.is_(True))
         .order_by(Submission.team_id.asc(), Submission.submitted_at.asc(), Submission.id.asc())
@@ -141,10 +139,9 @@ def get_leaderboard(db: Session = Depends(get_db)) -> LeaderboardResponse:
                 elif first_point_time == reference_time and progression_points[0].score != 0:
                     progression_points.insert(0, ScoreProgressPoint(time=reference_time, score=0))
 
-        # Calculate final score from progression instead of relying on team.total_score
-        final_score = 0
-        if progression_points:
-            final_score = progression_points[-1].score
+        # Use team.total_score as the authoritative value
+        # (It's pre-calculated and updated on each correct submission)
+        final_score = team.total_score or 0
 
         leaderboard_teams.append(
             TeamLeaderboard(

@@ -2,7 +2,7 @@
 Authentication endpoints for RabbitCTF.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
@@ -69,6 +69,14 @@ async def login_oauth2(
     token = auth_service.login(login_data)
 
     return token
+
+
+@router.get("/count", response_model=int)
+def count_users(db: Session = Depends(get_db)):
+    """
+    Get total number of registered users (public).
+    """
+    return db.query(User).count()
 
 
 @router.get("/me", response_model=UserResponse)

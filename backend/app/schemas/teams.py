@@ -50,7 +50,7 @@ class TeamCreate(TeamBase):
     @classmethod
     def validate_team_name(cls, v: str) -> str:
         """Validate team name format."""
-        if v.lower() in ["admin", "system", "moderator", "staff"]:
+        if v.lower() in ["admin", "system", "captain", "staff"]:
             raise ValueError("This team name is reserved")
         # Check for inappropriate characters
         if any(char in v for char in ["<", ">", '"', "'"]):

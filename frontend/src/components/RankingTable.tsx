@@ -1,15 +1,15 @@
-import React from 'react';
+import React from 'react'
 
-interface Team {
-  id: number;
-  name: string;
-  totalScore: number;
-  solves: number;
-  lastSolve: string;
+type Team = {
+  id: number
+  name: string
+  totalScore: number
+  solves: number
+  lastSolve: string
 }
 
-interface RankingTableProps {
-  teams: Team[];
+type RankingTableProps = {
+  teams: Team[]
 }
 
 const RankingTable: React.FC<RankingTableProps> = ({ teams }) => {
@@ -28,13 +28,11 @@ const RankingTable: React.FC<RankingTableProps> = ({ teams }) => {
           </thead>
           <tbody>
             {teams.map((team, index) => (
-              <tr 
-                key={team.id} 
+              <tr
+                key={team.id}
                 className="border-b border-white/5 transition-colors hover:bg-white/5 last:border-0"
               >
-                <th className="px-6 py-4 font-mono text-xl text-primary">
-                  {index + 1}
-                </th>
+                <th className="px-6 py-4 font-mono text-xl text-primary">{index + 1}</th>
                 <td className="px-6 py-4">
                   <div className="font-bold text-white text-lg">{team.name}</div>
                 </td>
@@ -55,7 +53,7 @@ const RankingTable: React.FC<RankingTableProps> = ({ teams }) => {
         </table>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default RankingTable;
+export default RankingTable

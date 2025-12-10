@@ -1,13 +1,16 @@
 import { useState, useEffect } from 'react'
 import type { FormEvent } from 'react'
+
+import { useState } from 'react'
+
 import type { Challenge } from '../types/challenge'
 
-interface ChallengeModalProps {
+type ChallengeModalProps = {
   challenge: Challenge
   onClose: () => void
 }
 
-interface SubmissionResponse {
+type SubmissionResponse = {
   is_correct: boolean
   score_awarded: number
   message: string
@@ -118,7 +121,7 @@ export default function ChallengeModal({ challenge, onClose }: ChallengeModalPro
             submitted_flag: flagValue,
           }),
           headers: {
-            'Authorization': `Bearer ${token}`,
+            Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
           method: 'POST',

@@ -36,7 +36,7 @@ def test_login():
             login_data = UserLogin(username="admin", password="admin123")
             token = auth_service.login(login_data)
 
-            print(f"   > Login exitoso!")
+            print("   > Login exitoso!")
             print(f"   Token Type: {token.token_type}")
             print(f"   Access Token: {token.access_token[:50]}...")
             print()
@@ -51,7 +51,7 @@ def test_login():
         try:
             login_data = UserLogin(username="admin", password="wrong_password")
             token = auth_service.login(login_data)
-            print(f"    Login debería haber fallado pero no lo hizo\n")
+            print("    Login debería haber fallado pero no lo hizo\n")
             return False
         except Exception as e:
             print(f"    Login falló correctamente: {str(e)[:50]}...\n")
@@ -68,7 +68,7 @@ def test_login():
             print(f"     - Role ID: {user.role_id}")
             print()
         else:
-            print(f"    Usuario no encontrado\n")
+            print("    Usuario no encontrado\n")
             return False
 
         # Listar usuarios disponibles

@@ -1,9 +1,9 @@
-import React from 'react';
+import React from 'react'
 
-interface TeamFiltersProps {
-  teams: { id: number; name: string }[];
-  visibleTeams: Set<string>;
-  toggleTeam: (teamName: string) => void;
+type TeamFiltersProps = {
+  teams: { id: number; name: string }[]
+  visibleTeams: Set<string>
+  toggleTeam: (teamName: string) => void
 }
 
 const TEAM_COLORS = [
@@ -17,7 +17,7 @@ const TEAM_COLORS = [
   '#ccff00',
   '#ff6600',
   '#aa00ff',
-];
+]
 
 const TeamFilters: React.FC<TeamFiltersProps> = ({ teams, visibleTeams, toggleTeam }) => {
   return (
@@ -25,18 +25,19 @@ const TeamFilters: React.FC<TeamFiltersProps> = ({ teams, visibleTeams, toggleTe
       <h3 className="mb-4 text-lg font-semibold text-white">Filter Teams</h3>
       <div className="flex flex-wrap gap-3">
         {teams.map((team, index) => {
-          const isVisible = visibleTeams.has(team.name);
-          const color = TEAM_COLORS[index % TEAM_COLORS.length];
-          
+          const isVisible = visibleTeams.has(team.name)
+          const color = TEAM_COLORS[index % TEAM_COLORS.length]
+
           return (
             <button
               key={team.id}
               onClick={() => toggleTeam(team.name)}
               className={`
                 btn btn-sm rounded-full border transition-all duration-200
-                ${isVisible 
-                  ? 'border-transparent text-base-100 hover:brightness-110' 
-                  : 'border-white/20 bg-transparent text-white/50 hover:bg-white/5 hover:text-white'
+                ${
+                  isVisible
+                    ? 'border-transparent text-base-100 hover:brightness-110'
+                    : 'border-white/20 bg-transparent text-white/50 hover:bg-white/5 hover:text-white'
                 }
               `}
               style={{
@@ -45,11 +46,11 @@ const TeamFilters: React.FC<TeamFiltersProps> = ({ teams, visibleTeams, toggleTe
             >
               {team.name}
             </button>
-          );
+          )
         })}
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default TeamFilters;
+export default TeamFilters
