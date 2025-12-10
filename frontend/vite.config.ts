@@ -17,4 +17,8 @@ export default defineConfig({
       usePolling: true,
     },
   },
+  preview: {
+    host: '0.0.0.0',
+    allowedHosts: ['frontend-production-9af7.up.railway.app', 'localhost'],
+  },
 })
