@@ -4,15 +4,7 @@ Run this script before starting the application.
 """
 import os
 from sqlalchemy import text
-from app.core.database import engine, SessionLocal
-"""
-Initialize database tables and seed data.
-Run this script before starting the application.
-"""
-import os
-from sqlalchemy import text
-from app.core.database import engine, SessionLocal
-from app.core.database import Base
+from app.core.database import engine, SessionLocal, Base
 import app.models  # noqa: F401 ensures models are registered
 
 
