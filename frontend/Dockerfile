@@ -4,8 +4,8 @@
 FROM node:20-alpine AS build
 WORKDIR /app
 
-# Install Corepack (not bundled in Alpine variant)
-RUN npm install -g corepack && corepack enable && corepack prepare pnpm@latest --activate
+# Install pnpm directly (more reliable in Alpine than corepack)
+RUN npm install -g pnpm
 
 # Build arguments
 ARG VITE_API_URL
