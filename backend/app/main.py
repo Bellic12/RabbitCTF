@@ -36,17 +36,25 @@ app.include_router(api_router, prefix="/api/v1")
 # Ensure DB tables exist on startup (idempotent)
 @app.on_event("startup")
 def startup_event():
-    # Create all tables if missing (ignore errors if already exist)
+    """Create tables and seed minimal data on startup."""
+    import logging
+    logger = logging.getLogger(__name__)
+    
     try:
+        # Force create all tables (ignore duplicate errors)
+        logger.info("Creating database tables...")
         Base.metadata.create_all(bind=engine, checkfirst=True)
-    except Exception:
-        pass  # Tables may already exist partially
-
-    # Optionally seed core reference data if empty
-    with SessionLocal() as db:
-        try:
+        logger.info("Tables created successfully")
+    except Exception as e:
+        logger.warning(f"Table creation warning (may already exist): {e}")
+    
+    # Seed minimal data
+    try:
+        with SessionLocal() as db:
+            # Check and seed roles
             count = db.execute(text("SELECT COUNT(*) FROM role")).scalar()
             if count == 0:
+                logger.info("Seeding roles...")
                 db.execute(text(
                     """
                     INSERT INTO role (name, description) VALUES
@@ -57,8 +65,11 @@ def startup_event():
                     """
                 ))
                 db.commit()
-        except Exception:
-            db.rollback()
+                logger.info("Roles seeded")
+    except Exception as e:
+        logger.error(f"Startup error: {e}")
+        # Don't crash the app, let it try to run anyway
+        pass
 
 
 # Root endpoint
