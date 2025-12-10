@@ -1,11 +1,12 @@
 """
 Submission endpoints for RabbitCTF.
 """
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
 from sqlalchemy.orm import Session
 from typing import List
 
 from app.core.database import get_db
+from app.core.audit import log_audit
 from app.api.deps import get_current_user, get_current_admin
 from app.schemas.submissions import (
     SubmissionBase,
@@ -40,6 +41,7 @@ router = APIRouter()
 )
 async def submit_flag(
     submission_data: SubmissionBase,
+    request: Request,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -57,6 +59,23 @@ async def submit_flag(
         user=current_user,
         challenge_id=submission_data.challenge_id,
         flag_value=submission_data.submitted_flag,
+    )
+    
+    # Get challenge name for audit log
+    challenge = db.query(Challenge).filter(Challenge.id == submission_data.challenge_id).first()
+    
+    # Log flag submission
+    log_audit(
+        db=db,
+        user_id=current_user.id,
+        action="SUBMIT",
+        resource_type="submission",
+        details={
+            "action": "flag_submission",
+            "challenge": challenge.title if challenge else f"Challenge {submission_data.challenge_id}",
+            "correct": result.is_correct
+        },
+        request=request
     )
 
     return {
@@ -252,7 +271,7 @@ async def get_first_bloods(
             Submission.challenge_id,
             func.min(Submission.submitted_at).label("first_solve_time"),
         )
-        .filter(Submission.is_correct is True)
+        .filter(Submission.is_correct == True)
         .group_by(Submission.challenge_id)
         .subquery()
     )
@@ -317,7 +336,7 @@ async def get_solve_timeline(
 
     submissions = (
         db.query(Submission)
-        .filter(Submission.is_correct is True)
+        .filter(Submission.is_correct == True)
         .order_by(Submission.submitted_at.desc())
         .limit(limit)
         .all()
@@ -381,7 +400,7 @@ async def admin_get_all_submissions(
     query = db.query(Submission)
 
     if correct_only:
-        query = query.filter(Submission.is_correct is True)
+        query = query.filter(Submission.is_correct == True)
 
     submissions = (
         query.order_by(Submission.submitted_at.desc()).offset(skip).limit(limit).all()
@@ -500,14 +519,14 @@ async def admin_get_challenge_stats(
     # Unique solvers (teams)
     unique_solvers = (
         db.query(func.count(distinct(Submission.team_id)))
-        .filter(Submission.challenge_id == challenge_id, Submission.is_correct is True)
+        .filter(Submission.challenge_id == challenge_id, Submission.is_correct == True)
         .scalar()
     )
 
     # Average attempts before solving
     solved_teams = (
         db.query(Submission.team_id)
-        .filter(Submission.challenge_id == challenge_id, Submission.is_correct is True)
+        .filter(Submission.challenge_id == challenge_id, Submission.is_correct == True)
         .distinct()
         .all()
     )
@@ -525,7 +544,7 @@ async def admin_get_challenge_stats(
                     .filter(
                         Submission.challenge_id == challenge_id,
                         Submission.team_id == team_id,
-                        Submission.is_correct is True,
+                        Submission.is_correct == True,
                     )
                     .order_by(Submission.submitted_at.asc())
                     .limit(1)
@@ -541,7 +560,7 @@ async def admin_get_challenge_stats(
     # Fastest solve time
     first_solve = (
         db.query(Submission)
-        .filter(Submission.challenge_id == challenge_id, Submission.is_correct is True)
+        .filter(Submission.challenge_id == challenge_id, Submission.is_correct == True)
         .order_by(Submission.submitted_at.asc())
         .first()
     )

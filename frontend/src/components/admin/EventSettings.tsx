@@ -115,6 +115,16 @@ export default function EventSettings() {
   // Estado calculado automáticamente
   const [calculatedStatus, setCalculatedStatus] = useState('not_started')
 
+    // Config state
+  const [config, setConfig] = useState({
+    max_submission_attempts: 5,
+    submission_time_window_seconds: 60,
+    submission_block_minutes: 5
+  })
+  const [configLoading, setConfigLoading] = useState(false)
+  const [configMessage, setConfigMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
+
+
   // Calcular status automáticamente cuando cambian las fechas
   useEffect(() => {
     const status = calculateEventStatus(eventConfig.start_time, eventConfig.end_time)
@@ -184,8 +194,8 @@ export default function EventSettings() {
           setRules(data.content_md)
         }
 
-        // Fetch Event Config
         if (token) {
+          // Fetch Event Config
           const configResponse = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/v1/admin/event/config`, {
             headers: { 'Authorization': `Bearer ${token}` }
           })
@@ -203,6 +213,19 @@ export default function EventSettings() {
               end_time: data.end_time || '',
               event_timezone: data.event_timezone || 'UTC',
               status: data.status || 'not_started'
+            })
+          }
+
+          // Fetch General Config
+          const generalConfigResponse = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/v1/admin/config`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          })
+          if (generalConfigResponse.ok) {
+            const data = await generalConfigResponse.json()
+            setConfig({
+              max_submission_attempts: data.max_submission_attempts,
+              submission_time_window_seconds: data.submission_time_window_seconds,
+              submission_block_minutes: data.submission_block_minutes
             })
           }
         }
@@ -265,7 +288,8 @@ export default function EventSettings() {
         setEventConfig({
           start_time: data.start_time || '',
           end_time: data.end_time || '',
-          event_timezone: data.event_timezone || 'UTC'
+          event_timezone: data.event_timezone || 'UTC',
+          status: data.status || 'not_started'
         })
         setSavedEventConfig({
           start_time: data.start_time || '',
@@ -293,6 +317,31 @@ export default function EventSettings() {
       })
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleSaveConfig = async () => {
+    setConfigLoading(true)
+    setConfigMessage(null)
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/v1/admin/config`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(config)
+      })
+
+      if (response.ok) {
+        setConfigMessage({ type: 'success', text: 'Configuration updated successfully' })
+      } else {
+        setConfigMessage({ type: 'error', text: 'Failed to update configuration' })
+      }
+    } catch (error) {
+      setConfigMessage({ type: 'error', text: 'An error occurred' })
+    } finally {
+      setConfigLoading(false)
     }
   }
 
@@ -547,6 +596,64 @@ export default function EventSettings() {
       <div className="divider"></div>
 
       {/* Rules Section (sin cambios) */}
+      <div>
+        <h3 className="text-lg font-bold mb-4">Submission Rate Limiting</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <label className="form-control w-full">
+            <div className="label">
+              <span className="label-text">Max Attempts</span>
+              <span className="label-text-alt text-white/50">per window</span>
+            </div>
+            <input
+              type="number"
+              className="input input-bordered w-full"
+              value={config.max_submission_attempts}
+              onChange={(e) => setConfig({...config, max_submission_attempts: parseInt(e.target.value)})}
+            />
+          </label>
+          <label className="form-control w-full">
+            <div className="label">
+              <span className="label-text">Time Window</span>
+              <span className="label-text-alt text-white/50">seconds</span>
+            </div>
+            <input
+              type="number"
+              className="input input-bordered w-full"
+              value={config.submission_time_window_seconds}
+              onChange={(e) => setConfig({...config, submission_time_window_seconds: parseInt(e.target.value)})}
+            />
+          </label>
+          <label className="form-control w-full">
+            <div className="label">
+              <span className="label-text">Block Duration</span>
+              <span className="label-text-alt text-white/50">minutes</span>
+            </div>
+            <input
+              type="number"
+              className="input input-bordered w-full"
+              value={config.submission_block_minutes}
+              onChange={(e) => setConfig({...config, submission_block_minutes: parseInt(e.target.value)})}
+            />
+          </label>
+        </div>
+        <div className="flex items-center mt-6">
+            <button 
+                className="btn btn-primary h-12 rounded-md border-none px-6 text-sm font-semibold text-primary-content hover:brightness-75 transition-all disabled:opacity-50 disabled:bg-neutral disabled:text-neutral-content disabled:cursor-not-allowed"
+                onClick={handleSaveConfig}
+                disabled={configLoading}
+            >
+                {configLoading ? 'Saving...' : 'Update Rate Limits'}
+            </button>
+            {configMessage && (
+                <span className={`ml-4 text-sm ${configMessage.type === 'success' ? 'text-success' : 'text-error'}`}>
+                {configMessage.text}
+                </span>
+            )}
+        </div>
+      </div>
+
+      <div className="divider"></div>
+
       <div>
         <h3 className="text-lg font-bold mb-4">
           Rules & Guidelines{' '}

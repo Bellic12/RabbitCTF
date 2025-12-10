@@ -31,14 +31,21 @@ class User(Base):
         cascade="all, delete-orphan",
     )
     password_reset_requests = relationship(
-        "PasswordResetRequest", back_populates="user"
+        "PasswordResetRequest", back_populates="user", cascade="all, delete-orphan"
     )
-    team_membership = relationship("TeamMember", back_populates="user", uselist=False)
+    team_membership = relationship(
+        "TeamMember", back_populates="user", uselist=False, cascade="all, delete-orphan"
+    )
     captained_team = relationship(
-        "Team", back_populates="captain", foreign_keys="Team.captain_id"
+        "Team",
+        back_populates="captain",
+        foreign_keys="Team.captain_id",
+        cascade="all, delete-orphan",
     )
     created_challenges = relationship("Challenge", back_populates="creator")
-    submissions = relationship("Submission", back_populates="user")
+    submissions = relationship(
+        "Submission", back_populates="user", cascade="all, delete-orphan"
+    )
     submission_blocks = relationship("SubmissionBlock", back_populates="user")
     created_event_rules = relationship("EventRuleVersion", back_populates="creator")
     created_notifications = relationship("Notification", back_populates="creator")

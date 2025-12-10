@@ -262,24 +262,48 @@ class ChallengeResponse(ChallengeBase):
         default=False,
         description="Whether current user's team has solved this challenge",
     )
+    solved_by: Optional[str] = Field(
+        None,
+        description="Username of the team member who solved the challenge",
+    )
+    blocked_until: Optional[datetime] = Field(
+        None,
+        description="If user is blocked from submitting, this is the expiration time"
+    )
     created_at: datetime
     operational_data: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
 
 
+class ScoreConfigNested(BaseModel):
+    """Nested score configuration."""
+    base_score: int
+    scoring_mode: str
+    decay_factor: Optional[float]
+    min_score: Optional[int]
+
+
+class VisibilityConfigNested(BaseModel):
+    """Nested visibility configuration."""
+    is_visible: bool
+    visible_from: Optional[datetime]
+    visible_until: Optional[datetime]
+
+
+class RuleConfigNested(BaseModel):
+    """Nested rule configuration."""
+    attempt_limit: int
+    is_case_sensitive: bool
+
+
 class ChallengeDetailResponse(ChallengeResponse):
     """Schema for detailed challenge response (admin view)."""
 
     is_draft: bool
-    is_visible: bool
-    visible_from: Optional[datetime]
-    visible_until: Optional[datetime]
-    attempt_limit: int
-    is_case_sensitive: bool
-    scoring_mode: str
-    decay_factor: Optional[float]
-    min_score: Optional[int]
+    score_config: ScoreConfigNested
+    visibility_config: VisibilityConfigNested
+    rule_config: RuleConfigNested
     created_by: Optional[int]
     updated_at: Optional[datetime]
     total_attempts: Optional[int] = Field(

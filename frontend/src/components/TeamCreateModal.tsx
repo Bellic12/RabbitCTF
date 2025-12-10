@@ -6,22 +6,30 @@ import { api } from '../services/api'
 type TeamCreateModalProps = {
   isOpen: boolean
   onClose: () => void
+  onSuccess: () => void
 }
 
-export default function TeamCreateModal({ isOpen, onClose }: TeamCreateModalProps) {
+export default function TeamCreateModal({ isOpen, onClose, onSuccess }: TeamCreateModalProps) {
   const { token } = useAuth()
   const [name, setName] = useState('')
-  const [description, setDescription] = useState('')
   const [password, setPassword] = useState('')
+  const [passwordConfirm, setPasswordConfirm] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
 
   const handleSubmit = async () => {
     if (!token) return
+
+    if (password !== passwordConfirm) {
+      setError('Passwords do not match')
+      return
+    }
+
     setIsLoading(true)
     setError('')
     try {
-      await api.teams.create(token, { name, description, password })
+      await api.teams.create(token, { name, password, password_confirm: passwordConfirm })
+      onSuccess()
       onClose()
     } catch (err) {
       setError('Failed to create team')
@@ -68,21 +76,6 @@ export default function TeamCreateModal({ isOpen, onClose }: TeamCreateModalProp
 
           <div className="form-control w-full">
             <label className="label pb-2">
-              <span className="label-text font-semibold text-white">Team Description</span>
-            </label>
-            <textarea
-              className="textarea textarea-bordered h-24 w-full border-white/10 bg-base-300 text-white focus:border-primary focus:outline-none"
-              placeholder="Brief description of your team's focus area"
-              value={description}
-              onChange={e => setDescription(e.target.value)}
-            ></textarea>
-            <label className="label">
-              <span className="label-text-alt text-xs text-white/40">Optional</span>
-            </label>
-          </div>
-
-          <div className="form-control w-full">
-            <label className="label pb-2">
               <span className="label-text font-semibold text-white">Team Password</span>
             </label>
             <input
@@ -97,6 +90,19 @@ export default function TeamCreateModal({ isOpen, onClose }: TeamCreateModalProp
                 Required - Share this with team members to join
               </span>
             </label>
+          </div>
+
+          <div className="form-control w-full">
+            <label className="label pb-2">
+              <span className="label-text font-semibold text-white">Confirm Password</span>
+            </label>
+            <input
+              type="password"
+              placeholder="Confirm team password"
+              className="input input-bordered w-full border-white/10 bg-base-300 text-white focus:border-primary focus:outline-none"
+              value={passwordConfirm}
+              onChange={e => setPasswordConfirm(e.target.value)}
+            />
           </div>
         </div>
 
