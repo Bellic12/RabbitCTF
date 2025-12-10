@@ -272,15 +272,17 @@ class ChallengeService:
 
     def delete_challenge(self, challenge_id: int, admin: User) -> None:
         """
-        Delete a challenge.
+        Delete a challenge and cleanup related data (submissions, scores).
 
         Args:
             challenge_id: ID of challenge to delete
             admin: Admin user performing action
 
         Raises:
-            HTTPException: If challenge not found or has submissions
+            HTTPException: If challenge not found
         """
+        from app.models.team import Team
+
         challenge = self.get_challenge_by_id(challenge_id)
 
         if not challenge:
@@ -288,25 +290,34 @@ class ChallengeService:
                 status_code=status.HTTP_404_NOT_FOUND, detail="Challenge not found"
             )
 
-        # Check if challenge has submissions
-        has_submissions = (
+        # 1. Find all correct submissions to adjust team scores
+        correct_submissions = (
             self.db.query(Submission)
-            .filter(Submission.challenge_id == challenge_id)
-            .first()
-            is not None
+            .filter(
+                Submission.challenge_id == challenge_id,
+                Submission.is_correct == True
+            )
+            .all()
         )
 
-        if has_submissions:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Cannot delete challenge with submissions. Mark as draft instead.",
-            )
+        # 2. Deduct scores from teams
+        for submission in correct_submissions:
+            if submission.awarded_score and submission.awarded_score > 0:
+                team = self.db.query(Team).filter(Team.id == submission.team_id).first()
+                if team:
+                    team.total_score = max(0, (team.total_score or 0) - submission.awarded_score)
 
-        # Delete flag first (foreign key constraint)
+        # 3. Delete all submissions for this challenge
+        self.db.query(Submission).filter(
+            Submission.challenge_id == challenge_id
+        ).delete()
+
+        # 4. Delete flag (foreign key constraint)
         self.db.query(ChallengeFlag).filter(
             ChallengeFlag.challenge_id == challenge_id
         ).delete()
 
+        # 5. Delete the challenge
         self.db.delete(challenge)
         self.db.commit()
 

@@ -39,6 +39,7 @@ export default function ChallengeManagement() {
   const [searchTerm, setSearchTerm] = useState('')
   const [categoryFilter, setCategoryFilter] = useState<string[]>([])
   const [difficultyFilter, setDifficultyFilter] = useState<string[]>([])
+  const [deleteConfirm, setDeleteConfirm] = useState<{ id: number, title: string } | null>(null)
   const { token } = useAuth()
 
   const categories = useMemo(() => {
@@ -88,12 +89,12 @@ export default function ChallengeManagement() {
     }
   }
 
-  const handleDeleteChallenge = async (challengeId: number) => {
-    if (!confirm('Are you sure you want to delete this challenge?')) return
+  const handleDeleteChallenge = async () => {
+    if (!deleteConfirm) return
 
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL || ''}/api/v1/challenges/admin/${challengeId}`,
+        `${import.meta.env.VITE_API_URL || ''}/api/v1/challenges/admin/${deleteConfirm.id}`,
         {
           method: 'DELETE',
           headers: {
@@ -105,6 +106,7 @@ export default function ChallengeManagement() {
       if (response.ok) {
         setSuccess('Challenge deleted successfully!')
         fetchChallenges()
+        setDeleteConfirm(null)
       } else {
         const payload = await response.json().catch(() => ({}))
         setError(payload.detail ?? 'Failed to delete challenge')
@@ -294,7 +296,7 @@ export default function ChallengeManagement() {
                         </button>
                         <button 
                           className="btn btn-square btn-sm btn-outline btn-error border"
-                          onClick={() => handleDeleteChallenge(challenge.id)}
+                          onClick={() => setDeleteConfirm({ id: challenge.id, title: challenge.title })}
                           title="Delete Challenge"
                         >
                           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
@@ -330,6 +332,26 @@ export default function ChallengeManagement() {
           setTimeout(() => setSuccess(''), 3000)
         }}
       />
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirm && (
+        <div className="modal modal-open">
+          <div className="modal-box border border-error/20">
+            <h3 className="font-bold text-lg text-error">Confirm Deletion</h3>
+            <p className="py-4">
+              Are you sure you want to delete the challenge <span className="font-bold">{deleteConfirm.title}</span>?
+              <br />
+              <span className="text-sm opacity-70 mt-2 block">
+                This action cannot be undone. All associated submissions will be permanently removed, and team scores will be recalculated.
+              </span>
+            </p>
+            <div className="modal-action">
+              <button className="btn btn-outline rounded-md transition-all" onClick={() => setDeleteConfirm(null)}>Cancel</button>
+              <button className="btn btn-error text-error-content rounded-md hover:brightness-75 transition-all border-none" onClick={handleDeleteChallenge}>Delete</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

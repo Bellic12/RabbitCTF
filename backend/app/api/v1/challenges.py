@@ -758,19 +758,30 @@ def delete_challenge(
             status_code=status.HTTP_404_NOT_FOUND, detail="Challenge not found"
         )
 
-    # Check if challenge has submissions
+    # 1. Find all correct submissions to adjust team scores
     from app.models.submission import Submission
+    from app.models.team import Team
 
-    has_submissions = (
-        db.query(Submission).filter(Submission.challenge_id == challenge_id).first()
-        is not None
+    correct_submissions = (
+        db.query(Submission)
+        .filter(
+            Submission.challenge_id == challenge_id,
+            Submission.is_correct == True
+        )
+        .all()
     )
 
-    if has_submissions:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Cannot delete challenge with submissions",
-        )
+    # 2. Deduct scores from teams
+    for submission in correct_submissions:
+        if submission.awarded_score and submission.awarded_score > 0:
+            team = db.query(Team).filter(Team.id == submission.team_id).first()
+            if team:
+                team.total_score = max(0, (team.total_score or 0) - submission.awarded_score)
+
+    # 3. Delete all submissions for this challenge
+    db.query(Submission).filter(
+        Submission.challenge_id == challenge_id
+    ).delete()
 
     # Delete all related configs (they should cascade, but being explicit)
     db.query(ChallengeScoreConfig).filter(
