@@ -96,26 +96,6 @@ def test_role_based_access():
         else:
             print(" Error: se esperaba rol 'admin'")
 
-        # print("\n" + "=" * 50)
-        # print(" Todos los tests pasaron correctamente!")
-        # print("\n Resumen:")
-        # print("   - Tokens incluyen información de rol")
-        # print("   - Cada usuario tiene su rol correcto en el token")
-        # print("   - Ready para usar dependencies de rol en endpoints")
-
-        # print("\n Endpoints protegidos disponibles:")
-        # print("   - GET  /api/v1/admin/users (solo admin)")
-        # print("   - DELETE /api/v1/admin/users/{id} (solo admin)")
-        # print("   - GET  /api/v1/admin/statistics (solo admin)")
-
-        # print("\n Cómo probar desde el frontend o Postman:")
-        # print("   1. Login: POST /api/v1/auth/login")
-        # print("   2. Copiar el access_token")
-        # print("   3. Agregar header: Authorization: Bearer <token>")
-        # print("   4. Hacer request a /api/v1/admin/users")
-        # print("   5. Si eres admin → 200 OK")
-        # print("   6. Si NO eres admin → 403 Forbidden")
-
         return True
 
     except Exception as e:
