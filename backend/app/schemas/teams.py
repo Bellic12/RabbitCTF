@@ -93,6 +93,19 @@ class TeamMemberResponse(BaseModel):
     email: str
     is_captain: bool = False
     joined_at: datetime
+    score: int = 0
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class SolvedChallengeResponse(BaseModel):
+    """Schema for solved challenge information."""
+
+    id: int
+    title: str
+    category_name: str
+    points: int
+    solved_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -104,8 +117,14 @@ class TeamDetailResponse(TeamResponse):
     members: List[TeamMemberResponse] = Field(
         default_factory=list, description="List of team members"
     )
+    solved_challenges: List[SolvedChallengeResponse] = Field(
+        default_factory=list, description="List of solved challenges"
+    )
     recent_solves: Optional[int] = Field(
         default=0, description="Number of challenges solved recently"
+    )
+    solved_challenges_count: int = Field(
+        default=0, description="Total number of challenges solved by the team"
     )
     rank: Optional[int] = Field(
         default=None, description="Team's current rank in the competition"
