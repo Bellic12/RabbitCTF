@@ -111,6 +111,30 @@ async def delete_user(
     return {"message": f"User {username} deleted successfully"}
 
 
+@router.delete("/teams/{team_id}")
+async def delete_team(
+    team_id: int,
+    current_user: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+):
+    """
+    Delete a team by ID (admin only).
+
+    Requires admin role.
+    """
+    team = db.query(Team).filter(Team.id == team_id).first()
+    if not team:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Team not found"
+        )
+
+    team_name = team.name
+    db.delete(team)
+    db.commit()
+
+    return {"message": f"Team {team_name} deleted successfully"}
+
+
 @router.get("/config", response_model=EventConfigResponse)
 async def get_event_config(
     current_user: User = Depends(get_current_admin), db: Session = Depends(get_db)
