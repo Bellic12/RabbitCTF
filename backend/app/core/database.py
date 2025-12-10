@@ -13,6 +13,10 @@ DATABASE_URL = os.getenv(
     "DATABASE_URL", "postgresql+psycopg://rabbitctf:rabbitctf@localhost:5432/rabbitctf"
 )
 
+# Convert postgresql:// to postgresql+psycopg2:// for psycopg2-binary
+if DATABASE_URL.startswith("postgresql://"):
+    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg2://", 1)
+
 # Create SQLAlchemy engine
 engine = create_engine(
     DATABASE_URL,
