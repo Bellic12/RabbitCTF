@@ -71,7 +71,7 @@ const calculateEventStatus = (startTime: string, endTime: string): string => {
   
   if (now < start) return 'not_started'
   if (now >= start && now <= end) return 'active'
-  if (now > end) return 'ended'
+  if (now > end) return 'finished'
   
   return 'not_started'
 }
@@ -83,6 +83,13 @@ export default function EventSettings() {
   const [showPreview, setShowPreview] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
   
+  const [savedEventConfig, setSavedEventConfig] = useState({
+    start_time: '',
+    end_time: '',
+    event_timezone: 'UTC',
+    status: 'not_started'
+  })
+
   const [eventConfig, setEventConfig] = useState({
     start_time: '',
     end_time: '',
@@ -97,21 +104,11 @@ export default function EventSettings() {
   
   // Estado calculado automáticamente
   const [calculatedStatus, setCalculatedStatus] = useState('not_started')
-  const [selectedDates, setSelectedDates] = useState<{
-    start: string
-    end: string
-  }>({ start: 'Not set', end: 'Not set' })
 
   // Calcular status automáticamente cuando cambian las fechas
   useEffect(() => {
     const status = calculateEventStatus(eventConfig.start_time, eventConfig.end_time)
     setCalculatedStatus(status)
-    
-    // Actualizar fechas formateadas para display
-    setSelectedDates({
-      start: formatDateForDisplay(eventConfig.start_time),
-      end: formatDateForDisplay(eventConfig.end_time)
-    })
     
     // Validar fechas
     validateDates()
@@ -150,7 +147,8 @@ export default function EventSettings() {
         }
         
         // Validar duración mínima (1 hora)
-        const minDuration = 60 * 60 * 1000 // 1 hora
+        // const minDuration = 60 * 60 * 1000 // 1 hora
+        const minDuration = 5 * 60 * 1000 // 5 minutos para pruebas
         if ((end.getTime() - start.getTime()) < minDuration) {
           errors.general = 'Event must be at least 1 hour long'
         }
@@ -188,6 +186,12 @@ export default function EventSettings() {
               start_time: data.start_time || '',
               end_time: data.end_time || '',
               event_timezone: data.event_timezone || 'UTC'
+            })
+            setSavedEventConfig({
+              start_time: data.start_time || '',
+              end_time: data.end_time || '',
+              event_timezone: data.event_timezone || 'UTC',
+              status: data.status || 'not_started'
             })
           }
         }
@@ -252,6 +256,12 @@ export default function EventSettings() {
           end_time: data.end_time || '',
           event_timezone: data.event_timezone || 'UTC'
         })
+        setSavedEventConfig({
+          start_time: data.start_time || '',
+          end_time: data.end_time || '',
+          event_timezone: data.event_timezone || 'UTC',
+          status: data.status || 'not_started'
+        })
         
         setMessage({ 
           type: 'success', 
@@ -309,20 +319,20 @@ export default function EventSettings() {
       description: 'Event has not started yet. Participants cannot submit flags.'
     },
     active: {
-      label: '▶️ ACTIVE',
+      label: ' ACTIVE',
       color: 'bg-green-500',
       textColor: 'text-green-300',
       description: 'Event is currently running. Participants can submit flags.'
     },
-    ended: {
-      label: '✅ ENDED',
+    finished: {
+      label: ' FINISHED',
       color: 'bg-red-500',
       textColor: 'text-red-300',
       description: 'Event has ended. No more flag submissions allowed.'
     }
   }
 
-  const currentStatus = statusConfig[calculatedStatus as keyof typeof statusConfig]
+  const currentStatus = statusConfig[(savedEventConfig.status || 'not_started') as keyof typeof statusConfig]
 
   return (
     <div className="space-y-8">
@@ -337,7 +347,7 @@ export default function EventSettings() {
               {currentStatus.label}
             </div>
             <span className="text-sm text-white/60">
-              (Auto-calculated from dates below)
+              (Current status in database)
             </span>
           </div>
           <p className="text-white/70 text-sm">
@@ -345,16 +355,16 @@ export default function EventSettings() {
           </p>
         </div>
         
-        {/* Selected Dates Display - SIEMPRE VISIBLE */}
+        {/* Current Database Configuration */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <div className="bg-base-300 p-4 rounded-lg">
             <div className="text-sm text-white/60 mb-1">Start Date & Time</div>
             <div className="text-white font-mono text-lg">
-              {selectedDates.start}
+              {formatDateForDisplay(savedEventConfig.start_time)}
             </div>
-            {eventConfig.start_time && (
+            {savedEventConfig.start_time && (
               <div className="text-xs text-white/40 mt-1">
-                {formatDateForInput(eventConfig.start_time)}
+                {formatDateForInput(savedEventConfig.start_time)}
               </div>
             )}
           </div>
@@ -362,11 +372,11 @@ export default function EventSettings() {
           <div className="bg-base-300 p-4 rounded-lg">
             <div className="text-sm text-white/60 mb-1">End Date & Time</div>
             <div className="text-white font-mono text-lg">
-              {selectedDates.end}
+              {formatDateForDisplay(savedEventConfig.end_time)}
             </div>
-            {eventConfig.end_time && (
+            {savedEventConfig.end_time && (
               <div className="text-xs text-white/40 mt-1">
-                {formatDateForInput(eventConfig.end_time)}
+                {formatDateForInput(savedEventConfig.end_time)}
               </div>
             )}
           </div>
@@ -415,7 +425,8 @@ export default function EventSettings() {
                   setEventConfig({...eventConfig, end_time: date})
                 }}
                 min={eventConfig.start_time ? 
-                  new Date(new Date(eventConfig.start_time).getTime() + 3600000).toISOString().slice(0, 16) : 
+                  // new Date(new Date(eventConfig.start_time).getTime() + 3600000).toISOString().slice(0, 16) 
+                  new Date(new Date(eventConfig.start_time).getTime() + 300000).toISOString().slice(0, 16) :  // 5 min (prueba)
                   new Date().toISOString().slice(0, 16)
                 } // Mínimo 1 hora después del inicio
               />
@@ -469,7 +480,7 @@ export default function EventSettings() {
           ) : 'Update Event Configuration'}
         </button>
         
-        {/* Status Change Info */}
+        {/* Status Change Info
         <div className="mt-4 text-sm text-white/60">
           <p className="font-semibold mb-1">How status changes work:</p>
           <ul className="list-disc pl-5 space-y-1">
@@ -477,7 +488,7 @@ export default function EventSettings() {
             <li><span className="font-medium">ACTIVE → ENDED:</span> Automatically when current time ≥ End Time</li>
             <li>Status updates every minute based on system time</li>
           </ul>
-        </div>
+        </div> */}
       </div>
       
       {/* Message Display */}

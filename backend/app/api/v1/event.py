@@ -22,6 +22,7 @@ async def get_event_status(db: Session = Depends(get_db)):
     if not config:
         # Return default if not configured
         return EventConfigResponse(
+            id=0,
             event_name="RabbitCTF",
             status=EventStatus.NOT_STARTED,
             start_time=None,

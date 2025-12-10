@@ -1,4 +1,4 @@
-import { Link, NavLink, useNavigate } from 'react-router-dom'
+import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom'
 
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
@@ -8,6 +8,7 @@ import EventTimer from './EventTimer'
 export default function Navigation() {
   const { user, logout, isAuthenticated, isLoading } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const { showToast } = useToast()
 
   const handleLogout = () => {
@@ -94,7 +95,7 @@ export default function Navigation() {
         </nav>
 
         <div className="flex items-center gap-3">
-          <EventTimer />
+          {location.pathname !== '/' && <EventTimer />}
           {isLoading ? (
             <div className="h-8 w-20 animate-pulse rounded-full bg-white/5"></div>
           ) : isAuthenticated && user ? (

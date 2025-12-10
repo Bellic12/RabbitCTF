@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 
-type EventStatus = 'not_started' | 'active' | 'ended' | 'finished'
+type EventStatus = 'not_started' | 'active' | 'finished'
 
 interface EventConfig {
   status: EventStatus
@@ -8,7 +8,11 @@ interface EventConfig {
   end_time: string | null
 }
 
-export default function EventTimer() {
+interface EventTimerProps {
+  variant?: 'navbar' | 'hero'
+}
+
+export default function EventTimer({ variant = 'navbar' }: EventTimerProps) {
   const [config, setConfig] = useState<EventConfig | null>(null)
   const [timeLeft, setTimeLeft] = useState<string>('')
   const [label, setLabel] = useState<string>('')
@@ -90,7 +94,31 @@ export default function EventTimer() {
     return () => clearInterval(timerInterval)
   }, [config])
 
-  if (!config || !timeLeft) return null
+  if (!config) return null
+
+  if (variant === 'hero') {
+    return (
+      <div className="flex flex-col items-center gap-2">
+        <div className="flex items-center gap-4">
+          <span className={`rounded-full border px-4 py-1 text-sm font-semibold uppercase tracking-wide ${
+            config.status === 'active' ? 'border-success/30 bg-success/10 text-success' :
+            config.status === 'finished' ? 'border-white/10 bg-white/5 text-white/50' :
+            'border-warning/30 bg-warning/10 text-warning'
+          }`}>
+            {(config.status || 'not_started').replace('_', ' ')}
+          </span>
+          {timeLeft && (
+            <span className="font-mono text-2xl font-bold text-white tabular-nums">
+              {timeLeft}
+            </span>
+          )}
+        </div>
+        {timeLeft && <span className="text-xs text-white/40 uppercase tracking-widest">{label}</span>}
+      </div>
+    )
+  }
+
+  if (!timeLeft) return null
 
   return (
     <div className={`hidden md:flex items-center gap-2 px-3 py-1 rounded-lg border ${
