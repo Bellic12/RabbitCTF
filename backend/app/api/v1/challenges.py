@@ -736,13 +736,51 @@ async def upload_challenge_files(
             detail="Challenge not found"
         )
     
+    # Check total size of existing files
+    existing_files = db.query(ChallengeFile).filter(ChallengeFile.challenge_id == challenge_id).all()
+    existing_filenames = {f.file_name for f in existing_files}
+    current_total_mb = sum(f.file_size_mb for f in existing_files if f.file_size_mb)
+    
+    MAX_FILE_SIZE_MB = 100
+    MAX_TOTAL_SIZE_MB = 500
+    
+    files_to_process = []
+    processed_filenames = set()
+    
+    # First pass: validate sizes and read content
+    for file in files:
+        if file.filename in existing_filenames or file.filename in processed_filenames:
+             raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"File '{file.filename}' already exists in this challenge."
+            )
+        processed_filenames.add(file.filename)
+
+        content = await file.read()
+        file_size_mb = len(content) / (1024 * 1024)
+        
+        if file_size_mb > MAX_FILE_SIZE_MB:
+             raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"File {file.filename} exceeds the 100MB limit."
+            )
+            
+        if current_total_mb + file_size_mb > MAX_TOTAL_SIZE_MB:
+             raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Total file size for this challenge would exceed 500MB."
+            )
+            
+        current_total_mb += file_size_mb
+        files_to_process.append((file, content, file_size_mb))
+    
     # Create uploads directory if it doesn't exist
     upload_dir = f"uploads/challenges/{challenge_id}"
     os.makedirs(upload_dir, exist_ok=True)
     
     uploaded_files = []
     
-    for file in files:
+    for file, content, file_size_mb in files_to_process:
         # Generate unique filename
         file_extension = os.path.splitext(file.filename)[1]
         unique_filename = f"{uuid.uuid4()}{file_extension}"
@@ -750,11 +788,9 @@ async def upload_challenge_files(
         
         # Save file
         with open(file_path, "wb") as buffer:
-            content = await file.read()
             buffer.write(content)
         
         # Save to database
-        file_size_mb = len(content) / (1024 * 1024)
         challenge_file = ChallengeFile(
             challenge_id=challenge_id,
             file_path=file_path,
