@@ -1,9 +1,11 @@
 from typing import List, Any
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Request
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import func
 from app.api import deps
 from app.core.database import get_db
+from app.core.audit import log_audit
 from app.schemas.challenges import (
     ChallengeResponse,
     ChallengeCategoryResponse,
@@ -20,6 +22,10 @@ from app.models.challenge_visibility_config import ChallengeVisibilityConfig
 from app.models.challenge_flag import ChallengeFlag
 from app.models.challenge_file import ChallengeFile
 from app.models.submission import Submission
+from app.models.submission_block import SubmissionBlock
+from app.models.team_member import TeamMember
+from app.models.team import Team
+from datetime import datetime
 import os
 import uuid
 
@@ -41,19 +47,42 @@ def read_categories(
     db: Session = Depends(get_db),
     skip: int = 0,
     limit: int = 100,
+    include_hidden: bool = False,
     current_user=Depends(deps.get_current_active_user),
 ) -> Any:
     """
     Retrieve challenge categories.
     """
-    categories = (
-        db.query(ChallengeCategory)
-        .filter(ChallengeCategory.is_active)
+    query = (
+        db.query(
+            ChallengeCategory,
+            func.count(Challenge.id).label("challenge_count")
+        )
+        .outerjoin(Challenge, Challenge.category_id == ChallengeCategory.id)
+    )
+
+    if not include_hidden:
+        query = query.filter(ChallengeCategory.is_active)
+
+    results = (
+        query
+        .group_by(ChallengeCategory.id)
         .offset(skip)
         .limit(limit)
         .all()
     )
-    return categories
+    
+    return [
+        ChallengeCategoryResponse(
+            id=cat.id,
+            name=cat.name,
+            description=cat.description,
+            is_active=cat.is_active,
+            created_at=cat.created_at,
+            challenge_count=count
+        )
+        for cat, count in results
+    ]
 
 
 @router.get("/difficulties", response_model=List[dict])
@@ -84,15 +113,66 @@ def read_challenges(
             joinedload(Challenge.category),
             joinedload(Challenge.difficulty),
             joinedload(Challenge.score_config),
+            joinedload(Challenge.visibility_config),
         )
         .filter(~Challenge.is_draft)
+        .filter(Challenge.visibility_config.has(is_visible=True))
+        .join(ChallengeCategory)
+        .filter(ChallengeCategory.is_active == True)
         .offset(skip)
         .limit(limit)
         .all()
     )
 
+    # Get solve counts
+    solve_counts = (
+        db.query(Submission.challenge_id, func.count(Submission.id))
+        .filter(Submission.is_correct == True)
+        .group_by(Submission.challenge_id)
+        .all()
+    )
+    solve_counts_map = {sc[0]: sc[1] for sc in solve_counts}
+
     results = []
     for c in challenges:
+        # Check if current user's team has solved this challenge
+        team_member = (
+            db.query(TeamMember)
+            .filter(TeamMember.user_id == current_user.id)
+            .first()
+        )
+        
+        is_solved = False
+        solved_by = None
+        if team_member:
+            submission = (
+                db.query(Submission)
+                .options(joinedload(Submission.user))
+                .filter(
+                    Submission.challenge_id == c.id,
+                    Submission.team_id == team_member.team_id,
+                    Submission.is_correct == True
+                )
+                .first()
+            )
+            if submission:
+                is_solved = True
+                solved_by = submission.user.username
+        
+        # Check if user is blocked
+        blocked_until = None
+        block = (
+            db.query(SubmissionBlock)
+            .filter(
+                SubmissionBlock.user_id == current_user.id,
+                SubmissionBlock.challenge_id == c.id,
+                SubmissionBlock.blocked_until > datetime.utcnow(),
+            )
+            .first()
+        )
+        if block:
+            blocked_until = block.blocked_until
+
         results.append(
             {
                 "id": c.id,
@@ -104,14 +184,156 @@ def read_challenges(
                 "difficulty_name": c.difficulty.name if c.difficulty else None,
                 "base_score": c.score_config.base_score if c.score_config else 0,
                 "current_score": c.score_config.base_score if c.score_config else 0,
-                "solve_count": 0,
-                "is_solved": False,
+                "solve_count": solve_counts_map.get(c.id, 0),
+                "is_solved": is_solved,
+                "solved_by": solved_by,
+                "blocked_until": blocked_until,
                 "created_at": c.created_at,
                 "operational_data": c.operational_data,
             }
         )
 
     return results
+
+
+@router.get("/{challenge_id}", response_model=ChallengeResponse)
+def read_challenge(
+    challenge_id: int,
+    db: Session = Depends(get_db),
+    current_user=Depends(deps.get_current_user),
+) -> Any:
+    """
+    Get a specific challenge by ID.
+    """
+    challenge = (
+        db.query(Challenge)
+        .options(
+            joinedload(Challenge.category),
+            joinedload(Challenge.difficulty),
+            joinedload(Challenge.score_config),
+            joinedload(Challenge.visibility_config),
+        )
+        .filter(Challenge.id == challenge_id)
+        .first()
+    )
+
+    if not challenge:
+        raise HTTPException(status_code=404, detail="Challenge not found")
+
+    if challenge.is_draft or (challenge.visibility_config and not challenge.visibility_config.is_visible):
+        if current_user.role.name != "admin":
+            raise HTTPException(status_code=404, detail="Challenge not found")
+
+    # Check if current user's team has solved this challenge
+    team_member = (
+        db.query(TeamMember)
+        .filter(TeamMember.user_id == current_user.id)
+        .first()
+    )
+    
+    is_solved = False
+    solved_by = None
+    if team_member:
+        submission = (
+            db.query(Submission)
+            .options(joinedload(Submission.user))
+            .filter(
+                Submission.challenge_id == challenge.id,
+                Submission.team_id == team_member.team_id,
+                Submission.is_correct == True
+            )
+            .first()
+        )
+        if submission:
+            is_solved = True
+            solved_by = submission.user.username
+
+    # Check if user is blocked
+    blocked_until = None
+    block = (
+        db.query(SubmissionBlock)
+        .filter(
+            SubmissionBlock.user_id == current_user.id,
+            SubmissionBlock.challenge_id == challenge.id,
+            SubmissionBlock.blocked_until > datetime.utcnow(),
+        )
+        .first()
+    )
+    if block:
+        blocked_until = block.blocked_until
+
+    # Get solve count
+    solve_count = (
+        db.query(Submission)
+        .filter(Submission.challenge_id == challenge.id, Submission.is_correct == True)
+        .count()
+    )
+
+    return {
+        "id": challenge.id,
+        "title": challenge.title,
+        "description": challenge.description,
+        "category_id": challenge.category_id,
+        "category_name": challenge.category.name if challenge.category else None,
+        "difficulty_id": challenge.difficulty_id,
+        "difficulty_name": challenge.difficulty.name if challenge.difficulty else None,
+        "base_score": challenge.score_config.base_score if challenge.score_config else 0,
+        "current_score": challenge.score_config.base_score if challenge.score_config else 0,
+        "solve_count": solve_count,
+        "is_solved": is_solved,
+        "solved_by": solved_by,
+        "blocked_until": blocked_until,
+        "created_at": challenge.created_at,
+        "operational_data": challenge.operational_data,
+    }
+
+
+@router.get("/{challenge_id}/solves", response_model=List[dict])
+def get_challenge_solves(
+    challenge_id: int,
+    db: Session = Depends(get_db),
+    current_user=Depends(deps.get_current_user),
+):
+    """
+    Get list of teams that solved the challenge.
+    """
+    # Check if challenge exists and is visible
+    challenge = (
+        db.query(Challenge)
+        .options(joinedload(Challenge.visibility_config))
+        .filter(Challenge.id == challenge_id)
+        .first()
+    )
+    
+    if not challenge:
+        raise HTTPException(status_code=404, detail="Challenge not found")
+        
+    if not challenge.visibility_config.is_visible:
+         # We need to check if user is admin. 
+         # Assuming User model has role relationship and we can check role name
+         if current_user.role.name != "admin":
+             raise HTTPException(status_code=404, detail="Challenge not found")
+
+    solves = (
+        db.query(Submission)
+        .join(Team)
+        .filter(
+            Submission.challenge_id == challenge_id,
+            Submission.is_correct == True
+        )
+        .order_by(Submission.submitted_at.asc())
+        .all()
+    )
+    
+    return [
+        {
+            "team_id": s.team_id,
+            "team_name": s.team.name,
+            "submitted_at": s.submitted_at,
+            "score": s.awarded_score
+        }
+        for s in solves
+    ]
 
 
 @router.get("/admin/all", response_model=List[ChallengeDetailResponse])
@@ -157,26 +379,21 @@ def read_all_challenges_admin(
                 "created_at": c.created_at,
                 "operational_data": c.operational_data,
                 "is_draft": c.is_draft,
-                "is_visible": (
-                    c.visibility_config.is_visible if c.visibility_config else False
-                ),
-                "visible_from": (
-                    c.visibility_config.visible_from if c.visibility_config else None
-                ),
-                "visible_until": (
-                    c.visibility_config.visible_until if c.visibility_config else None
-                ),
-                "attempt_limit": (
-                    c.rule_config.attempt_limit if c.rule_config else 0
-                ),
-                "is_case_sensitive": (
-                    c.rule_config.is_case_sensitive if c.rule_config else True
-                ),
-                "scoring_mode": (
-                    c.score_config.scoring_mode if c.score_config else "STATIC"
-                ),
-                "decay_factor": c.score_config.decay_factor if c.score_config else None,
-                "min_score": c.score_config.min_score if c.score_config else None,
+                "score_config": {
+                    "base_score": c.score_config.base_score if c.score_config else 0,
+                    "scoring_mode": c.score_config.scoring_mode if c.score_config else "STATIC",
+                    "decay_factor": c.score_config.decay_factor if c.score_config else None,
+                    "min_score": c.score_config.min_score if c.score_config else None,
+                },
+                "visibility_config": {
+                    "is_visible": c.visibility_config.is_visible if c.visibility_config else False,
+                    "visible_from": c.visibility_config.visible_from if c.visibility_config else None,
+                    "visible_until": c.visibility_config.visible_until if c.visibility_config else None,
+                },
+                "rule_config": {
+                    "attempt_limit": c.rule_config.attempt_limit if c.rule_config else 0,
+                    "is_case_sensitive": c.rule_config.is_case_sensitive if c.rule_config else True,
+                },
                 "created_by": c.created_by,
                 "updated_at": c.updated_at,
                 "total_attempts": 0,
@@ -191,12 +408,20 @@ def read_all_challenges_admin(
 @router.post("/admin/create", response_model=dict, status_code=status.HTTP_201_CREATED)
 def create_challenge(
     challenge_data: ChallengeCreateRequest,
+    request: Request,
     db: Session = Depends(get_db),
     current_user=Depends(deps.get_current_admin),
 ) -> Any:
     """
     Create a new challenge (admin only).
     """
+    # Validate category is active
+    category = db.query(ChallengeCategory).filter(ChallengeCategory.id == challenge_data.category_id).first()
+    if not category:
+        raise HTTPException(status_code=404, detail="Category not found")
+    if not category.is_active:
+        raise HTTPException(status_code=400, detail="Cannot assign challenge to an inactive category")
+
     # Create the challenge
     new_challenge = Challenge(
         title=challenge_data.title,
@@ -243,6 +468,17 @@ def create_challenge(
 
     db.commit()
     db.refresh(new_challenge)
+    
+    # Log challenge creation
+    log_audit(
+        db=db,
+        user_id=current_user.id,
+        action="CREATE",
+        resource_type="challenge",
+        resource_id=new_challenge.id,
+        details={"action": "created_challenge", "challenge_title": new_challenge.title},
+        request=request
+    )
 
     return {"id": new_challenge.id, "title": new_challenge.title, "message": "Challenge created successfully"}
 
@@ -250,13 +486,19 @@ def create_challenge(
 @router.patch("/admin/{challenge_id}/toggle-visibility", response_model=dict)
 def toggle_challenge_visibility(
     challenge_id: int,
+    request: Request,
     db: Session = Depends(get_db),
     current_user=Depends(deps.get_current_admin),
 ) -> Any:
     """
     Toggle challenge visibility (admin only).
     """
-    challenge = db.query(Challenge).filter(Challenge.id == challenge_id).first()
+    challenge = (
+        db.query(Challenge)
+        .options(joinedload(Challenge.visibility_config))
+        .filter(Challenge.id == challenge_id)
+        .first()
+    )
 
     if not challenge:
         raise HTTPException(
@@ -264,6 +506,7 @@ def toggle_challenge_visibility(
         )
 
     # Toggle visibility config
+    old_visibility = challenge.visibility_config.is_visible if challenge.visibility_config else False
     if challenge.visibility_config:
         challenge.visibility_config.is_visible = (
             not challenge.visibility_config.is_visible
@@ -279,13 +522,28 @@ def toggle_challenge_visibility(
     if challenge.visibility_config and challenge.visibility_config.is_visible:
         challenge.is_draft = False
 
+    new_visibility = challenge.visibility_config.is_visible if challenge.visibility_config else False
     db.commit()
+    
+    # Log visibility change
+    log_audit(
+        db=db,
+        user_id=current_user.id,
+        action="UPDATE",
+        resource_type="challenge",
+        resource_id=challenge_id,
+        details={
+            "action": "toggled_visibility",
+            "challenge_title": challenge.title,
+            "old_visibility": old_visibility,
+            "new_visibility": new_visibility
+        },
+        request=request
+    )
 
     return {
         "id": challenge_id,
-        "is_visible": (
-            challenge.visibility_config.is_visible if challenge.visibility_config else False
-        ),
+        "is_visible": new_visibility,
         "message": "Visibility toggled successfully",
     }
 
@@ -361,6 +619,7 @@ def get_challenge_admin(
 def update_challenge_admin(
     challenge_id: int,
     payload: ChallengeUpdateRequest,
+    request: Request,
     db: Session = Depends(get_db),
     current_user=Depends(deps.get_current_admin),
 ):
@@ -411,6 +670,12 @@ def update_challenge_admin(
     ]:
         value = getattr(payload, field)
         if value is not None:
+            if field == "category_id":
+                category = db.query(ChallengeCategory).filter(ChallengeCategory.id == value).first()
+                if not category:
+                    raise HTTPException(status_code=404, detail="Category not found")
+                if not category.is_active:
+                    raise HTTPException(status_code=400, detail="Cannot assign challenge to an inactive category")
             setattr(challenge, field, value)
 
     if payload.connection_info is not None:
@@ -462,6 +727,17 @@ def update_challenge_admin(
                 challenge.is_draft = False
 
     db.commit()
+    
+    # Log challenge update
+    log_audit(
+        db=db,
+        user_id=current_user.id,
+        action="UPDATE",
+        resource_type="challenge",
+        resource_id=challenge.id,
+        details={"action": "updated_challenge", "challenge_title": challenge.title},
+        request=request
+    )
 
     return {"id": challenge.id, "message": "Challenge updated successfully"}
 
@@ -482,19 +758,30 @@ def delete_challenge(
             status_code=status.HTTP_404_NOT_FOUND, detail="Challenge not found"
         )
 
-    # Check if challenge has submissions
+    # 1. Find all correct submissions to adjust team scores
     from app.models.submission import Submission
+    from app.models.team import Team
 
-    has_submissions = (
-        db.query(Submission).filter(Submission.challenge_id == challenge_id).first()
-        is not None
+    correct_submissions = (
+        db.query(Submission)
+        .filter(
+            Submission.challenge_id == challenge_id,
+            Submission.is_correct == True
+        )
+        .all()
     )
 
-    if has_submissions:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Cannot delete challenge with submissions",
-        )
+    # 2. Deduct scores from teams
+    for submission in correct_submissions:
+        if submission.awarded_score and submission.awarded_score > 0:
+            team = db.query(Team).filter(Team.id == submission.team_id).first()
+            if team:
+                team.total_score = max(0, (team.total_score or 0) - submission.awarded_score)
+
+    # 3. Delete all submissions for this challenge
+    db.query(Submission).filter(
+        Submission.challenge_id == challenge_id
+    ).delete()
 
     # Delete all related configs (they should cascade, but being explicit)
     db.query(ChallengeScoreConfig).filter(
@@ -550,6 +837,119 @@ def create_category(
         "message": "Category created successfully"
     }
 
+
+@router.patch("/admin/categories/{category_id}", response_model=dict)
+def update_category(
+    category_id: int,
+    category_data: dict,
+    db: Session = Depends(get_db),
+    current_user=Depends(deps.get_current_admin),
+) -> Any:
+    """
+    Update an existing challenge category (admin only).
+    """
+    category = db.query(ChallengeCategory).filter(
+        ChallengeCategory.id == category_id
+    ).first()
+    
+    if not category:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Category not found"
+        )
+    
+    # Check if new name conflicts with another category
+    if "name" in category_data and category_data["name"] != category.name:
+        existing = db.query(ChallengeCategory).filter(
+            ChallengeCategory.name == category_data["name"],
+            ChallengeCategory.id != category_id
+        ).first()
+        
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Category '{category_data['name']}' already exists"
+            )
+        category.name = category_data["name"]
+    
+    if "description" in category_data:
+        category.description = category_data.get("description")
+    
+    if "is_active" in category_data:
+        category.is_active = category_data.get("is_active", True)
+    
+    db.commit()
+    db.refresh(category)
+    
+    return {
+        "id": category.id,
+        "name": category.name,
+        "description": category.description,
+        "message": "Category updated successfully"
+    }
+
+
+@router.delete("/admin/categories/{category_id}", response_model=dict)
+def delete_category(
+    category_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user=Depends(deps.get_current_admin),
+) -> Any:
+    """
+    Delete a challenge category (admin only).
+    Category can only be deleted if it has no challenges assigned.
+    """
+    category = db.query(ChallengeCategory).filter(
+        ChallengeCategory.id == category_id
+    ).first()
+    
+    if not category:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Category not found"
+        )
+    
+    # Check if category has any challenges
+    challenge_count = db.query(Challenge).filter(
+        Challenge.category_id == category_id
+    ).count()
+    
+    if challenge_count > 0:
+        # Hide category instead of deleting
+        category.is_active = False
+        db.commit()
+        
+        log_audit(
+            db=db,
+            user_id=current_user.id,
+            action="UPDATE",
+            resource_type="category",
+            details={"action": "hide_category", "category_name": category.name, "reason": "has_challenges"},
+            request=request
+        )
+        
+        return {"message": f"Category '{category.name}' has been hidden because it has {challenge_count} challenges."}
+    
+    db.delete(category)
+    db.commit()
+    
+    # Log category deletion
+    log_audit(
+        db=db,
+        user_id=current_user.id,
+        action="DELETE",
+        resource_type="category",
+        resource_id=category_id,
+        details={"action": "deleted_category", "category_name": category.name},
+        request=request
+    )
+    
+    return {
+        "id": category_id,
+        "message": f"Category '{category.name}' deleted successfully"
+    }
+
 @router.post("/admin/{challenge_id}/files", response_model=dict)
 async def upload_challenge_files(
     challenge_id: int,
@@ -568,13 +968,51 @@ async def upload_challenge_files(
             detail="Challenge not found"
         )
     
+    # Check total size of existing files
+    existing_files = db.query(ChallengeFile).filter(ChallengeFile.challenge_id == challenge_id).all()
+    existing_filenames = {f.file_name for f in existing_files}
+    current_total_mb = sum(f.file_size_mb for f in existing_files if f.file_size_mb)
+    
+    MAX_FILE_SIZE_MB = 100
+    MAX_TOTAL_SIZE_MB = 500
+    
+    files_to_process = []
+    processed_filenames = set()
+    
+    # First pass: validate sizes and read content
+    for file in files:
+        if file.filename in existing_filenames or file.filename in processed_filenames:
+             raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"File '{file.filename}' already exists in this challenge."
+            )
+        processed_filenames.add(file.filename)
+
+        content = await file.read()
+        file_size_mb = len(content) / (1024 * 1024)
+        
+        if file_size_mb > MAX_FILE_SIZE_MB:
+             raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"File {file.filename} exceeds the 100MB limit."
+            )
+            
+        if current_total_mb + file_size_mb > MAX_TOTAL_SIZE_MB:
+             raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Total file size for this challenge would exceed 500MB."
+            )
+            
+        current_total_mb += file_size_mb
+        files_to_process.append((file, content, file_size_mb))
+    
     # Create uploads directory if it doesn't exist
     upload_dir = f"uploads/challenges/{challenge_id}"
     os.makedirs(upload_dir, exist_ok=True)
     
     uploaded_files = []
     
-    for file in files:
+    for file, content, file_size_mb in files_to_process:
         # Generate unique filename
         file_extension = os.path.splitext(file.filename)[1]
         unique_filename = f"{uuid.uuid4()}{file_extension}"
@@ -582,11 +1020,9 @@ async def upload_challenge_files(
         
         # Save file
         with open(file_path, "wb") as buffer:
-            content = await file.read()
             buffer.write(content)
         
         # Save to database
-        file_size_mb = len(content) / (1024 * 1024)
         challenge_file = ChallengeFile(
             challenge_id=challenge_id,
             file_path=file_path,

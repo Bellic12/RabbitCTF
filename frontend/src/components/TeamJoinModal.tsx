@@ -6,9 +6,10 @@ import { api } from '../services/api'
 type TeamJoinModalProps = {
   isOpen: boolean
   onClose: () => void
+  onSuccess: () => void
 }
 
-export default function TeamJoinModal({ isOpen, onClose }: TeamJoinModalProps) {
+export default function TeamJoinModal({ isOpen, onClose, onSuccess }: TeamJoinModalProps) {
   const { token } = useAuth()
   const [teamName, setTeamName] = useState('')
   const [password, setPassword] = useState('')
@@ -20,10 +21,15 @@ export default function TeamJoinModal({ isOpen, onClose }: TeamJoinModalProps) {
     setIsLoading(true)
     setError('')
     try {
-      await api.teams.join(token, { name: teamName, password })
+      await api.teams.join(token, { team_name: teamName, password })
+      onSuccess()
       onClose()
-    } catch (err) {
-      setError('Failed to join team')
+    } catch (err: any) {
+      if (err.message && err.message.includes('Team is full')) {
+        setError('Team is full')
+      } else {
+        setError(err.message || 'Failed to join team')
+      }
     } finally {
       setIsLoading(false)
     }
@@ -78,13 +84,13 @@ export default function TeamJoinModal({ isOpen, onClose }: TeamJoinModalProps) {
 
         <div className="mt-8 flex gap-3">
           <button
-            className="btn btn-outline flex-1 border-white/10 text-white hover:bg-white/5 hover:border-white/20"
+            className="btn btn-outline flex-1 border-white/10 text-white hover:bg-white/5 hover:border-white/20 rounded-md transition-all"
             onClick={onClose}
           >
             Cancel
           </button>
           <button
-            className="btn btn-primary flex-1 text-black"
+            className="btn btn-primary flex-1 text-primary-content rounded-md hover:brightness-75 transition-all border-none"
             onClick={handleSubmit}
             disabled={isLoading}
           >

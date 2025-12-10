@@ -22,7 +22,7 @@ export default function Navigation() {
     { label: 'Rules', to: '/rules', public: true },
     { label: 'Leaderboard', to: '/leaderboard', public: true },
     { label: 'Challenges', to: '/challenges', public: false },
-    { label: 'Team', to: '/team', public: false },
+    { label: 'Team', to: '/team', public: false, excludeAdmin: true },
     { label: 'Admin', to: '/admin', adminOnly: true },
   ]
 
@@ -30,11 +30,12 @@ export default function Navigation() {
     if (link.public) return true
     if (!isAuthenticated) return false
     if (link.adminOnly) return user?.role_id === ADMIN_ROLE_ID
+    if (link.excludeAdmin && user?.role_id === ADMIN_ROLE_ID) return false
     return true
   })
 
   return (
-    <header className="border-b border-white/5 bg-base-100/95 backdrop-blur">
+    <header className="border-b border-white/5 bg-base-100/95 backdrop-blur relative z-50">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
         <div className="flex items-center gap-2 text-lg font-semibold text-white">
           <div className="dropdown md:hidden">
@@ -73,7 +74,7 @@ export default function Navigation() {
               ))}
             </ul>
           </div>
-          <FlagIcon />
+          <img src="/UqbarUN_Isotype.svg" alt="RabbitCTF Logo" className="h-8 w-8" />
           RabbitCTF
         </div>
 
@@ -103,7 +104,7 @@ export default function Navigation() {
               <div
                 tabIndex={0}
                 role="button"
-                className="btn btn-ghost btn-sm gap-2 rounded-full border border-white/10 font-normal text-white hover:bg-white/5"
+                className="btn btn-ghost btn-sm gap-2 rounded-md border border-white/10 font-normal text-white hover:bg-white/5"
               >
                 <span>{user.username}</span>
                 <svg
@@ -123,7 +124,7 @@ export default function Navigation() {
               </div>
               <ul
                 tabIndex={0}
-                className="menu dropdown-content z-[1] mt-3 w-52 rounded-box bg-base-200 p-2 shadow-lg ring-1 ring-white/10"
+                className="menu dropdown-content z-[50] mt-3 w-52 rounded-box bg-base-200 p-2 shadow-lg ring-1 ring-white/10"
               >
                 <li>
                   <Link to="/profile" className="text-white hover:text-primary">
@@ -140,13 +141,13 @@ export default function Navigation() {
           ) : (
             <>
               <Link
-                className="btn btn-sm rounded-full border border-white/20 bg-transparent text-white hover:bg-white/5"
+                className="btn btn-sm rounded-md border border-white/20 bg-transparent text-white hover:bg-white/5 transition-all"
                 to="/login"
               >
                 Login
               </Link>
               <Link
-                className="btn btn-sm rounded-full border-none bg-primary text-black hover:bg-secondary"
+                className="btn btn-sm btn-primary text-primary-content rounded-md hover:brightness-75 transition-all border-none"
                 to="/register"
               >
                 Register
@@ -156,19 +157,5 @@ export default function Navigation() {
         </div>
       </div>
     </header>
-  )
-}
-
-function FlagIcon() {
-  return (
-    <svg aria-hidden="true" className="h-5 w-5 text-primary" fill="none" viewBox="0 0 24 24">
-      <path
-        className="stroke-current"
-        d="M6 4v16M6 4h11.2a1 1 0 01.8 1.6L16 9l2 2.4a1 1 0 01-.8 1.6H6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={1.6}
-      />
-    </svg>
   )
 }

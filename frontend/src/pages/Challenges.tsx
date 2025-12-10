@@ -3,34 +3,48 @@ import { useMemo, useState } from 'react'
 import ChallengeCard from '../components/ChallengeCard'
 import ChallengeModal from '../components/ChallengeModal'
 import Footer from '../components/Footer'
+import MultiSelect from '../components/MultiSelect'
 import Navigation from '../components/Navigation'
+import SearchBar from '../components/SearchBar'
+import { useAuth } from '../context/AuthContext'
 import { useChallenges } from '../hooks/useChallenges'
-import type {
-  Challenge,
-  ChallengeCategory,
-  ChallengeDifficulty,
-  ChallengeStatus,
-} from '../types/challenge'
+import type { Challenge } from '../types/challenge'
 
 export default function ChallengesPage() {
-  const { challenges, categories, isLoading } = useChallenges()
+  const { challenges, categories, isLoading, updateChallenge } = useChallenges()
+  const { user } = useAuth()
   const [searchTerm, setSearchTerm] = useState('')
 
-  const [categoryFilter, setCategoryFilter] = useState<'All' | ChallengeCategory>('All')
-  const [difficultyFilter, setDifficultyFilter] = useState<'All' | ChallengeDifficulty>('All')
-  const [statusFilter, setStatusFilter] = useState<'All' | ChallengeStatus>('All')
+  const [categoryFilter, setCategoryFilter] = useState<string[]>([])
+  const [difficultyFilter, setDifficultyFilter] = useState<string[]>([])
+  const [statusFilter, setStatusFilter] = useState<string[]>([])
   const [selected, setSelected] = useState<Challenge | null>(null)
 
   const filteredChallenges = useMemo(() => {
     return challenges.filter(challenge => {
       const matchTerm = challenge.title.toLowerCase().includes(searchTerm.toLowerCase())
-      const matchCategory = categoryFilter === 'All' || challenge.category === categoryFilter
-      const matchDifficulty =
-        difficultyFilter === 'All' || challenge.difficulty === difficultyFilter
-      const matchStatus = statusFilter === 'All' || challenge.status === statusFilter
+      
+      const matchCategory = categoryFilter.length === 0 || categoryFilter.includes(challenge.category)
+      
+      const matchDifficulty = difficultyFilter.length === 0 || difficultyFilter.includes(challenge.difficulty)
+      
+      const matchStatus = statusFilter.length === 0 || statusFilter.includes(challenge.status)
+      
       return matchTerm && matchCategory && matchDifficulty && matchStatus
     })
   }, [challenges, searchTerm, categoryFilter, difficultyFilter, statusFilter])
+
+  const groupedChallenges = useMemo(() => {
+    const groups: Record<string, Challenge[]> = {}
+    filteredChallenges.forEach(challenge => {
+      if (!groups[challenge.category]) {
+        groups[challenge.category] = []
+      }
+      groups[challenge.category].push(challenge)
+    })
+    // Sort categories alphabetically or by some other order if needed
+    return Object.entries(groups).sort((a, b) => a[0].localeCompare(b[0]))
+  }, [filteredChallenges])
 
   return (
     <div className="flex min-h-screen flex-col bg-base-100 text-base-content">
@@ -45,55 +59,41 @@ export default function ChallengesPage() {
             </p>
           </header>
 
-          <section className="flex flex-col gap-4 rounded-box border border-white/10 bg-base-200 p-6 shadow-[0_25px_65px_-50px_rgba(0,0,0,0.9)] md:flex-row md:items-center md:justify-between">
-            <label className="input input-bordered flex w-full items-center gap-2 bg-base-300 md:max-w-xl">
-              <SearchIcon className="hidden h-5 w-5 opacity-50 md:block" />
-              <input
-                className="grow"
-                onChange={event => setSearchTerm(event.target.value)}
-                placeholder="Search challenges..."
-                type="text"
-                value={searchTerm}
-              />
-            </label>
+          <section className="space-y-6">
+            <div className="rounded-box border border-white/10 bg-base-200 p-6 shadow-[0_25px_65px_-50px_rgba(0,0,0,0.9)]">
+              <div className="mb-4">
+                <SearchBar
+                  value={searchTerm}
+                  onChange={setSearchTerm}
+                  placeholder="Search challenges..."
+                />
+              </div>
 
-            <div className="flex flex-wrap items-center gap-3 md:flex-nowrap md:gap-4">
-              <select
-                className="select select-bordered w-full bg-base-300 md:w-auto"
-                onChange={event => setCategoryFilter(event.target.value)}
-                value={categoryFilter}
-              >
-                <option value="All">All</option>
-                {categories.map(category => (
-                  <option key={category} value={category}>
-                    {category}
-                  </option>
-                ))}
-              </select>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                <MultiSelect
+                  label="Category"
+                  options={categories.map(c => ({ label: c, value: c }))}
+                  selected={categoryFilter}
+                  onChange={setCategoryFilter}
+                />
 
-              <select
-                className="select select-bordered w-full bg-base-300 md:w-auto"
-                onChange={event =>
-                  setDifficultyFilter(event.target.value as typeof difficultyFilter)
-                }
-                value={difficultyFilter}
-              >
-                <option value="All">All</option>
-                <option value="Easy">Easy</option>
-                <option value="Medium">Medium</option>
-                <option value="Hard">Hard</option>
-                <option value="Insane">Insane</option>
-              </select>
+                <MultiSelect
+                  label="Difficulty"
+                  options={['Easy', 'Medium', 'Hard', 'Insane'].map(d => ({ label: d, value: d }))}
+                  selected={difficultyFilter}
+                  onChange={setDifficultyFilter}
+                />
 
-              <select
-                className="select select-bordered w-full bg-base-300 md:w-auto"
-                onChange={event => setStatusFilter(event.target.value as typeof statusFilter)}
-                value={statusFilter}
-              >
-                <option value="All">All</option>
-                <option value="solved">Solved</option>
-                <option value="open">Open</option>
-              </select>
+                <MultiSelect
+                  label="Status"
+                  options={[
+                    { label: 'Solved', value: 'solved' },
+                    { label: 'Open', value: 'open' }
+                  ]}
+                  selected={statusFilter}
+                  onChange={setStatusFilter}
+                />
+              </div>
             </div>
           </section>
 
@@ -102,42 +102,58 @@ export default function ChallengesPage() {
               <span className="loading loading-spinner loading-lg text-primary"></span>
             </div>
           ) : (
-            <section className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-              {filteredChallenges.map(challenge => (
-                <ChallengeCard key={challenge.id} challenge={challenge} onClick={setSelected} />
+            <div className="space-y-6">
+              {groupedChallenges.map(([category, categoryChallenges]) => (
+                <div key={category} className="collapse collapse-arrow border border-white/10 bg-base-200">
+                  <input type="checkbox" defaultChecked /> 
+                  <div className="collapse-title text-xl font-medium text-white">
+                    {category} <span className="text-sm font-normal text-white/60 ml-2">({categoryChallenges.length})</span>
+                  </div>
+                  <div className="collapse-content">
+                    <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3 pt-4">
+                      {categoryChallenges.map(challenge => (
+                        <ChallengeCard key={challenge.id} challenge={challenge} onClick={setSelected} />
+                      ))}
+                    </div>
+                  </div>
+                </div>
               ))}
 
               {filteredChallenges.length === 0 && (
-                <div className="col-span-full rounded-box border border-white/10 bg-base-200 p-10 text-center text-white/60">
+                <div className="rounded-box border border-white/10 bg-base-200 p-10 text-center text-white/60">
                   No challenges match the selected filters.
                 </div>
               )}
-            </section>
+            </div>
           )}
         </div>
       </main>
 
       <Footer />
 
-      {selected && <ChallengeModal challenge={selected} onClose={() => setSelected(null)} />}
+      {selected && (
+        <ChallengeModal
+          challenge={selected}
+          onClose={() => setSelected(null)}
+          onSolve={() => {
+            const updatedChallenge = {
+              ...selected,
+              status: 'solved',
+              solvedBy: user?.username || 'you',
+              solves: (selected.solves || 0) + 1
+            } as Challenge
+            
+            updateChallenge(selected.id, {
+              status: 'solved',
+              solvedBy: user?.username || 'you',
+              solves: (selected.solves || 0) + 1
+            })
+            
+            setSelected(updatedChallenge)
+          }}
+        />
+      )}
     </div>
   )
 }
 
-type IconProps = {
-  className?: string
-}
-
-function SearchIcon({ className }: IconProps) {
-  return (
-    <svg aria-hidden="true" className={className} fill="none" viewBox="0 0 24 24">
-      <path
-        className="stroke-current"
-        d="M11 5a6 6 0 014.472 9.992l3.27 3.27a1 1 0 01-1.414 1.414l-3.27-3.27A6 6 0 1111 5z"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={1.4}
-      />
-    </svg>
-  )
-}

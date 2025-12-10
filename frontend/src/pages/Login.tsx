@@ -137,7 +137,7 @@ export default function LoginPage() {
             )}
 
             <button
-              className="btn h-12 w-full rounded-full border-none bg-primary text-base font-semibold text-black hover:bg-secondary"
+              className="btn btn-primary w-full text-primary-content rounded-md hover:brightness-75 transition-all border-none"
               type="submit"
             >
               Login

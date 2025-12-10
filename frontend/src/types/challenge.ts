@@ -27,4 +27,6 @@ export type Challenge = {
   connectionInfo?: string
   files?: ChallengeFile[]
   solveHistory?: ChallengeSolve[]
+  solvedBy?: string
+  blocked_until?: string
 }

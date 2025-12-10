@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react'
 
 import ActivityLog from '../components/admin/ActivityLog'
 import ChallengeManagement from '../components/admin/ChallengeManagement'
-import Configuration from '../components/admin/Configuration'
 import EventSettings from '../components/admin/EventSettings'
 import UserManagement from '../components/admin/UserManagement'
+import ValidationStats from '../components/admin/ValidationStats'
 import Footer from '../components/Footer'
 import Navigation from '../components/Navigation'
 import { useAuth } from '../context/AuthContext'
@@ -99,7 +99,7 @@ export default function AdminPage() {
             { id: 'challenges', label: 'Challenges' },
             { id: 'users', label: 'Users & Teams' },
             { id: 'activity', label: 'Activity Log' },
-            { id: 'config', label: 'Configuration' },
+            { id: 'stats', label: 'Validation Stats' },
           ].map(tab => (
             <a
               key={tab.id}
@@ -118,7 +118,7 @@ export default function AdminPage() {
           {activeTab === 'challenges' && <ChallengeManagement />}
           {activeTab === 'users' && <UserManagement />}
           {activeTab === 'activity' && <ActivityLog />}
-          {activeTab === 'config' && <Configuration />}
+          {activeTab === 'stats' && <ValidationStats />}
         </div>
       </main>
       <Footer />

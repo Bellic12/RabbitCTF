@@ -36,7 +36,9 @@ class Team(Base):
     members = relationship(
         "TeamMember", back_populates="team", cascade="all, delete-orphan"
     )
-    submissions = relationship("Submission", back_populates="team")
+    submissions = relationship(
+        "Submission", back_populates="team", cascade="all, delete-orphan"
+    )
 
     def __repr__(self):
         return f"<Team(id={self.id}, name='{self.name}', score={self.total_score})>"

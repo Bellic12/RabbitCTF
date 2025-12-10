@@ -2,7 +2,7 @@
 Authentication endpoints for RabbitCTF.
 """
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
@@ -11,6 +11,7 @@ from app.api.deps import get_current_user
 from app.schemas.auth import UserCreate, UserLogin, UserResponse, Token
 from app.services.auth_service import AuthService
 from app.models.user import User
+from app.core.audit import log_audit
 
 router = APIRouter()
 
@@ -18,7 +19,7 @@ router = APIRouter()
 @router.post(
     "/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED
 )
-async def register(user_data: UserCreate, db: Session = Depends(get_db)):
+async def register(user_data: UserCreate, request: Request, db: Session = Depends(get_db)):
     """
     Register a new user.
 
@@ -31,11 +32,23 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)):
     """
     auth_service = AuthService(db)
     user = auth_service.register(user_data)
+    
+    # Log registration
+    log_audit(
+        db=db,
+        user_id=user.id,
+        action="CREATE",
+        resource_type="user",
+        resource_id=user.id,
+        details={"action": "user_registration", "username": user.username},
+        request=request
+    )
+    
     return user
 
 
 @router.post("/login", response_model=Token)
-async def login(login_data: UserLogin, db: Session = Depends(get_db)):
+async def login(login_data: UserLogin, request: Request, db: Session = Depends(get_db)):
     """
     Login and get access token.
 
@@ -47,6 +60,19 @@ async def login(login_data: UserLogin, db: Session = Depends(get_db)):
     """
     auth_service = AuthService(db)
     token = auth_service.login(login_data)
+    
+    # Get user for audit log
+    user = auth_service.get_user_by_username(login_data.username)
+    if user:
+        log_audit(
+            db=db,
+            user_id=user.id,
+            action="LOGIN",
+            resource_type="user",
+            details={"action": "user_login", "username": user.username},
+            request=request
+        )
+    
     return token
 
 

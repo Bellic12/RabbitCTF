@@ -23,7 +23,7 @@ export function DifficultyBadge({ difficulty, className = '' }: DifficultyBadgeP
 
   return (
     <span
-      className={`rounded px-2 py-0.5 text-[11px] font-semibold ${getColorClass(difficulty)} ${className}`}
+      className={`rounded-md px-3 py-1 text-xs font-semibold ${getColorClass(difficulty)} ${className}`}
     >
       {difficulty}
     </span>
@@ -38,7 +38,7 @@ type CategoryBadgeProps = {
 export function CategoryBadge({ category, className = '' }: CategoryBadgeProps) {
   return (
     <span
-      className={`rounded border border-white/10 bg-black/30 px-2 py-0.5 text-[11px] uppercase tracking-wide text-white/70 ${className}`}
+      className={`rounded-md border border-info/20 bg-info-content px-3 py-1 text-xs uppercase tracking-wide text-info ${className}`}
     >
       {category}
     </span>

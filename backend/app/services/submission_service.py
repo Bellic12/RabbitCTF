@@ -8,6 +8,8 @@ from datetime import datetime, timedelta
 from dataclasses import dataclass
 
 from app.models.submission import Submission
+from app.models.submission_block import SubmissionBlock
+from app.models.event_config import EventConfig
 from app.models.challenge_flag import ChallengeFlag
 from app.models.challenge_score_config import ChallengeScoreConfig
 from app.models.user import User
@@ -96,11 +98,28 @@ class SubmissionService:
 
         # Check rate limit
         if not self._check_rate_limit(user.id, challenge_id):
+            # Check if blocked to give better message
+            block = (
+                self.db.query(SubmissionBlock)
+                .filter(
+                    SubmissionBlock.user_id == user.id,
+                    SubmissionBlock.challenge_id == challenge_id,
+                    SubmissionBlock.blocked_until > datetime.utcnow(),
+                )
+                .first()
+            )
+            
+            msg = "Rate limit exceeded."
+            if block:
+                remaining = int((block.blocked_until - datetime.utcnow()).total_seconds() / 60) + 1
+                msg = f"You are blocked from submitting to this challenge for {remaining} minutes."
+
+            # Record the blocked attempt in submissions table
             submission = Submission(
                 challenge_id=challenge_id,
                 user_id=user.id,
                 team_id=team_id,
-                submitted_flag="",
+                submitted_flag=flag_value,
                 is_correct=False,
             )
             self.db.add(submission)
@@ -108,8 +127,8 @@ class SubmissionService:
 
             return SubmissionResult(
                 is_correct=False,
-                message="Rate limit exceeded. Please wait before submitting again.",
-                status=SubmissionStatus.RATE_LIMITED,
+                message=msg,
+                status=SubmissionStatus.BLOCKED,
             )
 
         # Get challenge flag
@@ -132,6 +151,9 @@ class SubmissionService:
             is_case_sensitive = challenge.rule_config.is_case_sensitive
         
         # Compare flags directly (plain text comparison)
+        # Strip whitespace from submitted flag
+        flag_value = flag_value.strip()
+        
         submitted_flag = flag_value if is_case_sensitive else flag_value.lower()
         stored_flag = flag.flag_value if is_case_sensitive else flag.flag_value.lower()
         is_correct = (submitted_flag == stored_flag)
@@ -142,7 +164,7 @@ class SubmissionService:
             .filter(
                 Submission.challenge_id == challenge_id,
                 Submission.team_id == team_id,
-                Submission.is_correct is True,
+                Submission.is_correct == True,
             )
             .first()
             is not None
@@ -172,7 +194,7 @@ class SubmissionService:
                 self.db.query(Submission)
                 .filter(
                     Submission.challenge_id == challenge_id,
-                    Submission.is_correct is True,
+                    Submission.is_correct == True,
                 )
                 .first()
             )
@@ -260,8 +282,29 @@ class SubmissionService:
         Returns:
             True if within rate limit, False otherwise
         """
-        # Get submissions in last 60 seconds
-        time_window = datetime.utcnow() - timedelta(seconds=60)
+        # 1. Check if user is currently blocked
+        active_block = (
+            self.db.query(SubmissionBlock)
+            .filter(
+                SubmissionBlock.user_id == user_id,
+                SubmissionBlock.challenge_id == challenge_id,
+                SubmissionBlock.blocked_until > datetime.utcnow(),
+            )
+            .first()
+        )
+        
+        if active_block:
+            return False
+
+        # 2. Get configuration
+        config = self.db.query(EventConfig).first()
+        # Default values if config not found
+        max_attempts = config.max_submission_attempts if config else 5
+        window_seconds = config.submission_time_window_seconds if config else 60
+        block_minutes = config.submission_block_minutes if config else 5
+
+        # 3. Count recent submissions
+        time_window = datetime.utcnow() - timedelta(seconds=window_seconds)
 
         recent_submissions = (
             self.db.query(Submission)
@@ -273,10 +316,21 @@ class SubmissionService:
             .count()
         )
 
-        # Allow max 3 submissions per minute per challenge
-        MAX_SUBMISSIONS_PER_MINUTE = 3
+        # 4. Check limit and block if necessary
+        if recent_submissions >= max_attempts:
+            # Create block
+            blocked_until = datetime.utcnow() + timedelta(minutes=block_minutes)
+            block = SubmissionBlock(
+                user_id=user_id,
+                challenge_id=challenge_id,
+                blocked_until=blocked_until,
+                reason="Rate limit exceeded"
+            )
+            self.db.add(block)
+            self.db.commit()
+            return False
 
-        return recent_submissions < MAX_SUBMISSIONS_PER_MINUTE
+        return True
 
     def get_user_submissions(
         self, user_id: int, skip: int = 0, limit: int = 100
@@ -317,7 +371,7 @@ class SubmissionService:
         )
 
         if correct_only:
-            query = query.filter(Submission.is_correct is True)
+            query = query.filter(Submission.is_correct == True)
 
         return (
             query.order_by(Submission.submitted_at.desc())
