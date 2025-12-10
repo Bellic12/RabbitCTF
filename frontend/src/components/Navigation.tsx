@@ -20,7 +20,7 @@ export default function Navigation() {
     { label: 'Rules', to: '/rules', public: true },
     { label: 'Leaderboard', to: '/leaderboard', public: true },
     { label: 'Challenges', to: '/challenges', public: false },
-    { label: 'Team', to: '/team', public: false },
+    { label: 'Team', to: '/team', public: false, excludeAdmin: true },
     { label: 'Admin', to: '/admin', adminOnly: true },
   ]
 
@@ -28,6 +28,7 @@ export default function Navigation() {
     if (link.public) return true
     if (!isAuthenticated) return false
     if (link.adminOnly) return user?.role_id === ADMIN_ROLE_ID
+    if (link.excludeAdmin && user?.role_id === ADMIN_ROLE_ID) return false
     return true
   })
 

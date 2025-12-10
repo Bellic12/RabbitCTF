@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Navigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../services/api'
 import Footer from '../components/Footer'
@@ -6,6 +7,7 @@ import Navigation from '../components/Navigation'
 import TeamCreateModal from '../components/TeamCreateModal'
 import TeamJoinModal from '../components/TeamJoinModal'
 import TeamStats from '../components/TeamStats'
+import { ADMIN_ROLE_ID } from '../components/ProtectedRoute'
 
 type TeamMember = {
   user_id: number
@@ -43,6 +45,10 @@ export default function TeamPage() {
   const [loading, setLoading] = useState(true)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [isJoinModalOpen, setIsJoinModalOpen] = useState(false)
+
+  if (user?.role_id === ADMIN_ROLE_ID) {
+    return <Navigate to="/admin" replace />
+  }
 
   const fetchTeam = async () => {
     if (!token) return
