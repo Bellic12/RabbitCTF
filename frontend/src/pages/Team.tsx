@@ -117,11 +117,6 @@ export default function TeamPage() {
               </div>
             </div>
 
-            {/* Team Statistics */}
-            {team.solved_challenges && team.solved_challenges.length > 0 && (
-              <TeamStats solvedChallenges={team.solved_challenges} />
-            )}
-
             {/* Team Members List */}
             <div className="space-y-4">
               <h2 className="text-2xl font-bold px-1">Team Members</h2>
@@ -176,6 +171,14 @@ export default function TeamPage() {
                 })}
               </div>
             </div>
+
+            {/* Team Statistics */}
+            {team.solved_challenges && team.solved_challenges.length > 0 && (
+              <div className="space-y-4">
+                <h2 className="text-2xl font-bold px-1">Team Statistics</h2>
+                <TeamStats solvedChallenges={team.solved_challenges} />
+              </div>
+            )}
 
             {/* Solved Challenges List */}
             <div className="space-y-4">
