@@ -331,3 +331,109 @@ class ChallengeService:
             .order_by(Submission.submitted_at.asc())
             .first()
         )
+
+    def recalculate_dynamic_scores(self, challenge_id: int) -> dict:
+        """
+        Recalculate all dynamic scores for a challenge and update team totals.
+        
+        This method:
+        1. Gets all correct submissions for the challenge ordered by time
+        2. Recalculates each submission's score based on its position
+        3. Updates awarded_score for each submission
+        4. Recalculates total_score for all affected teams
+        
+        Args:
+            challenge_id: ID of the challenge to recalculate
+            
+        Returns:
+            Dictionary with recalculation statistics
+            
+        Raises:
+            HTTPException: If challenge not found or not dynamic scoring
+        """
+        from app.models.team import Team
+        
+        challenge = self.get_challenge_by_id(challenge_id)
+        if not challenge:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Challenge not found"
+            )
+        
+        # Get score configuration
+        score_config = (
+            self.db.query(ChallengeScoreConfig)
+            .filter(ChallengeScoreConfig.challenge_id == challenge_id)
+            .first()
+        )
+        
+        # Only recalculate for dynamic scoring
+        if not score_config or score_config.scoring_mode.lower() != "dynamic":
+            return {
+                "recalculated": 0,
+                "message": "Challenge does not use dynamic scoring"
+            }
+        
+        # Get all correct submissions ordered by submission time
+        correct_submissions = (
+            self.db.query(Submission)
+            .filter(
+                Submission.challenge_id == challenge_id,
+                Submission.is_correct == True
+            )
+            .order_by(Submission.submitted_at.asc(), Submission.id.asc())
+            .all()
+        )
+        
+        if not correct_submissions:
+            return {
+                "recalculated": 0,
+                "message": "No correct submissions found"
+            }
+        
+        # Get scoring strategy
+        strategy = get_scoring_strategy(score_config.scoring_mode.lower())
+        base_score = score_config.base_score
+        decay = score_config.decay_factor or 0.9
+        min_score = score_config.min_score or 10
+        
+        # Track team score changes
+        team_score_deltas = {}  # team_id -> score_delta
+        
+        # Recalculate each submission
+        for index, submission in enumerate(correct_submissions):
+            old_score = submission.awarded_score or 0
+            
+            # Calculate new score based on position (solve_count = index)
+            new_score = strategy.calculate_score(
+                base_score=base_score,
+                solve_count=index,
+                decay=decay,
+                min_score=min_score
+            )
+            
+            # Update submission
+            submission.awarded_score = new_score
+            
+            # Track the delta for team total_score update
+            score_delta = new_score - old_score
+            team_id = submission.team_id
+            if team_id not in team_score_deltas:
+                team_score_deltas[team_id] = 0
+            team_score_deltas[team_id] += score_delta
+        
+        # Update team total_scores efficiently
+        for team_id, delta in team_score_deltas.items():
+            team = self.db.query(Team).filter(Team.id == team_id).first()
+            if team:
+                team.total_score = (team.total_score or 0) + delta
+        
+        # Commit all changes
+        self.db.commit()
+        
+        return {
+            "recalculated": len(correct_submissions),
+            "teams_affected": len(team_score_deltas),
+            "score_deltas": team_score_deltas,
+            "message": f"Successfully recalculated {len(correct_submissions)} submissions for {len(team_score_deltas)} teams"
+        }
