@@ -65,6 +65,7 @@ export default function App() {
       <Route element={<ProtectedRoute />}>
         <Route path="/challenges" element={<ChallengesPage />} />
         <Route path="/team" element={<TeamPage />} />
+        <Route path="/teams/:id" element={<TeamPage />} />
       </Route>
 
       {/* Admin Routes */}

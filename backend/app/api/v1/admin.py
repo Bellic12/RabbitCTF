@@ -17,11 +17,13 @@ from app.models.team import Team
 from app.models.challenge import Challenge
 from app.models.challenge_category import ChallengeCategory
 from app.models.submission import Submission
+from app.models.event_config import EventConfig
 from app.schemas.admin import (
-    AdminStatsResponse,
-    ChallengeStatsResponse,
+    AdminStatsResponse, 
+    ChallengeStatsResponse, 
     ChallengeStatItem,
-    AdminSubmissionResponse,
+    EventConfigResponse,
+    EventConfigUpdate
 )
 
 router = APIRouter()
@@ -104,6 +106,48 @@ async def delete_user(
     username = user.username
     db.delete(user)
     db.commit()
+
+    return {"message": f"User {username} deleted successfully"}
+
+
+@router.get("/config", response_model=EventConfigResponse)
+async def get_event_config(
+    current_user: User = Depends(get_current_admin), db: Session = Depends(get_db)
+):
+    """
+    Get event configuration.
+    """
+    config = db.query(EventConfig).first()
+    if not config:
+        # Create default config if not exists
+        config = EventConfig()
+        db.add(config)
+        db.commit()
+        db.refresh(config)
+    return config
+
+
+@router.put("/config", response_model=EventConfigResponse)
+async def update_event_config(
+    config_in: EventConfigUpdate,
+    current_user: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+):
+    """
+    Update event configuration.
+    """
+    config = db.query(EventConfig).first()
+    if not config:
+        config = EventConfig()
+        db.add(config)
+    
+    update_data = config_in.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(config, field, value)
+    
+    db.commit()
+    db.refresh(config)
+    return config
 
     return {"message": f"User '{username}' deleted successfully"}
 

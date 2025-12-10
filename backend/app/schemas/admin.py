@@ -30,6 +30,18 @@ class ChallengeStatsResponse(BaseModel):
     challenges_stats: List[ChallengeStatItem]
 
 
+class EventConfigUpdate(BaseModel):
+    max_team_size: Optional[int] = None
+    max_submission_attempts: Optional[int] = None
+    submission_time_window_seconds: Optional[int] = None
+    submission_block_minutes: Optional[int] = None
+
+
+class EventConfigResponse(BaseModel):
+    max_team_size: int
+    max_submission_attempts: int
+    submission_time_window_seconds: int
+    submission_block_minutes: int
 class AdminSubmissionResponse(BaseModel):
     id: int
     user_id: int
@@ -45,4 +57,5 @@ class AdminSubmissionResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
 

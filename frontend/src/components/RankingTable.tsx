@@ -1,4 +1,5 @@
 import React from 'react'
+import { Link } from 'react-router-dom'
 
 type Team = {
   id: number
@@ -34,7 +35,9 @@ const RankingTable: React.FC<RankingTableProps> = ({ teams }) => {
               >
                 <th className="px-6 py-4 font-mono text-xl text-primary">{index + 1}</th>
                 <td className="px-6 py-4">
-                  <div className="font-bold text-white text-lg">{team.name}</div>
+                  <Link to={`/teams/${team.id}`} className="font-bold text-white text-lg hover:text-primary hover:underline">
+                    {team.name}
+                  </Link>
                 </td>
                 <td className="px-6 py-4 text-right font-mono text-lg font-bold text-info">
                   {team.totalScore}
