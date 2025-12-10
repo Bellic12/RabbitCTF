@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react'
 import type { FormEvent } from 'react'
 
-import { useState } from 'react'
-
 import type { Challenge } from '../types/challenge'
 
 type ChallengeModalProps = {
