@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import type { FormEvent } from 'react'
 
 import type { Challenge } from '../types/challenge'
+import { useEventStatus } from '../hooks/useEventStatus'
+import { useToast } from '../context/ToastContext'
 
 type ChallengeModalProps = {
   challenge: Challenge
@@ -59,6 +61,9 @@ export default function ChallengeModal({ challenge, onClose }: ChallengeModalPro
   const [error, setError] = useState('')
   const [files, setFiles] = useState<ChallengeFile[]>([])
   const [isLoadingFiles, setIsLoadingFiles] = useState(true)
+  
+  const eventConfig = useEventStatus()
+  const { showToast } = useToast()
 
   useEffect(() => {
     fetchChallengeFiles()
@@ -94,6 +99,15 @@ export default function ChallengeModal({ challenge, onClose }: ChallengeModalPro
     event.preventDefault()
     setError('')
     setSubmissionResult(null)
+
+    if (eventConfig?.status && eventConfig.status !== 'active') {
+      showToast(
+        `Flag submission is disabled because the event is ${eventConfig.status.replace('_', ' ')}`,
+        'info',
+        5000
+      )
+      return
+    }
 
     if (!flagValue.trim()) {
       setError('Please enter a flag')

@@ -14,7 +14,8 @@ from app.models.user import User
 from app.models.team import Team
 from app.models.team_member import TeamMember
 from app.services.challenge_service import ChallengeService
-from app.core.enum import SubmissionStatus
+from app.core.enum import SubmissionStatus, EventStatus
+from app.models.event_config import EventConfig
 
 
 @dataclass
@@ -49,6 +50,14 @@ class SubmissionService:
         Returns:
             SubmissionResult with validation result and score
         """
+        # Check event status
+        event_config = self.db.query(EventConfig).first()
+        if event_config and event_config.status != EventStatus.ACTIVE:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Flag submission is not allowed when event is {event_config.status.replace('_', ' ')}",
+            )
+
         # Get challenge
         challenge = self.challenge_service.get_challenge_by_id(challenge_id)
 
