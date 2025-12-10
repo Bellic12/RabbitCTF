@@ -24,8 +24,12 @@ export default function TeamJoinModal({ isOpen, onClose, onSuccess }: TeamJoinMo
       await api.teams.join(token, { team_name: teamName, password })
       onSuccess()
       onClose()
-    } catch (err) {
-      setError('Failed to join team')
+    } catch (err: any) {
+      if (err.message && err.message.includes('Team is full')) {
+        setError('Team is full')
+      } else {
+        setError(err.message || 'Failed to join team')
+      }
     } finally {
       setIsLoading(false)
     }

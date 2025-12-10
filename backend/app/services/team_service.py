@@ -14,6 +14,7 @@ from app.models.user import User
 from app.models.submission import Submission
 from app.models.challenge import Challenge
 from app.models.challenge_category import ChallengeCategory
+from app.models.event_config import EventConfig
 from app.schemas.teams import TeamCreate, TeamJoin, TeamDetailResponse, TeamMemberResponse, SolvedChallengeResponse
 from app.core.security import get_password_hash, verify_password
 
@@ -133,7 +134,8 @@ class TeamService:
             )
 
         # Check team size limit
-        max_team_size = 4  # Default from event_config
+        event_config = self.db.query(EventConfig).first()
+        max_team_size = event_config.max_team_size if event_config else 4
 
         current_size = (
             self.db.query(TeamMember).filter(TeamMember.team_id == team.id).count()

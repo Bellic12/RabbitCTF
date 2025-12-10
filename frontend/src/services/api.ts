@@ -108,7 +108,10 @@ export const api = {
         headers: getHeaders(token),
         body: JSON.stringify(data),
       })
-      if (!res.ok) throw new Error('Failed to join team')
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}))
+        throw new Error(errorData.detail || 'Failed to join team')
+      }
       return res.json()
     },
     leave: async (token: string) => {
@@ -125,6 +128,24 @@ export const api = {
         headers: getHeaders(token),
       })
       if (!res.ok) throw new Error('Failed to delete team')
+      return res.json()
+    },
+  },
+  admin: {
+    getConfig: async (token: string) => {
+      const res = await fetch(`${API_URL}/admin/config`, {
+        headers: getHeaders(token),
+      })
+      if (!res.ok) throw new Error('Failed to fetch config')
+      return res.json()
+    },
+    updateConfig: async (token: string, data: any) => {
+      const res = await fetch(`${API_URL}/admin/config`, {
+        method: 'PUT',
+        headers: getHeaders(token),
+        body: JSON.stringify(data),
+      })
+      if (!res.ok) throw new Error('Failed to update config')
       return res.json()
     },
   },
