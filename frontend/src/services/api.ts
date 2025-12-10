@@ -153,7 +153,22 @@ export const api = {
         body: JSON.stringify(data),
       })
       if (!res.ok) throw new Error('Failed to update config')
+    getSubmissions: async (token: string, params?: any) => {
+      const query = new URLSearchParams(params).toString()
+      const res = await fetch(`${API_URL}/admin/submissions?${query}`, {
+        headers: getHeaders(token),
+      })
+      if (!res.ok) throw new Error('Failed to fetch submissions')
+      return res.json()
+    },
+    getTeams: async (token: string) => {
+      const res = await fetch(`${API_URL}/admin/teams`, {
+        headers: getHeaders(token),
+      })
+      if (!res.ok) throw new Error('Failed to fetch teams')
       return res.json()
     },
   },
 }
+
+
