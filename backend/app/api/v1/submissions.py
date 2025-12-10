@@ -271,7 +271,7 @@ async def get_first_bloods(
             Submission.challenge_id,
             func.min(Submission.submitted_at).label("first_solve_time"),
         )
-        .filter(Submission.is_correct is True)
+        .filter(Submission.is_correct == True)
         .group_by(Submission.challenge_id)
         .subquery()
     )
@@ -336,7 +336,7 @@ async def get_solve_timeline(
 
     submissions = (
         db.query(Submission)
-        .filter(Submission.is_correct is True)
+        .filter(Submission.is_correct == True)
         .order_by(Submission.submitted_at.desc())
         .limit(limit)
         .all()
@@ -400,7 +400,7 @@ async def admin_get_all_submissions(
     query = db.query(Submission)
 
     if correct_only:
-        query = query.filter(Submission.is_correct is True)
+        query = query.filter(Submission.is_correct == True)
 
     submissions = (
         query.order_by(Submission.submitted_at.desc()).offset(skip).limit(limit).all()
@@ -519,14 +519,14 @@ async def admin_get_challenge_stats(
     # Unique solvers (teams)
     unique_solvers = (
         db.query(func.count(distinct(Submission.team_id)))
-        .filter(Submission.challenge_id == challenge_id, Submission.is_correct is True)
+        .filter(Submission.challenge_id == challenge_id, Submission.is_correct == True)
         .scalar()
     )
 
     # Average attempts before solving
     solved_teams = (
         db.query(Submission.team_id)
-        .filter(Submission.challenge_id == challenge_id, Submission.is_correct is True)
+        .filter(Submission.challenge_id == challenge_id, Submission.is_correct == True)
         .distinct()
         .all()
     )
@@ -544,7 +544,7 @@ async def admin_get_challenge_stats(
                     .filter(
                         Submission.challenge_id == challenge_id,
                         Submission.team_id == team_id,
-                        Submission.is_correct is True,
+                        Submission.is_correct == True,
                     )
                     .order_by(Submission.submitted_at.asc())
                     .limit(1)
@@ -560,7 +560,7 @@ async def admin_get_challenge_stats(
     # Fastest solve time
     first_solve = (
         db.query(Submission)
-        .filter(Submission.challenge_id == challenge_id, Submission.is_correct is True)
+        .filter(Submission.challenge_id == challenge_id, Submission.is_correct == True)
         .order_by(Submission.submitted_at.asc())
         .first()
     )

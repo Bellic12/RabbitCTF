@@ -1,11 +1,15 @@
 import { useState, useEffect } from 'react'
 import type { FormEvent } from 'react'
 
+import { useAuth } from '../context/AuthContext'
+import { api } from '../services/api'
 import type { Challenge } from '../types/challenge'
+import { CategoryBadge, DifficultyBadge } from './Badges'
 
 type ChallengeModalProps = {
   challenge: Challenge
   onClose: () => void
+  onSolve?: () => void
 }
 
 type SubmissionResponse = {
@@ -51,14 +55,18 @@ const buildDownload = async (fileUrl: string, fileName: string) => {
   window.URL.revokeObjectURL(url)
 }
 
-export default function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
+export default function ChallengeModal({ challenge, onClose, onSolve }: ChallengeModalProps) {
+  const { token } = useAuth()
   const [tab, setTab] = useState<'details' | 'history'>('details')
   const [flagValue, setFlagValue] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submissionResult, setSubmissionResult] = useState<SubmissionResponse | null>(null)
+  const [solveHistory, setSolveHistory] = useState<any[]>([])
+  const [isLoadingSolves, setIsLoadingSolves] = useState(false)
   const [error, setError] = useState('')
   const [files, setFiles] = useState<ChallengeFile[]>([])
   const [isLoadingFiles, setIsLoadingFiles] = useState(true)
+  const [isCopied, setIsCopied] = useState(false)
 
   useEffect(() => {
     fetchChallengeFiles()
@@ -89,6 +97,22 @@ export default function ChallengeModal({ challenge, onClose }: ChallengeModalPro
       setIsLoadingFiles(false)
     }
   }
+
+  useEffect(() => {
+    if (tab === 'history' && token) {
+      setIsLoadingSolves(true)
+      api.challenges.getSolves(token, challenge.id)
+        .then((data: any) => {
+          setSolveHistory(data.map((s: any) => ({
+            team: s.team_name,
+            submittedAt: new Date(s.submitted_at).toLocaleString(),
+            points: s.score
+          })))
+        })
+        .catch((err: any) => console.error(err))
+        .finally(() => setIsLoadingSolves(false))
+    }
+  }, [tab, challenge.id, token])
 
   const handleSubmitFlag = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -138,6 +162,7 @@ export default function ChallengeModal({ challenge, onClose }: ChallengeModalPro
 
       if (data.is_correct) {
         setFlagValue('')
+        if (onSolve) onSolve()
       }
     } catch (caught) {
       setError('Unable to reach the submission service')
@@ -162,20 +187,8 @@ export default function ChallengeModal({ challenge, onClose }: ChallengeModalPro
 
           <div className="space-y-3">
             <div className="flex items-center gap-3 text-sm font-semibold text-white/70">
-              <span
-                className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                  challenge.difficulty === 'Easy'
-                    ? 'bg-emerald-500/10 text-emerald-400'
-                    : challenge.difficulty === 'Medium'
-                      ? 'bg-amber-500/10 text-amber-400'
-                      : 'bg-rose-500/10 text-rose-400'
-                }`}
-              >
-                {challenge.difficulty}
-              </span>
-              <span className="rounded-full border border-white/10 bg-black/30 px-3 py-1 text-xs uppercase tracking-wide text-white/60">
-                {challenge.category}
-              </span>
+              <DifficultyBadge difficulty={challenge.difficulty} />
+              <CategoryBadge category={challenge.category} />
               <span className="text-primary">{challenge.points} points</span>
               <span className="text-white/40">{challenge.solves} solves</span>
             </div>
@@ -196,7 +209,7 @@ export default function ChallengeModal({ challenge, onClose }: ChallengeModalPro
               onClick={() => setTab('history')}
               type="button"
             >
-              Solve History ({challenge.solveHistory?.length ?? 0})
+              Solve History ({challenge.solves})
             </button>
           </div>
         </div>
@@ -289,11 +302,28 @@ export default function ChallengeModal({ challenge, onClose }: ChallengeModalPro
                   <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-black/30 px-4 py-3">
                     <code className="flex-1 text-sm text-white/80">{challenge.connectionInfo}</code>
                     <button
-                      className="btn btn-sm rounded-full border-none bg-white/10 text-white hover:bg-white/20"
-                      onClick={() => navigator.clipboard.writeText(challenge.connectionInfo ?? '')}
+                      className={`btn btn-sm rounded-full border-none transition-all ${
+                        isCopied 
+                          ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30' 
+                          : 'bg-white/10 text-white hover:bg-white/20'
+                      }`}
+                      onClick={async () => {
+                        await navigator.clipboard.writeText(challenge.connectionInfo ?? '')
+                        setIsCopied(true)
+                        setTimeout(() => setIsCopied(false), 2000)
+                      }}
                       type="button"
                     >
-                      Copy
+                      {isCopied ? (
+                        <>
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                          Copied!
+                        </>
+                      ) : (
+                        'Copy'
+                      )}
                     </button>
                   </div>
                 </section>
@@ -332,34 +362,46 @@ export default function ChallengeModal({ challenge, onClose }: ChallengeModalPro
 
                 <div className="flex flex-col gap-3 md:flex-row">
                   <input
-                    className="h-12 flex-1 rounded-2xl border border-white/15 bg-base-300 px-4 text-sm text-white focus:border-primary focus:outline-none disabled:opacity-50"
-                    disabled={isSubmitting}
+                    className={`h-12 flex-1 rounded-2xl border px-4 text-sm text-white focus:outline-none disabled:cursor-not-allowed ${
+                      challenge.status === 'solved' || submissionResult?.is_correct
+                        ? 'border-emerald-500/50 bg-emerald-500/10 placeholder:text-emerald-400'
+                        : 'border-white/15 bg-base-300 focus:border-primary disabled:opacity-50'
+                    }`}
+                    disabled={isSubmitting || challenge.status === 'solved' || submissionResult?.is_correct}
                     onChange={event => setFlagValue(event.target.value)}
-                    placeholder="flag{...}"
+                    placeholder={
+                      challenge.status === 'solved'
+                        ? `Solved by ${challenge.solvedBy || 'your team'}`
+                        : submissionResult?.is_correct
+                          ? 'Challenge solved!'
+                          : 'flag{...}'
+                    }
                     type="text"
                     value={flagValue}
                     onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !isSubmitting) {
+                      if (e.key === 'Enter' && !isSubmitting && challenge.status !== 'solved' && !submissionResult?.is_correct) {
                         handleSubmitFlag(e as any)
                       }
                     }}
                   />
                   <button
-                    className="btn h-12 rounded-full border-none bg-primary px-6 text-sm font-semibold text-black hover:bg-secondary disabled:opacity-50"
-                    disabled={isSubmitting}
+                    className="btn btn-primary h-12 rounded-md border-none px-6 text-sm font-semibold text-primary-content hover:brightness-75 transition-all disabled:opacity-50 disabled:bg-neutral disabled:text-neutral-content disabled:cursor-not-allowed"
+                    disabled={isSubmitting || challenge.status === 'solved' || submissionResult?.is_correct}
                     type="button"
                     onClick={(e) => handleSubmitFlag(e as any)}
                   >
-                    {isSubmitting ? 'Submitting...' : 'Submit'}
+                    {isSubmitting ? 'Submitting...' : challenge.status === 'solved' || submissionResult?.is_correct ? 'Solved' : 'Submit'}
                   </button>
                 </div>
               </section>
             </div>
           ) : (
             <div className="mt-6 space-y-3">
-              {challenge.solveHistory && challenge.solveHistory.length > 0 ? (
-                <div className="space-y-3">
-                  {challenge.solveHistory.map((entry, index) => (
+              {isLoadingSolves ? (
+                <div className="text-center text-white/50">Loading solves...</div>
+              ) : solveHistory && solveHistory.length > 0 ? (
+                <div className="space-y-3 max-h-96 overflow-y-auto pr-2 custom-scrollbar">
+                  {solveHistory.map((entry, index) => (
                     <div
                       className="flex items-center justify-between rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white/70"
                       key={`${entry.team}-${index}`}
@@ -410,7 +452,7 @@ function SuccessIcon() {
   return (
     <svg
       aria-hidden="true"
-      className="h-5 w-5"
+      className="h-8 w-8"
       fill="none"
       viewBox="0 0 24 24"
       xmlns="http://www.w3.org/2000/svg"

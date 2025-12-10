@@ -157,6 +157,52 @@ export default function EditChallengeModal({ challengeId, isOpen, onClose, onUpd
     const selectedFiles = e.target.files
     if (selectedFiles) {
       const filesArray = Array.from(selectedFiles)
+      
+      // Validation
+      const MAX_FILE_SIZE = 100 * 1024 * 1024 // 100MB
+      const MAX_TOTAL_SIZE_MB = 500 // 500MB
+      
+      // Check individual file sizes
+      const oversizedFile = filesArray.find(f => f.size > MAX_FILE_SIZE)
+      if (oversizedFile) {
+        setUploadError(`File ${oversizedFile.name} exceeds the 100MB limit.`)
+        e.target.value = ''
+        return
+      }
+
+      // Check for duplicates in existing files
+      const duplicateExisting = filesArray.find(nf => existingFiles.some(ef => ef.name === nf.name))
+      if (duplicateExisting) {
+        setUploadError(`File '${duplicateExisting.name}' already exists in this challenge.`)
+        e.target.value = ''
+        return
+      }
+
+      // Check for duplicates in new files (staged)
+      const duplicateNew = filesArray.find(nf => newFiles.some(sf => sf.name === nf.name))
+      if (duplicateNew) {
+        setUploadError(`File '${duplicateNew.name}' is already selected.`)
+        e.target.value = ''
+        return
+      }
+      
+      // Calculate total size in MB
+      // Existing files size
+      const existingSizeMB = existingFiles.reduce((acc, f) => {
+        const match = f.size.match(/([\d.]+)\s*MB/)
+        return acc + (match ? parseFloat(match[1]) : 0)
+      }, 0)
+      
+      // New files size (convert bytes to MB)
+      const currentNewFilesSizeMB = newFiles.reduce((acc, f) => acc + f.size / (1024 * 1024), 0)
+      const incomingFilesSizeMB = filesArray.reduce((acc, f) => acc + f.size / (1024 * 1024), 0)
+      
+      if (existingSizeMB + currentNewFilesSizeMB + incomingFilesSizeMB > MAX_TOTAL_SIZE_MB) {
+        setUploadError('Total file size cannot exceed 500MB.')
+        e.target.value = ''
+        return
+      }
+
       setNewFiles(prev => [...prev, ...filesArray])
       setUploadError('')
       e.target.value = ''
@@ -242,7 +288,15 @@ export default function EditChallengeModal({ challengeId, isOpen, onClose, onUpd
           body: fd,
         })
         if (!uploadRes.ok) {
-          setUploadError('Challenge updated but some files failed to upload.')
+          const errorText = await uploadRes.text()
+          try {
+            const errorJson = JSON.parse(errorText)
+            setUploadError(errorJson.detail || 'Challenge updated but some files failed to upload.')
+          } catch {
+            setUploadError('Challenge updated but some files failed to upload.')
+          }
+          setIsSubmitting(false)
+          return
         }
       }
 
@@ -286,11 +340,6 @@ export default function EditChallengeModal({ challengeId, isOpen, onClose, onUpd
               <div className="alert alert-error mb-4">
                 <span>{error}</span>
                 <button type="button" onClick={() => setError('')} className="btn btn-sm btn-ghost">×</button>
-              </div>
-            )}
-            {uploadError && (
-              <div className="alert alert-warning mb-4">
-                <span>{uploadError}</span>
               </div>
             )}
 
@@ -649,6 +698,12 @@ export default function EditChallengeModal({ challengeId, isOpen, onClose, onUpd
                   disabled={isSubmitting}
                 />
 
+                {uploadError && (
+                  <div className="alert alert-warning mt-2">
+                    <span>{uploadError}</span>
+                  </div>
+                )}
+
                 {newFiles.length > 0 && (
                   <div className="mt-3 space-y-2">
                     {newFiles.map((file, index) => (
@@ -680,7 +735,7 @@ export default function EditChallengeModal({ challengeId, isOpen, onClose, onUpd
 
               <button
                 type="submit"
-                className="btn btn-primary w-full text-primary-content"
+                className="btn btn-primary w-full text-primary-content rounded-md hover:brightness-75 transition-all border-none"
                 disabled={isSubmitting}
               >
                 {isSubmitting ? (
@@ -704,7 +759,7 @@ export default function EditChallengeModal({ challengeId, isOpen, onClose, onUpd
                   setNewFiles([])
                 }
               }}
-              className="btn btn-ghost hover:bg-base-200"
+              className="btn btn-error text-error-content rounded-md hover:brightness-75 transition-all border-none"
               disabled={isSubmitting}
             >
               Cancel

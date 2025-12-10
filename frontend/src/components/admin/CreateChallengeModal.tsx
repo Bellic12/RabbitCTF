@@ -149,6 +149,37 @@ export default function CreateChallengeModal({ isOpen, onClose, onCreate }: Crea
     const selectedFiles = e.target.files
     if (selectedFiles) {
       const newFiles = Array.from(selectedFiles)
+      
+      // Validation
+      const MAX_FILE_SIZE = 100 * 1024 * 1024 // 100MB
+      const MAX_TOTAL_SIZE = 500 * 1024 * 1024 // 500MB
+      
+      // Check individual file sizes
+      const oversizedFile = newFiles.find(f => f.size > MAX_FILE_SIZE)
+      if (oversizedFile) {
+        setUploadError(`File ${oversizedFile.name} exceeds the 100MB limit.`)
+        e.target.value = ''
+        return
+      }
+
+      // Check for duplicates
+      const duplicateFile = newFiles.find(nf => files.some(f => f.name === nf.name))
+      if (duplicateFile) {
+        setUploadError(`File '${duplicateFile.name}' is already selected.`)
+        e.target.value = ''
+        return
+      }
+      
+      // Check total size
+      const currentTotalSize = files.reduce((acc, f) => acc + f.size, 0)
+      const newFilesSize = newFiles.reduce((acc, f) => acc + f.size, 0)
+      
+      if (currentTotalSize + newFilesSize > MAX_TOTAL_SIZE) {
+        setUploadError('Total file size cannot exceed 500MB.')
+        e.target.value = ''
+        return
+      }
+
       setFiles(prev => [...prev, ...newFiles])
       setUploadError('')
       
@@ -323,12 +354,52 @@ export default function CreateChallengeModal({ isOpen, onClose, onCreate }: Crea
           )
 
           if (!uploadResponse.ok) {
-            setUploadError('Challenge created but file upload failed. You can upload files later.')
-            console.error('File upload failed:', await uploadResponse.text())
+            // If file upload fails, we should rollback the challenge creation
+            // to avoid creating a challenge without its necessary files
+            try {
+              await fetch(
+                `${import.meta.env.VITE_API_URL || ''}/api/v1/challenges/admin/${challengeId}`,
+                {
+                  method: 'DELETE',
+                  headers: {
+                    'Authorization': `Bearer ${token}`
+                  }
+                }
+              )
+            } catch (deleteError) {
+              console.error('Failed to rollback challenge creation:', deleteError)
+            }
+
+            const errorText = await uploadResponse.text()
+            try {
+              const errorJson = JSON.parse(errorText)
+              setUploadError(errorJson.detail || 'Challenge created but file upload failed.')
+            } catch {
+              setUploadError('Challenge created but file upload failed.')
+            }
+            setIsSubmitting(false)
+            return
           }
         } catch (uploadError) {
-          setUploadError('Challenge created but file upload failed. You can upload files later.')
+          // Rollback on network error too
+          try {
+            await fetch(
+              `${import.meta.env.VITE_API_URL || ''}/api/v1/challenges/admin/${challengeId}`,
+              {
+                method: 'DELETE',
+                headers: {
+                  'Authorization': `Bearer ${token}`
+                }
+              }
+            )
+          } catch (deleteError) {
+            console.error('Failed to rollback challenge creation:', deleteError)
+          }
+
+          setUploadError('File upload failed. Challenge creation rolled back.')
           console.error('File upload error:', uploadError)
+          setIsSubmitting(false)
+          return
         }
       }
 
@@ -368,15 +439,6 @@ export default function CreateChallengeModal({ isOpen, onClose, onCreate }: Crea
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <span>{error}</span>
-              </div>
-            )}
-
-            {uploadError.length > 0 && (
-              <div className="alert alert-warning mb-4">
-                <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
-                <span>{uploadError}</span>
               </div>
             )}
 
@@ -685,6 +747,15 @@ export default function CreateChallengeModal({ isOpen, onClose, onCreate }: Crea
                   className="file-input file-input-bordered file-input-primary w-full bg-base-200"
                   disabled={isSubmitting}
                 />
+
+                {uploadError.length > 0 && (
+                  <div className="alert alert-warning mt-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <span>{uploadError}</span>
+                  </div>
+                )}
                 
                 {files.length > 0 && (
                   <div className="mt-3 space-y-2">
@@ -717,7 +788,7 @@ export default function CreateChallengeModal({ isOpen, onClose, onCreate }: Crea
 
               <button 
                 type="submit"
-                className="btn btn-primary w-full text-primary-content"
+                className="btn btn-primary w-full text-primary-content rounded-md hover:brightness-75 transition-all border-none"
                 disabled={isSubmitting}
               >
                 {isSubmitting ? (
@@ -741,7 +812,7 @@ export default function CreateChallengeModal({ isOpen, onClose, onCreate }: Crea
                     resetForm()
                   }
                 }}
-                className="btn btn-ghost hover:bg-base-200"
+                className="btn btn-error text-error-content rounded-md hover:brightness-75 transition-all border-none"
                 disabled={isSubmitting}
               >
                 Cancel
@@ -812,7 +883,7 @@ export default function CreateChallengeModal({ isOpen, onClose, onCreate }: Crea
                     setNewCategory({ name: '', description: '' })
                     setCategoryError('')
                   }}
-                  className="btn btn-ghost"
+                  className="btn btn-error text-error-content rounded-md hover:brightness-75 transition-all border-none"
                   disabled={isCreatingCategory}
                 >
                   Cancel
@@ -820,7 +891,7 @@ export default function CreateChallengeModal({ isOpen, onClose, onCreate }: Crea
                 <button
                   type="button"
                   onClick={handleCreateCategory}
-                  className="btn btn-primary"
+                  className="btn btn-primary text-primary-content rounded-md hover:brightness-75 transition-all border-none"
                   disabled={isCreatingCategory}
                 >
                   {isCreatingCategory ? (
