@@ -41,7 +41,9 @@ class EventConfigResponse(BaseModel):
     max_submission_attempts: int
     submission_time_window_seconds: int
     submission_block_minutes: int
-    from_attributes = True 
+    
+    class Config:
+        from_attributes = True 
     
 class AdminSubmissionResponse(BaseModel):
     id: int

@@ -72,7 +72,7 @@ export default function Navigation() {
               ))}
             </ul>
           </div>
-          <FlagIcon />
+          <img src="/UqbarUN_Isotype.svg" alt="RabbitCTF Logo" className="h-8 w-8" />
           RabbitCTF
         </div>
 
@@ -154,19 +154,5 @@ export default function Navigation() {
         </div>
       </div>
     </header>
-  )
-}
-
-function FlagIcon() {
-  return (
-    <svg aria-hidden="true" className="h-5 w-5 text-primary" fill="none" viewBox="0 0 24 24">
-      <path
-        className="stroke-current"
-        d="M6 4v16M6 4h11.2a1 1 0 01.8 1.6L16 9l2 2.4a1 1 0 01-.8 1.6H6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={1.6}
-      />
-    </svg>
   )
 }

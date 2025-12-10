@@ -23,7 +23,6 @@ from app.schemas.admin import (
     ChallengeStatsResponse, 
     ChallengeStatItem,
     EventConfigResponse,
-    EventConfigUpdate
     EventConfigUpdate,
     AdminSubmissionResponse
 )
@@ -290,12 +289,6 @@ async def get_event_config(
 @router.put("/config", response_model=EventConfigResponse)
 async def update_event_config(
     config_in: EventConfigUpdate,
-@router.get("/submissions", response_model=List[AdminSubmissionResponse])
-async def get_admin_submissions(
-    challenge_id: Optional[int] = None,
-    team_id: Optional[int] = None,
-    skip: int = 0,
-    limit: int = 100,
     current_user: User = Depends(get_current_admin),
     db: Session = Depends(get_db),
 ):
@@ -314,6 +307,18 @@ async def get_admin_submissions(
     db.commit()
     db.refresh(config)
     return config
+
+
+@router.get("/submissions", response_model=List[AdminSubmissionResponse])
+async def get_admin_submissions(
+    challenge_id: Optional[int] = None,
+    team_id: Optional[int] = None,
+    skip: int = 0,
+    limit: int = 100,
+    current_user: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+):
+    """
     Get all submissions with details (admin only).
     """
     query = (
@@ -326,6 +331,33 @@ async def get_admin_submissions(
 
     if challenge_id:
         query = query.filter(Submission.challenge_id == challenge_id)
+
+    if team_id:
+        query = query.filter(Submission.team_id == team_id)
+
+    submissions = (
+        query.order_by(Submission.submitted_at.desc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+
+    return [
+        AdminSubmissionResponse(
+            id=sub.id,
+            user_id=sub.user_id,
+            username=sub.user.username,
+            team_id=sub.team_id,
+            team_name=sub.team.name,
+            challenge_id=sub.challenge_id,
+            challenge_title=sub.challenge.title,
+            category_name=sub.challenge.category.name if sub.challenge.category else "Unknown",
+            submitted_flag=sub.submitted_flag,
+            is_correct=sub.is_correct,
+            submitted_at=sub.submitted_at,
+        )
+        for sub in submissions
+    ]
 
     if team_id:
         query = query.filter(Submission.team_id == team_id)
