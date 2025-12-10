@@ -32,7 +32,7 @@ export default function Navigation() {
   })
 
   return (
-    <header className="border-b border-white/5 bg-base-100/95 backdrop-blur">
+    <header className="border-b border-white/5 bg-base-100/95 backdrop-blur relative z-50">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
         <div className="flex items-center gap-2 text-lg font-semibold text-white">
           <div className="dropdown md:hidden">
@@ -120,7 +120,7 @@ export default function Navigation() {
               </div>
               <ul
                 tabIndex={0}
-                className="menu dropdown-content z-[1] mt-3 w-52 rounded-box bg-base-200 p-2 shadow-lg ring-1 ring-white/10"
+                className="menu dropdown-content z-[50] mt-3 w-52 rounded-box bg-base-200 p-2 shadow-lg ring-1 ring-white/10"
               >
                 <li>
                   <Link to="/profile" className="text-white hover:text-primary">

@@ -3,6 +3,7 @@ Team service for business logic.
 """
 
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from fastapi import HTTPException, status
 from typing import List, Optional
 
@@ -10,7 +11,10 @@ from app.models.team import Team
 from app.models.team_member import TeamMember
 from app.models.team_credential import TeamCredential
 from app.models.user import User
-from app.schemas.teams import TeamCreate, TeamJoin
+from app.models.submission import Submission
+from app.models.challenge import Challenge
+from app.models.challenge_category import ChallengeCategory
+from app.schemas.teams import TeamCreate, TeamJoin, TeamDetailResponse, TeamMemberResponse, SolvedChallengeResponse
 from app.core.security import get_password_hash, verify_password
 
 
@@ -151,12 +155,14 @@ class TeamService:
     def leave_team(self, user: User) -> None:
         """
         Remove user from their current team.
+        If captain leaves, transfer captaincy to the next oldest member.
+        If last member leaves, delete the team.
 
         Args:
             user: User who wants to leave
 
         Raises:
-            HTTPException: If user not in team or is captain
+            HTTPException: If user not in team
         """
         membership = (
             self.db.query(TeamMember).filter(TeamMember.user_id == user.id).first()
@@ -169,14 +175,69 @@ class TeamService:
 
         team = self.db.query(Team).filter(Team.id == membership.team_id).first()
 
-        # Captain cannot leave (must transfer captaincy first)
-        if team and team.captain_id == user.id:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Captain must transfer captaincy before leaving",
+        if not team:
+            # Should not happen if foreign keys are correct, but good for safety
+            self.db.delete(membership)
+            self.db.commit()
+            return
+
+        # If user is captain
+        if team.captain_id == user.id:
+            # Find other members ordered by joined_at
+            other_members = (
+                self.db.query(TeamMember)
+                .filter(TeamMember.team_id == team.id, TeamMember.user_id != user.id)
+                .order_by(TeamMember.joined_at.asc())
+                .all()
             )
 
+            if other_members:
+                # Transfer captaincy to the oldest member
+                new_captain_member = other_members[0]
+                team.captain_id = new_captain_member.user_id
+                self.db.add(team)
+            else:
+                # No other members, delete the team
+                self.db.delete(team)
+                self.db.commit()
+                return
+
         self.db.delete(membership)
+        self.db.commit()
+
+    def delete_team(self, user: User) -> None:
+        """
+        Delete the team. Only captain can do this.
+
+        Args:
+            user: User requesting deletion (must be captain)
+
+        Raises:
+            HTTPException: If user not in team or not captain
+        """
+        membership = (
+            self.db.query(TeamMember).filter(TeamMember.user_id == user.id).first()
+        )
+
+        if not membership:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail="User is not in a team"
+            )
+
+        team = self.db.query(Team).filter(Team.id == membership.team_id).first()
+
+        if not team:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Team not found"
+            )
+
+        if team.captain_id != user.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only team captain can delete the team",
+            )
+
+        self.db.delete(team)
         self.db.commit()
 
     def transfer_captaincy(self, current_captain: User, new_captain_id: int) -> Team:
@@ -271,4 +332,118 @@ class TeamService:
         Returns:
             List of top teams
         """
+        return (
+            self.db.query(Team)
+            .order_by(Team.total_score.desc())
+            .limit(limit)
+            .all()
+        )
+
+    def get_user_team(self, user: User) -> Optional[TeamDetailResponse]:
+        """
+        Get team details for the current user.
+        """
+        # Find which team the user belongs to
+        membership = (
+            self.db.query(TeamMember).filter(TeamMember.user_id == user.id).first()
+        )
+
+        if not membership:
+            return None
+
+        team = self.db.query(Team).filter(Team.id == membership.team_id).first()
+        if not team:
+            return None
+
+        # Get all members
+        members = self.db.query(TeamMember).filter(TeamMember.team_id == team.id).all()
+        
+        # Calculate member scores and build member responses
+        member_responses = []
+        for member in members:
+            # Calculate score for this member
+            score = (
+                self.db.query(func.sum(Submission.awarded_score))
+                .filter(
+                    Submission.user_id == member.user_id,
+                    Submission.is_correct == True
+                )
+                .scalar()
+            ) or 0
+            
+            member_user = self.db.query(User).filter(User.id == member.user_id).first()
+            
+            member_responses.append(
+                TeamMemberResponse(
+                    user_id=member.user_id,
+                    username=member_user.username,
+                    email=member_user.email,
+                    is_captain=(member.user_id == team.captain_id),
+                    joined_at=member.joined_at,
+                    score=score
+                )
+            )
+
+        # Calculate total solved challenges
+        solved_count = (
+            self.db.query(Submission)
+            .filter(
+                Submission.team_id == team.id,
+                Submission.is_correct == True
+            )
+            .count()
+        )
+
+        # Calculate total team score dynamically
+        total_team_score = (
+            self.db.query(func.sum(Submission.awarded_score))
+            .filter(
+                Submission.team_id == team.id,
+                Submission.is_correct == True
+            )
+            .scalar()
+        ) or 0
+
+        # Get solved challenges with details
+        solved_challenges_query = (
+            self.db.query(
+                Challenge.id,
+                Challenge.title,
+                ChallengeCategory.name.label("category_name"),
+                Submission.awarded_score,
+                Submission.submitted_at
+            )
+            .join(Submission, Submission.challenge_id == Challenge.id)
+            .join(ChallengeCategory, ChallengeCategory.id == Challenge.category_id)
+            .filter(
+                Submission.team_id == team.id,
+                Submission.is_correct == True
+            )
+            .order_by(Submission.submitted_at.desc())
+            .all()
+        )
+
+        solved_challenges_data = [
+            SolvedChallengeResponse(
+                id=row.id,
+                title=row.title,
+                category_name=row.category_name,
+                points=row.awarded_score,
+                solved_at=row.submitted_at
+            )
+            for row in solved_challenges_query
+        ]
+
+        return TeamDetailResponse(
+            id=team.id,
+            name=team.name,
+            captain_id=team.captain_id,
+            total_score=total_team_score,
+            created_at=team.created_at,
+            member_count=len(members),
+            captain_username=team.captain.username,
+            members=member_responses,
+            solved_challenges_count=solved_count,
+            solved_challenges=solved_challenges_data,
+        )
         return self.db.query(Team).order_by(Team.total_score.desc()).limit(limit).all()

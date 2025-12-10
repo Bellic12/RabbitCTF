@@ -1,14 +1,25 @@
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy.orm import Session
 from typing import Any
+from typing import Any, Optional
 
 from app.api import deps
 from app.core.database import get_db
-from app.core.audit import log_audit
-from app.schemas.teams import TeamCreate, TeamJoin, TeamResponse
+from app.schemas.teams import TeamCreate, TeamJoin, TeamResponse, TeamDetailResponse
 from app.services.team_service import TeamService
 
 router = APIRouter()
+
+@router.get("/me", response_model=Optional[TeamDetailResponse])
+def get_my_team(
+    db: Session = Depends(get_db),
+    current_user = Depends(deps.get_current_user),
+) -> Any:
+    """
+    Get current user's team details.
+    """
+    team_service = TeamService(db)
+    return team_service.get_user_team(current_user)
 
 @router.post("/", response_model=TeamResponse)
 def create_team(
@@ -61,3 +72,30 @@ def join_team(
     )
     
     return team
+    return team_service.join_team(team_in, current_user)
+
+
+@router.post("/leave")
+def leave_team(
+    db: Session = Depends(get_db),
+    current_user = Depends(deps.get_current_user),
+) -> Any:
+    """
+    Leave current team.
+    """
+    team_service = TeamService(db)
+    team_service.leave_team(current_user)
+    return {"message": "Successfully left the team"}
+
+
+@router.delete("/")
+def delete_team(
+    db: Session = Depends(get_db),
+    current_user = Depends(deps.get_current_user),
+) -> Any:
+    """
+    Delete current team (Captain only).
+    """
+    team_service = TeamService(db)
+    team_service.delete_team(current_user)
+    return {"message": "Team successfully deleted"}

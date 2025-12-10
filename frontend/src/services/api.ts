@@ -78,6 +78,14 @@ export const api = {
     },
   },
   teams: {
+    me: async (token: string) => {
+      const res = await fetch(`${API_URL}/teams/me`, {
+        headers: getHeaders(token),
+      })
+      if (res.status === 404) return null
+      if (!res.ok) throw new Error('Failed to fetch team')
+      return res.json()
+    },
     create: async (token: string, data: any) => {
       const res = await fetch(`${API_URL}/teams/`, {
         method: 'POST',
@@ -94,6 +102,22 @@ export const api = {
         body: JSON.stringify(data),
       })
       if (!res.ok) throw new Error('Failed to join team')
+      return res.json()
+    },
+    leave: async (token: string) => {
+      const res = await fetch(`${API_URL}/teams/leave`, {
+        method: 'POST',
+        headers: getHeaders(token),
+      })
+      if (!res.ok) throw new Error('Failed to leave team')
+      return res.json()
+    },
+    delete: async (token: string) => {
+      const res = await fetch(`${API_URL}/teams/`, {
+        method: 'DELETE',
+        headers: getHeaders(token),
+      })
+      if (!res.ok) throw new Error('Failed to delete team')
       return res.json()
     },
   },

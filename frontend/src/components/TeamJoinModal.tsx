@@ -6,9 +6,10 @@ import { api } from '../services/api'
 type TeamJoinModalProps = {
   isOpen: boolean
   onClose: () => void
+  onSuccess: () => void
 }
 
-export default function TeamJoinModal({ isOpen, onClose }: TeamJoinModalProps) {
+export default function TeamJoinModal({ isOpen, onClose, onSuccess }: TeamJoinModalProps) {
   const { token } = useAuth()
   const [teamName, setTeamName] = useState('')
   const [password, setPassword] = useState('')
@@ -20,7 +21,8 @@ export default function TeamJoinModal({ isOpen, onClose }: TeamJoinModalProps) {
     setIsLoading(true)
     setError('')
     try {
-      await api.teams.join(token, { name: teamName, password })
+      await api.teams.join(token, { team_name: teamName, password })
+      onSuccess()
       onClose()
     } catch (err) {
       setError('Failed to join team')
