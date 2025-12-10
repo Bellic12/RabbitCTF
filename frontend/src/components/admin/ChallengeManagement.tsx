@@ -2,7 +2,6 @@ import { useState, useEffect, useMemo } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import MultiSelect from '../MultiSelect'
 import SearchBar from '../SearchBar'
-import CreateChallengeModal from './CreateChallengeModal'
 import EditChallengeModal from './EditChallengeModal'
 
 interface Challenge {
@@ -32,7 +31,6 @@ interface Challenge {
 
 export default function ChallengeManagement() {
   const [challenges, setChallenges] = useState<Challenge[]>([])
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [selectedChallengeId, setSelectedChallengeId] = useState<number | null>(null)
   const [error, setError] = useState('')
@@ -189,7 +187,10 @@ export default function ChallengeManagement() {
         <h3 className="text-lg font-bold">Challenge Management</h3>
         <button 
           className="btn btn-primary btn-sm gap-2 text-primary-content rounded-md hover:brightness-75 transition-all border-none"
-          onClick={() => setIsCreateModalOpen(true)}
+          onClick={() => {
+            setSelectedChallengeId(null)
+            setIsEditModalOpen(true)
+          }}
         >
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
@@ -316,17 +317,6 @@ export default function ChallengeManagement() {
         )}
       </div>
 
-      {/* Create Challenge Modal */}
-      <CreateChallengeModal 
-        isOpen={isCreateModalOpen} 
-        onClose={() => setIsCreateModalOpen(false)} 
-        onCreate={() => {
-          setSuccess('Challenge created successfully!')
-          fetchChallenges()
-          setTimeout(() => setSuccess(''), 3000)
-        }}
-      />
-
       <EditChallengeModal
         isOpen={isEditModalOpen}
         challengeId={selectedChallengeId}
@@ -335,7 +325,7 @@ export default function ChallengeManagement() {
           setSelectedChallengeId(null)
         }}
         onUpdated={() => {
-          setSuccess('Challenge updated successfully!')
+          setSuccess(selectedChallengeId ? 'Challenge updated successfully!' : 'Challenge created successfully!')
           fetchChallenges()
           setTimeout(() => setSuccess(''), 3000)
         }}

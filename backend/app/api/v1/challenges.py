@@ -47,19 +47,42 @@ def read_categories(
     db: Session = Depends(get_db),
     skip: int = 0,
     limit: int = 100,
+    include_hidden: bool = False,
     current_user=Depends(deps.get_current_active_user),
 ) -> Any:
     """
     Retrieve challenge categories.
     """
-    categories = (
-        db.query(ChallengeCategory)
-        .filter(ChallengeCategory.is_active)
+    query = (
+        db.query(
+            ChallengeCategory,
+            func.count(Challenge.id).label("challenge_count")
+        )
+        .outerjoin(Challenge, Challenge.category_id == ChallengeCategory.id)
+    )
+
+    if not include_hidden:
+        query = query.filter(ChallengeCategory.is_active)
+
+    results = (
+        query
+        .group_by(ChallengeCategory.id)
         .offset(skip)
         .limit(limit)
         .all()
     )
-    return categories
+    
+    return [
+        ChallengeCategoryResponse(
+            id=cat.id,
+            name=cat.name,
+            description=cat.description,
+            is_active=cat.is_active,
+            created_at=cat.created_at,
+            challenge_count=count
+        )
+        for cat, count in results
+    ]
 
 
 @router.get("/difficulties", response_model=List[dict])
@@ -94,6 +117,8 @@ def read_challenges(
         )
         .filter(~Challenge.is_draft)
         .filter(Challenge.visibility_config.has(is_visible=True))
+        .join(ChallengeCategory)
+        .filter(ChallengeCategory.is_active == True)
         .offset(skip)
         .limit(limit)
         .all()
@@ -390,6 +415,13 @@ def create_challenge(
     """
     Create a new challenge (admin only).
     """
+    # Validate category is active
+    category = db.query(ChallengeCategory).filter(ChallengeCategory.id == challenge_data.category_id).first()
+    if not category:
+        raise HTTPException(status_code=404, detail="Category not found")
+    if not category.is_active:
+        raise HTTPException(status_code=400, detail="Cannot assign challenge to an inactive category")
+
     # Create the challenge
     new_challenge = Challenge(
         title=challenge_data.title,
@@ -638,6 +670,12 @@ def update_challenge_admin(
     ]:
         value = getattr(payload, field)
         if value is not None:
+            if field == "category_id":
+                category = db.query(ChallengeCategory).filter(ChallengeCategory.id == value).first()
+                if not category:
+                    raise HTTPException(status_code=404, detail="Category not found")
+                if not category.is_active:
+                    raise HTTPException(status_code=400, detail="Cannot assign challenge to an inactive category")
             setattr(challenge, field, value)
 
     if payload.connection_info is not None:
@@ -867,10 +905,20 @@ def delete_category(
     ).count()
     
     if challenge_count > 0:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Cannot delete category with {challenge_count} challenge(s) assigned"
+        # Hide category instead of deleting
+        category.is_active = False
+        db.commit()
+        
+        log_audit(
+            db=db,
+            user_id=current_user.id,
+            action="UPDATE",
+            resource_type="category",
+            details={"action": "hide_category", "category_name": category.name, "reason": "has_challenges"},
+            request=request
         )
+        
+        return {"message": f"Category '{category.name}' has been hidden because it has {challenge_count} challenges."}
     
     db.delete(category)
     db.commit()
