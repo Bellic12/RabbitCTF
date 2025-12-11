@@ -48,15 +48,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     fetchUser()
   }, [token])
-        console.error('Error fetching user:', error)
-        logout()
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    fetchUser()
-  }, [token])
 
   const login = (newToken: string) => {
     localStorage.setItem('token', newToken)
