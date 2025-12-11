@@ -1,4 +1,9 @@
-const API_URL = import.meta.env.VITE_API_URL || '/api/v1'
+// Robust URL handling:
+// 1. Strip trailing slash
+// 2. Ensure it ends with /api/v1 (avoiding double /api/v1 if already present)
+const envUrl = import.meta.env.VITE_API_URL || ''
+const baseUrl = envUrl.endsWith('/') ? envUrl.slice(0, -1) : envUrl
+const API_URL = baseUrl.endsWith('/api/v1') ? baseUrl : `${baseUrl}/api/v1`
 
 const getHeaders = (token?: string) => {
   const headers: HeadersInit = {
@@ -20,12 +25,19 @@ export const api = {
       return res.json()
     },
     login: async (data: any) => {
+      const formData = new URLSearchParams()
+      formData.append('username', data.username)
+      formData.append('password', data.password)
+
       const res = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
-        headers: getHeaders(),
-        body: JSON.stringify(data),
+        body: formData,
       })
-      if (!res.ok) throw new Error('Login failed')
+      
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}))
+        throw new Error(errData.detail || 'Login failed')
+      }
       return res.json()
     },
     register: async (data: any) => {

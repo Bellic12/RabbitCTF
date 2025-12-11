@@ -2,6 +2,8 @@ import type { ReactNode } from 'react'
 
 import { createContext, useContext, useEffect, useState } from 'react'
 
+import { api } from '../services/api'
+
 type User = {
   id: number
   username: string
@@ -34,20 +36,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/v1/auth/me`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        })
-
-        if (response.ok) {
-          const userData = await response.json()
-          setUser(userData)
-        } else {
-          // Token invalid or expired
-          logout()
-        }
+        const userData = await api.auth.me(token)
+        setUser(userData)
       } catch (error) {
+        console.error('Failed to fetch user:', error)
+        logout()
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchUser()
+  }, [token])
         console.error('Error fetching user:', error)
         logout()
       } finally {

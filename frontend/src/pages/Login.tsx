@@ -5,6 +5,8 @@ import Footer from '../components/Footer'
 import Navigation from '../components/Navigation'
 import { useAuth } from '../context/AuthContext'
 
+import { api } from '../services/api'
+
 type LoginResponse = {
   access_token: string
   token_type: string
@@ -40,23 +42,14 @@ export default function LoginPage() {
       return
     }
 
-    // # Authentication example
-
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/v1/auth/login`, {
-        body: JSON.stringify({ password, username }),
-        headers: { 'Content-Type': 'application/json' },
-        method: 'POST',
-      })
-
-      if (!response.ok) {
-        const payload = (await response.json().catch(() => ({}))) as ErrorResponse
-        setError(payload.detail ?? 'Invalid username or password')
-        return
-      }
-
-      const data = (await response.json()) as LoginResponse
+      const data = await api.auth.login({ username, password })
       login(data.access_token)
+      navigate('/challenges')
+    } catch (err: any) {
+      setError(err.message || 'Invalid username or password')
+    }
+  }
 
       void navigate('/')
     } catch {
