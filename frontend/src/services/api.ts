@@ -25,18 +25,21 @@ export const api = {
       return res.json()
     },
     login: async (data: any) => {
-      const formData = new URLSearchParams()
-      formData.append('username', data.username)
-      formData.append('password', data.password)
-
       const res = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
-        body: formData,
+        headers: getHeaders(),
+        body: JSON.stringify({
+          username: data.username,
+          password: data.password
+        }),
       })
       
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}))
-        throw new Error(errData.detail || 'Login failed')
+        const errorMessage = Array.isArray(errData.detail) 
+          ? errData.detail.map((e: any) => e.msg).join(', ') 
+          : (errData.detail || 'Login failed')
+        throw new Error(errorMessage)
       }
       return res.json()
     },
@@ -48,7 +51,10 @@ export const api = {
       })
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}))
-        throw new Error(errData.detail || 'Registration failed')
+        const errorMessage = Array.isArray(errData.detail) 
+          ? errData.detail.map((e: any) => e.msg).join(', ') 
+          : (errData.detail || 'Registration failed')
+        throw new Error(errorMessage)
       }
       return res.json()
     },
