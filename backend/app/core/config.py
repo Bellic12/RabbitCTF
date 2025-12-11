@@ -22,7 +22,8 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 24 hours
 
     # CORS
-    BACKEND_CORS_ORIGINS: list = ["http://localhost:8080", "http://localhost:5173"]
+    # Allow all origins by default to avoid CORS issues in deployment
+    BACKEND_CORS_ORIGINS: list = ["*"]
 
     # Password Hashing
     PWD_CONTEXT_SCHEMES: list = ["bcrypt"]
