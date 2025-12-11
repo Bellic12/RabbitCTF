@@ -102,7 +102,7 @@ export default function ChallengeModal({ challenge, onClose, onSolve }: Challeng
       const token = localStorage.getItem('token')
       if (!token) return
 
-      const data = await api.challenges.get(token, challenge.id)
+      const data = await api.challenges.get(token, Number(challenge.id))
 
       if (data.blocked_until) {
         const blockedDate = new Date(data.blocked_until)
@@ -128,7 +128,7 @@ export default function ChallengeModal({ challenge, onClose, onSolve }: Challeng
       const token = localStorage.getItem('token')
       if (!token) return
 
-      const data = await api.challenges.getFiles(token, challenge.id)
+      const data = await api.challenges.getFiles(token, Number(challenge.id))
       setFiles(data)
     } catch (error) {
       console.error('Failed to fetch challenge files:', error)
@@ -140,7 +140,7 @@ export default function ChallengeModal({ challenge, onClose, onSolve }: Challeng
   useEffect(() => {
     if (tab === 'history' && token) {
       setIsLoadingSolves(true)
-      api.challenges.getSolves(token, challenge.id)
+      api.challenges.getSolves(token, Number(challenge.id))
         .then((data: any) => {
           setSolveHistory(data.map((s: any) => ({
             team: s.team_name,
@@ -183,7 +183,7 @@ export default function ChallengeModal({ challenge, onClose, onSolve }: Challeng
         return
       }
 
-      const data = await api.challenges.submit(token, challenge.id, flagValue)
+      const data = await api.challenges.submit(token, Number(challenge.id), flagValue)
       setSubmissionResult(data)
 
       if (data.is_correct) {

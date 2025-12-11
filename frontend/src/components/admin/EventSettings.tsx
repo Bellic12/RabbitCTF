@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import ReactMarkdown from 'react-markdown'
 import { useAuth } from '../../context/AuthContext'
+import { api } from '../../services/api'
 
 const markdownComponents = {
   h1: ({node, ...props}: any) => 
@@ -255,6 +256,8 @@ export default function EventSettings() {
       return
     }
     
+    if (!token) return
+
     setLoading(true)
     
     try {
@@ -296,6 +299,7 @@ export default function EventSettings() {
   }
 
   const handleSaveTeamConfig = async () => {
+    if (!token) return
     setTeamConfigLoading(true)
     setTeamConfigMessage(null)
     try {
@@ -309,6 +313,7 @@ export default function EventSettings() {
   }
 
   const handleSaveRateLimits = async () => {
+    if (!token) return
     setConfigLoading(true)
     setConfigMessage(null)
     try {
@@ -326,6 +331,7 @@ export default function EventSettings() {
   }
 
   const handleSaveRules = async () => {
+    if (!token) return
     setLoading(true)
     setMessage(null)
     
