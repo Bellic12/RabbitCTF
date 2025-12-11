@@ -1,6 +1,24 @@
-// Remove trailing slash from API_URL if present
-const baseUrl = import.meta.env.VITE_API_URL?.replace(/\/$/, '') || ''
-const API_URL = baseUrl ? `${baseUrl}/api/v1` : '/api/v1'
+// Normalize API URL defensively to avoid malformed hosts (e.g., ...railway.appapi)
+const rawApiEnv = import.meta.env.VITE_API_URL || ''
+
+// Fix common typo where "api" is concatenated to the host without a slash
+const sanitizedEnv = rawApiEnv.replace(/(\.app)api\b/i, '$1')
+
+let normalized = ''
+try {
+  // Ensure it parses as a URL; add protocol if missing
+  const candidate = sanitizedEnv.includes('://') ? sanitizedEnv : `https://${sanitizedEnv}`
+  const parsed = new URL(candidate)
+
+  // Strip trailing slash and trailing /api path segment if present
+  const cleanPath = parsed.pathname.replace(/\/$/, '').replace(/\/api$/i, '')
+  normalized = `${parsed.protocol}//${parsed.host}${cleanPath}`
+} catch (_e) {
+  // Fallback to original sanitized env minus trailing slash and /api
+  normalized = sanitizedEnv.replace(/\/$/, '').replace(/\/api$/i, '')
+}
+
+const API_URL = normalized ? `${normalized}/api/v1` : '/api/v1'
 
 const getHeaders = (token?: string) => {
   const headers: HeadersInit = {
