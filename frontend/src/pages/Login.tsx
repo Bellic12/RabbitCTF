@@ -7,15 +7,6 @@ import { useAuth } from '../context/AuthContext'
 
 import { api } from '../services/api'
 
-type LoginResponse = {
-  access_token: string
-  token_type: string
-}
-
-type ErrorResponse = {
-  detail?: string
-}
-
 export default function LoginPage() {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
