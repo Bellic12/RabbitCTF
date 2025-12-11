@@ -12,6 +12,8 @@ import RulesPage from './pages/Rules'
 import TeamPage from './pages/Team'
 import SetupPage from './pages/Setup'
 
+import { api } from './services/api'
+
 export default function App() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -20,18 +22,15 @@ export default function App() {
   useEffect(() => {
     const checkSetup = async () => {
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/v1/setup/status`)
-        if (response.ok) {
-          const data = await response.json()
-          if (!data.is_setup_completed) {
-             if (location.pathname !== '/setup') {
-                navigate('/setup')
-             }
-          } else {
-             if (location.pathname === '/setup') {
-                navigate('/')
-             }
-          }
+        const data = await api.setup.status()
+        if (!data.is_setup_completed) {
+           if (location.pathname !== '/setup') {
+              navigate('/setup')
+           }
+        } else {
+           if (location.pathname === '/setup') {
+              navigate('/')
+           }
         }
       } catch (error) {
         console.error("Failed to check setup status", error)

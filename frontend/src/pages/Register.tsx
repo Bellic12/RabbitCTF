@@ -3,10 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 
 import Footer from '../components/Footer'
 import Navigation from '../components/Navigation'
-
-type ErrorResponse = {
-  detail?: string
-}
+import { api } from '../services/api'
 
 export default function RegisterPage() {
   const [username, setUsername] = useState('')
@@ -45,24 +42,11 @@ export default function RegisterPage() {
       return
     }
 
-    // # Registration example
-
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}api/v1/auth/register`, {
-        body: JSON.stringify({ email, password, password_confirm: confirmPassword, username }),
-        headers: { 'Content-Type': 'application/json' },
-        method: 'POST',
-      })
-
-      if (!response.ok) {
-        const payload = (await response.json().catch(() => ({}))) as ErrorResponse
-        setError(payload.detail ?? 'Unable to create the account')
-        return
-      }
-
+      await api.auth.register({ email, password, password_confirm: confirmPassword, username })
       void navigate('/login', { state: { registrationSuccess: true } })
-    } catch {
-      setError('Unable to reach the registration service')
+    } catch (err: any) {
+      setError(err.message || 'Unable to create the account')
     }
   }
 

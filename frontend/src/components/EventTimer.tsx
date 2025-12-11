@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { api } from '../services/api'
 
 type EventStatus = 'not_started' | 'active' | 'finished'
 
@@ -20,16 +21,12 @@ export default function EventTimer({ variant = 'navbar' }: EventTimerProps) {
 
   const fetchConfig = async () => {
     try {
-      // Add timestamp to prevent caching
-      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/v1/event/status?t=${Date.now()}`)
-      if (response.ok) {
-        const data = await response.json()
-        // Only update state if values actually changed to prevent effect re-runs
-        setConfig(prev => {
-          if (JSON.stringify(prev) === JSON.stringify(data)) return prev
-          return data
-        })
-      }
+      const data = await api.event.status()
+      // Only update state if values actually changed to prevent effect re-runs
+      setConfig(prev => {
+        if (JSON.stringify(prev) === JSON.stringify(data)) return prev
+        return data
+      })
     } catch (error) {
       console.error('Failed to fetch event status', error)
     }

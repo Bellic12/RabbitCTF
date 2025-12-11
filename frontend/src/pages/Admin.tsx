@@ -8,6 +8,7 @@ import ValidationStats from '../components/admin/ValidationStats'
 import Footer from '../components/Footer'
 import Navigation from '../components/Navigation'
 import { useAuth } from '../context/AuthContext'
+import { api } from '../services/api'
 import type { AdminStats } from '../types/admin'
 
 export default function AdminPage() {
@@ -17,24 +18,16 @@ export default function AdminPage() {
 
   useEffect(() => {
     const fetchStats = async () => {
+      if (!token) return
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/v1/admin/stats`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        })
-        if (response.ok) {
-          const data = await response.json()
-          setStatsData(data)
-        }
+        const data = await api.admin.stats.get(token)
+        setStatsData(data)
       } catch (error) {
         console.error('Failed to fetch admin stats:', error)
       }
     }
 
-    if (token) {
-      fetchStats()
-    }
+    fetchStats()
   }, [token])
 
   const stats = [

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { api } from '../services/api'
 
 export type EventStatus = 'not_started' | 'active' | 'finished'
 
@@ -13,14 +14,11 @@ export function useEventStatus() {
 
   const fetchConfig = async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/v1/event/status?t=${Date.now()}`)
-      if (response.ok) {
-        const data = await response.json()
-        setConfig(prev => {
-          if (JSON.stringify(prev) === JSON.stringify(data)) return prev
-          return data
-        })
-      }
+      const data = await api.event.status()
+      setConfig(prev => {
+        if (JSON.stringify(prev) === JSON.stringify(data)) return prev
+        return data
+      })
     } catch (error) {
       console.error('Failed to fetch event status', error)
     }

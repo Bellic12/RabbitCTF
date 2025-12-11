@@ -165,39 +165,34 @@ export default function EditChallengeModal({ challengeId, isOpen, onClose, onUpd
   }, [isOpen, challengeId, token])
 
   const fetchCategories = async () => {
-    const res = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/v1/challenges/categories?include_hidden=true`, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-    if (res.ok) {
-      setCategories(await res.json())
+    try {
+      const data = await api.challenges.categories(token!, true)
+      setCategories(data)
+    } catch (error) {
+      console.error('Failed to fetch categories', error)
     }
   }
 
   const fetchDifficulties = async () => {
-    const res = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/v1/challenges/difficulties`, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-    if (res.ok) {
-      setDifficulties(await res.json())
+    try {
+      const data = await api.challenges.difficulties(token!)
+      setDifficulties(data)
+    } catch (error) {
+      console.error('Failed to fetch difficulties', error)
     }
   }
 
   const fetchChallengeDetail = async (id: number) => {
-    const res = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/v1/challenges/admin/${id}`, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-    if (!res.ok) {
-      throw new Error('Failed to load challenge')
-    }
-    const data: ChallengeDetail = await res.json()
-    setExistingFiles(data.files || [])
-    setScoringLocked((data.is_visible ?? false) && data.submission_count > 0)
-    setFormData({
-      title: data.title,
-      description: data.description,
-      category_id: data.category_id?.toString() || '',
-      difficulty_id: data.difficulty_id?.toString() || '',
-      scoringType: (data.score_config?.scoring_mode || 'static') as 'static' | 'dynamic',
+    try {
+      const data: ChallengeDetail = await api.challenges.admin.get(token!, id)
+      setExistingFiles(data.files || [])
+      setScoringLocked((data.is_visible ?? false) && data.submission_count > 0)
+      setFormData({
+        title: data.title,
+        description: data.description,
+        category_id: data.category_id?.toString() || '',
+        difficulty_id: data.difficulty_id?.toString() || '',
+        scoringType: (data.score_config?.scoring_mode || 'static') as 'static' | 'dynamic',
       baseScore: (data.score_config?.base_score ?? 100).toString(),
       minimumScore: (data.score_config?.min_score ?? 10).toString(),
       decayFactor: (data.score_config?.decay_factor ?? 0.9).toString(),
@@ -208,6 +203,10 @@ export default function EditChallengeModal({ challengeId, isOpen, onClose, onUpd
       connectionInfo: data.connection_info || '',
       isDraft: data.is_draft,
     })
+    } catch (error) {
+      console.error('Failed to fetch challenge details', error)
+      setError('Failed to load challenge details')
+    }
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -283,13 +282,8 @@ export default function EditChallengeModal({ challengeId, isOpen, onClose, onUpd
   const removeExistingFile = async (fileId: number) => {
     if (!challengeId || !token) return
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/v1/challenges/admin/${challengeId}/files/${fileId}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` }
-      })
-      if (res.ok) {
-        setExistingFiles(prev => prev.filter(f => f.id !== fileId))
-      }
+      await api.challenges.admin.deleteFile(token, challengeId, fileId)
+      setExistingFiles(prev => prev.filter(f => f.id !== fileId))
     } catch (err) {
       console.error('Failed to delete file', err)
     }
@@ -333,79 +327,26 @@ export default function EditChallengeModal({ challengeId, isOpen, onClose, onUpd
 
       if (challengeId) {
         // Update existing challenge
-        const res = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/v1/challenges/admin/${challengeId}`, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(body),
-        })
-
-        if (!res.ok) {
-          const payload = await res.json().catch(() => ({}))
-          setError(payload.detail ?? 'Failed to update challenge')
-          setIsSubmitting(false)
-          return
-        }
+        await api.challenges.admin.update(token, challengeId, body)
       } else {
         // Create new challenge
-        const res = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/v1/challenges/admin/create`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(body),
-        })
-
-        if (!res.ok) {
-          const payload = await res.json().catch(() => ({}))
-          if (res.status === 422 && payload.detail && Array.isArray(payload.detail)) {
-            const errors = payload.detail.map((err: any) => {
-              const field = err.loc?.[err.loc.length - 1] || 'field'
-              return `${field}: ${err.msg}`
-            }).join(', ')
-            setError(`Validation error: ${errors}`)
-          } else {
-            setError(payload.detail ?? 'Failed to create challenge')
-          }
-          setIsSubmitting(false)
-          return
-        }
-
-        const data = await res.json()
+        const data = await api.challenges.admin.create(token, body)
         targetId = data.id
       }
 
       // Upload new files if provided
       if (newFiles.length > 0 && targetId) {
-        const fd = new FormData()
-        newFiles.forEach(file => fd.append('files', file))
-        const uploadRes = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/v1/challenges/admin/${targetId}/files`, {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${token}` },
-          body: fd,
-        })
-        
-        if (!uploadRes.ok) {
+        try {
+          await api.challenges.admin.uploadFiles(token, targetId, newFiles)
+        } catch (uploadErr: any) {
           // If create mode and upload fails, rollback
           if (!challengeId) {
              try {
-              await fetch(`${import.meta.env.VITE_API_URL || ''}/api/v1/challenges/admin/${targetId}`, {
-                method: 'DELETE',
-                headers: { Authorization: `Bearer ${token}` }
-              })
+              await api.challenges.admin.delete(token, targetId)
             } catch (e) { /* ignore */ }
           }
 
-          const errorText = await uploadRes.text()
-          try {
-            const errorJson = JSON.parse(errorText)
-            setUploadError(errorJson.detail || 'Challenge saved but files failed to upload.')
-          } catch {
-            setUploadError('Challenge saved but files failed to upload.')
-          }
+          setUploadError(uploadErr.message || 'Challenge saved but files failed to upload.')
           
           if (!challengeId) {
              // If we rolled back, stop here
@@ -418,8 +359,8 @@ export default function EditChallengeModal({ challengeId, isOpen, onClose, onUpd
       onUpdated()
       onClose()
       setNewFiles([])
-    } catch (caught) {
-      setError('Unable to save challenge')
+    } catch (caught: any) {
+      setError(caught.message || 'Unable to save challenge')
       console.error('Save challenge failed', caught)
     } finally {
       setIsSubmitting(false)
@@ -560,22 +501,8 @@ export default function EditChallengeModal({ challengeId, isOpen, onClose, onUpd
                                         type: 'info',
                                         onConfirm: async () => {
                                           try {
-                                            const response = await fetch(
-                                              `${import.meta.env.VITE_API_URL || ''}/api/v1/challenges/admin/categories/${cat.id}`,
-                                              {
-                                                method: 'PATCH',
-                                                headers: {
-                                                  'Content-Type': 'application/json',
-                                                  'Authorization': `Bearer ${token}`
-                                                },
-                                                body: JSON.stringify({ is_active: true })
-                                              }
-                                            )
-                                            if (response.ok) {
-                                              await fetchCategories()
-                                            } else {
-                                              console.error('Failed to unhide category')
-                                            }
+                                            await api.challenges.admin.updateCategory(token!, cat.id, { is_active: true })
+                                            await fetchCategories()
                                           } catch (err) {
                                             console.error(err)
                                           }
@@ -603,22 +530,10 @@ export default function EditChallengeModal({ challengeId, isOpen, onClose, onUpd
                                         type: 'warning',
                                         onConfirm: async () => {
                                           try {
-                                            const response = await fetch(
-                                              `${import.meta.env.VITE_API_URL || ''}/api/v1/challenges/admin/categories/${cat.id}`,
-                                              {
-                                                method: 'DELETE',
-                                                headers: {
-                                                  'Authorization': `Bearer ${token}`
-                                                }
-                                              }
-                                            )
-                                            if (response.ok) {
-                                              await fetchCategories()
-                                              if (formData.category_id === cat.id.toString()) {
-                                                setFormData(prev => ({ ...prev, category_id: '' }))
-                                              }
-                                            } else {
-                                              console.error('Failed to hide category')
+                                            await api.challenges.admin.deleteCategory(token!, cat.id)
+                                            await fetchCategories()
+                                            if (formData.category_id === cat.id.toString()) {
+                                              setFormData(prev => ({ ...prev, category_id: '' }))
                                             }
                                           } catch (err) {
                                             console.error(err)
@@ -646,23 +561,10 @@ export default function EditChallengeModal({ challengeId, isOpen, onClose, onUpd
                                         type: 'error',
                                         onConfirm: async () => {
                                           try {
-                                            const response = await fetch(
-                                              `${import.meta.env.VITE_API_URL || ''}/api/v1/challenges/admin/categories/${cat.id}`,
-                                              {
-                                                method: 'DELETE',
-                                                headers: {
-                                                  'Authorization': `Bearer ${token}`
-                                                }
-                                              }
-                                            )
-                                            if (response.ok) {
-                                              await fetchCategories()
-                                              if (formData.category_id === cat.id.toString()) {
-                                                setFormData(prev => ({ ...prev, category_id: '' }))
-                                              }
-                                            } else {
-                                              const error = await response.json()
-                                              console.error(error.detail || 'Failed to delete category')
+                                            await api.challenges.admin.deleteCategory(token!, cat.id)
+                                            await fetchCategories()
+                                            if (formData.category_id === cat.id.toString()) {
+                                              setFormData(prev => ({ ...prev, category_id: '' }))
                                             }
                                           } catch (err) {
                                             console.error(err)
@@ -1063,32 +965,22 @@ export default function EditChallengeModal({ challengeId, isOpen, onClose, onUpd
                 if (editCategoryModal.currentName && editCategoryModal.currentName.trim()) {
                   try {
                     const isEditing = !!editCategoryModal.categoryId
-                    const url = isEditing
-                      ? `${import.meta.env.VITE_API_URL || ''}/api/v1/challenges/admin/categories/${editCategoryModal.categoryId}`
-                      : `${import.meta.env.VITE_API_URL || ''}/api/v1/challenges/admin/categories`
-                    
-                    const response = await fetch(url, {
-                      method: isEditing ? 'PATCH' : 'POST',
-                      headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                      },
-                      body: JSON.stringify({ 
-                        name: editCategoryModal.currentName.trim(),
-                        description: editCategoryModal.currentDescription.trim(),
-                        is_active: true
-                      })
-                    })
+                    const categoryData = { 
+                      name: editCategoryModal.currentName.trim(),
+                      description: editCategoryModal.currentDescription.trim(),
+                      is_active: true
+                    }
 
-                    if (response.ok) {
-                      const newCat = await response.json()
-                      await fetchCategories()
-                      if (!isEditing) {
-                        setFormData(prev => ({ ...prev, category_id: newCat.id.toString() }))
-                      }
+                    let newCat
+                    if (isEditing) {
+                      newCat = await api.challenges.admin.updateCategory(token!, editCategoryModal.categoryId!, categoryData)
                     } else {
-                      const error = await response.json()
-                      console.error(error.detail || 'Failed to save category')
+                      newCat = await api.challenges.admin.createCategory(token!, categoryData)
+                    }
+
+                    await fetchCategories()
+                    if (!isEditing) {
+                      setFormData(prev => ({ ...prev, category_id: newCat.id.toString() }))
                     }
                   } catch (err) {
                     console.error(err)

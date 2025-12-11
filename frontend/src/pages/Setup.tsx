@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import type { FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { api } from '../services/api'
 
 export default function Setup() {
   const [username, setUsername] = useState('')
@@ -18,12 +19,9 @@ export default function Setup() {
 
   const checkSetupStatus = async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/v1/setup/status`)
-      if (response.ok) {
-        const data = await response.json()
-        if (data.is_setup_completed) {
-          navigate('/login')
-        }
+      const data = await api.setup.status()
+      if (data.is_setup_completed) {
+        navigate('/login')
       }
     } catch (err) {
       console.error('Failed to check setup status', err)
@@ -42,32 +40,16 @@ export default function Setup() {
     }
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/v1/setup/admin`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          username,
-          email,
-          password,
-          password_confirm: passwordConfirm,
-        }),
+      await api.setup.admin({
+        username,
+        email,
+        password,
+        password_confirm: passwordConfirm,
       })
-
-      if (response.ok) {
-        // Setup successful
-        navigate('/login', { state: { message: 'Administrator created successfully. Please login.' } })
-      } else {
-        const data = await response.json()
-        if (Array.isArray(data.detail)) {
-          setError(data.detail.map((e: any) => e.msg).join(', '))
-        } else {
-          setError(data.detail || 'Failed to create administrator')
-        }
-      }
-    } catch (err) {
-      setError('An error occurred. Please try again.')
+      // Setup successful
+      navigate('/login', { state: { message: 'Administrator created successfully. Please login.' } })
+    } catch (err: any) {
+      setError(err.message || 'An error occurred. Please try again.')
     } finally {
       setIsLoading(false)
     }

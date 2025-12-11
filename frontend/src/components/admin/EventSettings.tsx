@@ -192,47 +192,34 @@ export default function EventSettings() {
     const fetchData = async () => {
       try {
         // Fetch Rules
-        const rulesResponse = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/v1/rules/`)
-        if (rulesResponse.ok) {
-          const data = await rulesResponse.json()
-          setRules(data.content_md)
-        }
+        const rulesData = await api.rules.list()
+        setRules(rulesData.content_md)
 
         if (token) {
           // Fetch Event Config
-          const configResponse = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/v1/admin/event/config`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-          })
+          const data = await api.admin.event.getConfig(token)
           
-          if (configResponse.ok) {
-            const data = await configResponse.json()
-            setEventConfig({
-              start_time: data.start_time || '',
-              end_time: data.end_time || '',
-              event_timezone: data.event_timezone || 'UTC',
-              status: data.status || 'not_started'
-            })
-            setSavedEventConfig({
-              start_time: data.start_time || '',
-              end_time: data.end_time || '',
-              event_timezone: data.event_timezone || 'UTC',
-              status: data.status || 'not_started'
-            })
-          }
+          setEventConfig({
+            start_time: data.start_time || '',
+            end_time: data.end_time || '',
+            event_timezone: data.event_timezone || 'UTC',
+            status: data.status || 'not_started'
+          })
+          setSavedEventConfig({
+            start_time: data.start_time || '',
+            end_time: data.end_time || '',
+            event_timezone: data.event_timezone || 'UTC',
+            status: data.status || 'not_started'
+          })
 
           // Fetch General Config
-          const generalConfigResponse = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/v1/admin/config`, {
-            headers: { 'Authorization': `Bearer ${token}` }
+          const generalConfigData = await api.admin.getConfig(token)
+          setConfig({
+            max_submission_attempts: generalConfigData.max_submission_attempts,
+            submission_time_window_seconds: generalConfigData.submission_time_window_seconds,
+            submission_block_minutes: generalConfigData.submission_block_minutes,
+            max_team_size: generalConfigData.max_team_size
           })
-          if (generalConfigResponse.ok) {
-            const data = await generalConfigResponse.json()
-            setConfig({
-              max_submission_attempts: data.max_submission_attempts,
-              submission_time_window_seconds: data.submission_time_window_seconds,
-              submission_block_minutes: data.submission_block_minutes,
-              max_team_size: data.max_team_size
-            })
-          }
         }
       } catch (error) {
         console.error('Failed to fetch data:', error)
@@ -271,54 +258,37 @@ export default function EventSettings() {
     setLoading(true)
     
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/v1/admin/event/config`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          start_time: eventConfig.start_time,
-          end_time: eventConfig.end_time,
-          event_timezone: eventConfig.event_timezone,
-          // Send the manually selected status if it differs from calculated
-          status: eventConfig.status
-        })
+      const data = await api.admin.event.updateConfig(token, {
+        start_time: eventConfig.start_time,
+        end_time: eventConfig.end_time,
+        event_timezone: eventConfig.event_timezone,
+        // Send the manually selected status if it differs from calculated
+        status: eventConfig.status
       })
 
-      if (response.ok) {
-        const data = await response.json()
-        
-        // Actualizar con la respuesta del servidor
-        setEventConfig({
-          start_time: data.start_time || '',
-          end_time: data.end_time || '',
-          event_timezone: data.event_timezone || 'UTC',
-          status: data.status || 'not_started'
-        })
-        setSavedEventConfig({
-          start_time: data.start_time || '',
-          end_time: data.end_time || '',
-          event_timezone: data.event_timezone || 'UTC',
-          status: data.status || 'not_started'
-        })
-        
-        setMessage({ 
-          type: 'success', 
-          text: 'Event configuration updated successfully!' 
-        })
-      } else {
-        const errorData = await response.json()
-        setMessage({ 
-          type: 'error', 
-          text: errorData.detail || 'Failed to update event configuration' 
-        })
-      }
-    } catch (error) {
+      // Actualizar con la respuesta del servidor
+      setEventConfig({
+        start_time: data.start_time || '',
+        end_time: data.end_time || '',
+        event_timezone: data.event_timezone || 'UTC',
+        status: data.status || 'not_started'
+      })
+      setSavedEventConfig({
+        start_time: data.start_time || '',
+        end_time: data.end_time || '',
+        event_timezone: data.event_timezone || 'UTC',
+        status: data.status || 'not_started'
+      })
+      
+      setMessage({ 
+        type: 'success', 
+        text: 'Event configuration updated successfully!' 
+      })
+    } catch (error: any) {
       console.error('Update error:', error)
       setMessage({ 
         type: 'error', 
-        text: 'Network error. Please check your connection.' 
+        text: error.message || 'Failed to update event configuration' 
       })
     } finally {
       setLoading(false)
@@ -329,22 +299,10 @@ export default function EventSettings() {
     setTeamConfigLoading(true)
     setTeamConfigMessage(null)
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/v1/admin/config`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ max_team_size: config.max_team_size })
-      })
-
-      if (response.ok) {
-        setTeamConfigMessage({ type: 'success', text: 'Team size updated successfully' })
-      } else {
-        setTeamConfigMessage({ type: 'error', text: 'Failed to update team size' })
-      }
+      await api.admin.updateConfig(token, { max_team_size: config.max_team_size })
+      setTeamConfigMessage({ type: 'success', text: 'Team size updated successfully' })
     } catch (error) {
-      setTeamConfigMessage({ type: 'error', text: 'An error occurred' })
+      setTeamConfigMessage({ type: 'error', text: 'Failed to update team size' })
     } finally {
       setTeamConfigLoading(false)
     }
@@ -354,26 +312,14 @@ export default function EventSettings() {
     setConfigLoading(true)
     setConfigMessage(null)
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/v1/admin/config`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          max_submission_attempts: config.max_submission_attempts,
-          submission_time_window_seconds: config.submission_time_window_seconds,
-          submission_block_minutes: config.submission_block_minutes
-        })
+      await api.admin.updateConfig(token, {
+        max_submission_attempts: config.max_submission_attempts,
+        submission_time_window_seconds: config.submission_time_window_seconds,
+        submission_block_minutes: config.submission_block_minutes
       })
-
-      if (response.ok) {
-        setConfigMessage({ type: 'success', text: 'Rate limits updated successfully' })
-      } else {
-        setConfigMessage({ type: 'error', text: 'Failed to update rate limits' })
-      }
+      setConfigMessage({ type: 'success', text: 'Rate limits updated successfully' })
     } catch (error) {
-      setConfigMessage({ type: 'error', text: 'An error occurred' })
+      setConfigMessage({ type: 'error', text: 'Failed to update rate limits' })
     } finally {
       setConfigLoading(false)
     }
@@ -384,22 +330,10 @@ export default function EventSettings() {
     setMessage(null)
     
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/v1/rules/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ content_md: rules })
-      })
-
-      if (response.ok) {
-        setMessage({ type: 'success', text: 'Rules updated successfully' })
-      } else {
-        setMessage({ type: 'error', text: 'Failed to update rules' })
-      }
+      await api.rules.update(token, rules)
+      setMessage({ type: 'success', text: 'Rules updated successfully' })
     } catch (error) {
-      setMessage({ type: 'error', text: 'Network error saving rules' })
+      setMessage({ type: 'error', text: 'Failed to update rules' })
     } finally {
       setLoading(false)
     }

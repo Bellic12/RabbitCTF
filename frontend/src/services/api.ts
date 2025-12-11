@@ -46,7 +46,10 @@ export const api = {
         headers: getHeaders(),
         body: JSON.stringify(data),
       })
-      if (!res.ok) throw new Error('Registration failed')
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}))
+        throw new Error(errData.detail || 'Registration failed')
+      }
       return res.json()
     },
     count: async () => {
@@ -65,8 +68,9 @@ export const api = {
       if (!res.ok) throw new Error('Failed to fetch challenges')
       return res.json()
     },
-    categories: async (token: string) => {
-      const res = await fetch(`${API_URL}/challenges/categories`, {
+    categories: async (token: string, includeHidden: boolean = false) => {
+      const query = includeHidden ? '?include_hidden=true' : ''
+      const res = await fetch(`${API_URL}/challenges/categories${query}`, {
         headers: getHeaders(token),
       })
       if (!res.ok) throw new Error('Failed to fetch categories')
@@ -84,6 +88,212 @@ export const api = {
         headers: getHeaders(token),
       })
       if (!res.ok) throw new Error('Failed to fetch solves')
+      return res.json()
+    },
+    submit: async (token: string, challengeId: number, flag: string) => {
+      const res = await fetch(`${API_URL}/submissions/submit`, {
+        method: 'POST',
+        headers: getHeaders(token),
+        body: JSON.stringify({ challenge_id: challengeId, submitted_flag: flag }),
+      })
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({}))
+        throw new Error(error.detail || 'Submission failed')
+      }
+      return res.json()
+    },
+    start: async (token: string, challengeId: number) => {
+      const res = await fetch(`${API_URL}/challenges/${challengeId}/start`, {
+        method: 'POST',
+        headers: getHeaders(token),
+      })
+      if (!res.ok) throw new Error('Failed to start challenge')
+      return res.json()
+    },
+    stop: async (token: string, challengeId: number) => {
+      const res = await fetch(`${API_URL}/challenges/${challengeId}/stop`, {
+        method: 'POST',
+        headers: getHeaders(token),
+      })
+      if (!res.ok) throw new Error('Failed to stop challenge')
+      return res.json()
+    },
+    admin: {
+      list: async (token: string) => {
+        const res = await fetch(`${API_URL}/challenges/admin/all`, {
+          headers: getHeaders(token),
+        })
+        if (!res.ok) throw new Error('Failed to fetch admin challenges')
+        return res.json()
+      },
+      get: async (token: string, id: number) => {
+        const res = await fetch(`${API_URL}/challenges/admin/${id}`, {
+          headers: getHeaders(token),
+        })
+        if (!res.ok) throw new Error('Failed to fetch challenge')
+        return res.json()
+      },
+      create: async (token: string, data: any) => {
+        const res = await fetch(`${API_URL}/challenges/admin/create`, {
+          method: 'POST',
+          headers: getHeaders(token),
+          body: JSON.stringify(data),
+        })
+        if (!res.ok) throw new Error('Failed to create challenge')
+        return res.json()
+      },
+      update: async (token: string, id: number, data: any) => {
+        const res = await fetch(`${API_URL}/challenges/admin/${id}`, {
+          method: 'PUT',
+          headers: getHeaders(token),
+          body: JSON.stringify(data),
+        })
+        if (!res.ok) throw new Error('Failed to update challenge')
+        return res.json()
+      },
+      delete: async (token: string, id: number) => {
+        const res = await fetch(`${API_URL}/challenges/admin/${id}`, {
+          method: 'DELETE',
+          headers: getHeaders(token),
+        })
+        if (!res.ok) throw new Error('Failed to delete challenge')
+        return res.json()
+      },
+      uploadFile: async (token: string, challengeId: number, file: File) => {
+        const formData = new FormData()
+        formData.append('file', file)
+        const res = await fetch(`${API_URL}/challenges/admin/${challengeId}/files`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          body: formData,
+        })
+        if (!res.ok) throw new Error('Failed to upload file')
+        return res.json()
+      },
+      uploadFiles: async (token: string, challengeId: number, files: File[]) => {
+        const formData = new FormData()
+        files.forEach(file => formData.append('files', file))
+        const res = await fetch(`${API_URL}/challenges/admin/${challengeId}/files`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          body: formData,
+        })
+        if (!res.ok) throw new Error('Failed to upload files')
+        return res.json()
+      },
+      deleteFile: async (token: string, challengeId: number, fileId: number) => {
+        const res = await fetch(`${API_URL}/challenges/admin/${challengeId}/files/${fileId}`, {
+          method: 'DELETE',
+          headers: getHeaders(token),
+        })
+        if (!res.ok) throw new Error('Failed to delete file')
+        return res.json()
+      },
+      toggleVisibility: async (token: string, id: number) => {
+        const res = await fetch(`${API_URL}/challenges/admin/${id}/toggle-visibility`, {
+          method: 'PATCH',
+          headers: getHeaders(token),
+        })
+        if (!res.ok) throw new Error('Failed to toggle visibility')
+        return res.json()
+      },
+      createCategory: async (token: string, data: any) => {
+        const res = await fetch(`${API_URL}/challenges/admin/categories`, {
+          method: 'POST',
+          headers: getHeaders(token),
+          body: JSON.stringify(data),
+        })
+        if (!res.ok) throw new Error('Failed to create category')
+        return res.json()
+      },
+      updateCategory: async (token: string, id: number, data: any) => {
+        const res = await fetch(`${API_URL}/challenges/admin/categories/${id}`, {
+          method: 'PATCH',
+          headers: getHeaders(token),
+          body: JSON.stringify(data),
+        })
+        if (!res.ok) throw new Error('Failed to update category')
+        return res.json()
+      },
+      deleteCategory: async (token: string, id: number) => {
+        const res = await fetch(`${API_URL}/challenges/admin/categories/${id}`, {
+          method: 'DELETE',
+          headers: getHeaders(token),
+        })
+        if (!res.ok) throw new Error('Failed to delete category')
+        return res.json()
+      },
+    },
+    difficulties: async (token: string) => {
+      const res = await fetch(`${API_URL}/challenges/difficulties`, {
+        headers: getHeaders(token),
+      })
+      if (!res.ok) throw new Error('Failed to fetch difficulties')
+      return res.json()
+    },
+    get: async (token: string, challengeId: number) => {
+      const res = await fetch(`${API_URL}/challenges/${challengeId}`, {
+        headers: getHeaders(token),
+      })
+      if (!res.ok) throw new Error('Failed to fetch challenge')
+      return res.json()
+    },
+    getFiles: async (token: string, challengeId: number) => {
+      const res = await fetch(`${API_URL}/challenges/${challengeId}/files`, {
+        headers: getHeaders(token),
+      })
+      if (!res.ok) throw new Error('Failed to fetch challenge files')
+      return res.json()
+    },
+    downloadFile: async (token: string, fileUrl: string) => {
+      const url = fileUrl.startsWith('/') ? fileUrl : `/${fileUrl}`
+      const res = await fetch(`${baseUrl}${url}`, {
+        headers: getHeaders(token),
+      })
+      if (!res.ok) throw new Error('Download failed')
+      return res.blob()
+    },
+  },
+  setup: {
+    status: async () => {
+      const res = await fetch(`${API_URL}/setup/status`)
+      if (!res.ok) throw new Error('Failed to fetch setup status')
+      return res.json()
+    },
+    admin: async (data: any) => {
+      const res = await fetch(`${API_URL}/setup/admin`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(data),
+      })
+      if (!res.ok) throw new Error('Setup failed')
+      return res.json()
+    },
+  },
+  rules: {
+    list: async () => {
+      const res = await fetch(`${API_URL}/rules/`)
+      if (!res.ok) throw new Error('Failed to fetch rules')
+      return res.json()
+    },
+    update: async (token: string, content_md: string) => {
+      const res = await fetch(`${API_URL}/rules/`, {
+        method: 'POST',
+        headers: getHeaders(token),
+        body: JSON.stringify({ content_md }),
+      })
+      if (!res.ok) throw new Error('Failed to update rules')
+      return res.json()
+    },
+  },
+  event: {
+    status: async () => {
+      const res = await fetch(`${API_URL}/event/status?t=${Date.now()}`)
+      if (!res.ok) throw new Error('Failed to fetch event status')
       return res.json()
     },
   },
@@ -167,6 +377,24 @@ export const api = {
       if (!res.ok) throw new Error('Failed to update config')
       return res.json()
     },
+    event: {
+      getConfig: async (token: string) => {
+        const res = await fetch(`${API_URL}/admin/event/config`, {
+          headers: getHeaders(token),
+        })
+        if (!res.ok) throw new Error('Failed to fetch event config')
+        return res.json()
+      },
+      updateConfig: async (token: string, data: any) => {
+        const res = await fetch(`${API_URL}/admin/event/config`, {
+          method: 'PUT',
+          headers: getHeaders(token),
+          body: JSON.stringify(data),
+        })
+        if (!res.ok) throw new Error('Failed to update event config')
+        return res.json()
+      },
+    },
     getUsers: async (token: string) => {
       const res = await fetch(`${API_URL}/admin/users`, {
         headers: getHeaders(token),
@@ -204,6 +432,23 @@ export const api = {
       })
       if (!res.ok) throw new Error('Failed to fetch teams')
       return res.json()
+    },
+    stats: {
+      get: async (token: string) => {
+        const res = await fetch(`${API_URL}/admin/stats`, {
+          headers: getHeaders(token),
+        })
+        if (!res.ok) throw new Error('Failed to fetch admin stats')
+        return res.json()
+      },
+      challenges: async (token: string, params?: any) => {
+        const query = new URLSearchParams(params).toString()
+        const res = await fetch(`${API_URL}/admin/stats/challenges?${query}`, {
+          headers: getHeaders(token),
+        })
+        if (!res.ok) throw new Error('Failed to fetch challenge stats')
+        return res.json()
+      },
     },
   },
 }

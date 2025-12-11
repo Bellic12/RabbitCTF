@@ -36,17 +36,7 @@ const buildDownload = async (fileUrl: string, fileName: string) => {
     throw new Error('Not authenticated')
   }
 
-  const res = await fetch(`${import.meta.env.VITE_API_URL || ''}${fileUrl}`, {
-    headers: {
-      Authorization: `Bearer ${token}`
-    }
-  })
-
-  if (!res.ok) {
-    throw new Error('Download failed')
-  }
-
-  const blob = await res.blob()
+  const blob = await api.challenges.downloadFile(token, fileUrl)
   const url = window.URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
@@ -112,29 +102,19 @@ export default function ChallengeModal({ challenge, onClose, onSolve }: Challeng
       const token = localStorage.getItem('token')
       if (!token) return
 
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL || ''}/api/v1/challenges/${challenge.id}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        }
-      )
+      const data = await api.challenges.get(token, challenge.id)
 
-      if (response.ok) {
-        const data = await response.json()
-        if (data.blocked_until) {
-          const blockedDate = new Date(data.blocked_until)
-          if (blockedDate > new Date()) {
-            setBlockedUntil(blockedDate)
-            setSubmissionResult({
-              is_correct: false,
-              score_awarded: 0,
-              message: `You are blocked from submitting to this challenge until ${blockedDate.toLocaleTimeString()}`,
-              status: 'blocked',
-              is_first_blood: false
-            })
-          }
+      if (data.blocked_until) {
+        const blockedDate = new Date(data.blocked_until)
+        if (blockedDate > new Date()) {
+          setBlockedUntil(blockedDate)
+          setSubmissionResult({
+            is_correct: false,
+            score_awarded: 0,
+            message: `You are blocked from submitting to this challenge until ${blockedDate.toLocaleTimeString()}`,
+            status: 'blocked',
+            is_first_blood: false
+          })
         }
       }
     } catch (error) {
@@ -148,19 +128,8 @@ export default function ChallengeModal({ challenge, onClose, onSolve }: Challeng
       const token = localStorage.getItem('token')
       if (!token) return
 
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL || ''}/api/v1/challenges/${challenge.id}/files`,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        }
-      )
-
-      if (response.ok) {
-        const data = await response.json()
-        setFiles(data)
-      }
+      const data = await api.challenges.getFiles(token, challenge.id)
+      setFiles(data)
     } catch (error) {
       console.error('Failed to fetch challenge files:', error)
     } finally {
@@ -214,37 +183,15 @@ export default function ChallengeModal({ challenge, onClose, onSolve }: Challeng
         return
       }
 
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL || ''}/api/v1/submissions/submit`,
-        {
-          body: JSON.stringify({
-            challenge_id: challenge.id,
-            submitted_flag: flagValue,
-          }),
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-          method: 'POST',
-        }
-      )
-
-      if (!response.ok) {
-        const payload = await response.json().catch(() => ({}))
-        setError(payload.detail ?? 'Failed to submit flag')
-        setIsSubmitting(false)
-        return
-      }
-
-      const data = await response.json()
+      const data = await api.challenges.submit(token, challenge.id, flagValue)
       setSubmissionResult(data)
 
       if (data.is_correct) {
         setFlagValue('')
         if (onSolve) onSolve()
       }
-    } catch (caught) {
-      setError('Unable to reach the submission service')
+    } catch (caught: any) {
+      setError(caught.message || 'Unable to reach the submission service')
       console.error('Flag submission failed', caught)
     } finally {
       setIsSubmitting(false)

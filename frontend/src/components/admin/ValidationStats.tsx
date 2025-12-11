@@ -44,8 +44,8 @@ export default function ValidationStats() {
       try {
         const [cats, diffs, teamsData] = await Promise.all([
           api.challenges.categories(token),
-          fetch(`${import.meta.env.VITE_API_URL || ''}/api/v1/challenges/difficulties`, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()),
-          fetch(`${import.meta.env.VITE_API_URL || ''}/api/v1/admin/teams`, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json())
+          api.challenges.difficulties(token),
+          api.admin.getTeams(token)
         ])
         setCategories(cats)
         setDifficulties(diffs)
@@ -67,13 +67,8 @@ export default function ValidationStats() {
         if (difficultyId) params.append('difficulty_id', difficultyId)
         if (teamId) params.append('team_id', teamId)
 
-        const res = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/v1/admin/stats/challenges?${params.toString()}`, {
-            headers: { Authorization: `Bearer ${token}` }
-        })
-        if (res.ok) {
-            const data = await res.json()
-            setStats(data)
-        }
+        const data = await api.admin.stats.challenges(token, params)
+        setStats(data)
       } catch (err) {
         console.error(err)
       } finally {

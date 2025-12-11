@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useAuth } from '../../context/AuthContext'
+import { api } from '../../services/api'
 import MultiSelect from '../MultiSelect'
 import SearchBar from '../SearchBar'
 import EditChallengeModal from './EditChallengeModal'
@@ -75,15 +76,8 @@ export default function ChallengeManagement() {
 
   const fetchChallenges = async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/v1/challenges/admin/all`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      })
-      if (response.ok) {
-        const data = await response.json()
-        setChallenges(data)
-      }
+      const data = await api.challenges.admin.list(token!)
+      setChallenges(data)
     } catch (error) {
       console.error('Failed to fetch challenges:', error)
     }
@@ -93,26 +87,12 @@ export default function ChallengeManagement() {
     if (!deleteConfirm) return
 
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL || ''}/api/v1/challenges/admin/${deleteConfirm.id}`,
-        {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        }
-      )
-
-      if (response.ok) {
-        setSuccess('Challenge deleted successfully!')
-        fetchChallenges()
-        setDeleteConfirm(null)
-      } else {
-        const payload = await response.json().catch(() => ({}))
-        setError(payload.detail ?? 'Failed to delete challenge')
-      }
-    } catch (error) {
-      setError('Unable to delete challenge')
+      await api.challenges.admin.delete(token!, deleteConfirm.id)
+      setSuccess('Challenge deleted successfully!')
+      fetchChallenges()
+      setDeleteConfirm(null)
+    } catch (error: any) {
+      setError(error.message || 'Unable to delete challenge')
       console.error('Delete challenge failed:', error)
     }
   }
@@ -137,45 +117,28 @@ export default function ChallengeManagement() {
     )
 
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL || ''}/api/v1/challenges/admin/${challengeId}/toggle-visibility`,
-        {
-          method: 'PATCH',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        }
-      )
+      const result = await api.challenges.admin.toggleVisibility(token!, challengeId)
 
-      if (response.ok) {
-        const result = await response.json()
-        // Confirmar con el valor real del backend
-        setChallenges(prevChallenges => 
-          prevChallenges.map(challenge => 
-            challenge.id === challengeId
-              ? {
-                  ...challenge,
-                  visibility_config: {
-                    ...challenge.visibility_config,
-                    is_visible: result.is_visible
-                  }
+      // Confirmar con el valor real del backend
+      setChallenges(prevChallenges => 
+        prevChallenges.map(challenge => 
+          challenge.id === challengeId
+            ? {
+                ...challenge,
+                visibility_config: {
+                  ...challenge.visibility_config,
+                  is_visible: result.is_visible
                 }
-              : challenge
-          )
+              }
+            : challenge
         )
-        setSuccess('Visibility updated successfully!')
-        setTimeout(() => setSuccess(''), 3000)
-      } else {
-        // Revertir en caso de error
-        setChallenges(previousChallenges)
-        const payload = await response.json().catch(() => ({}))
-        setError(payload.detail ?? 'Failed to toggle visibility')
-        setTimeout(() => setError(''), 3000)
-      }
-    } catch (error) {
+      )
+      setSuccess('Visibility updated successfully!')
+      setTimeout(() => setSuccess(''), 3000)
+    } catch (error: any) {
       // Revertir en caso de error
       setChallenges(previousChallenges)
-      setError('Unable to toggle visibility')
+      setError(error.message || 'Unable to toggle visibility')
       console.error('Toggle visibility failed:', error)
       setTimeout(() => setError(''), 3000)
     } finally {

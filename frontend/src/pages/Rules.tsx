@@ -3,6 +3,7 @@ import ReactMarkdown from 'react-markdown'
 
 import Footer from '../components/Footer'
 import Navigation from '../components/Navigation'
+import { api } from '../services/api'
 
 type RuleContent = {
   content_md: string
@@ -18,9 +19,7 @@ const Rules: React.FC = () => {
   useEffect(() => {
     const fetchRules = async () => {
       try {
-        const response = await fetch('/api/v1/rules/')
-        if (!response.ok) throw new Error('Failed to fetch rules')
-        const data = await response.json()
+        const data = await api.rules.list()
         setRules(data)
       } catch (err) {
         setError('Could not load competition rules.')
