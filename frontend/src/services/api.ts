@@ -18,7 +18,13 @@ try {
   normalized = sanitizedEnv.replace(/\/$/, '').replace(/\/api$/i, '')
 }
 
-const API_URL = normalized ? `${normalized}/api/v1` : '/api/v1'
+// Final API URL
+let API_URL = normalized ? `${normalized}/api/v1` : '/api/v1'
+
+// Hard fallback: if still malformed (e.g., contains "appapi"), force known backend URL
+if (/appapi/i.test(API_URL)) {
+  API_URL = 'https://backend-production-f060.up.railway.app/api/v1'
+}
 
 const getHeaders = (token?: string) => {
   const headers: HeadersInit = {

@@ -32,6 +32,8 @@ app.add_middleware(
 
 # Include API router
 app.include_router(api_router, prefix="/api/v1")
+# Backward/alternate path support in case frontend builds call /v1/*
+app.include_router(api_router, prefix="/v1")
 
 
 # Ensure DB tables exist on startup (idempotent)
