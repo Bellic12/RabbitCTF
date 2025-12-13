@@ -206,6 +206,8 @@ ON CONFLICT (user_id) DO NOTHING;
 INSERT INTO event_config (
     event_name, 
     status, 
+    start_time,
+    end_time,
     max_team_size, 
     max_submission_attempts,
     submission_time_window_seconds,
@@ -217,6 +219,8 @@ INSERT INTO event_config (
 ) VALUES (
     'RabbitCTF 2025', 
     'not_started',
+    NOW(),
+    NOW() + INTERVAL '2 days',
     4,
     5,
     60,

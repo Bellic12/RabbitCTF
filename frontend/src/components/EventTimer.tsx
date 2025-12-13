@@ -37,9 +37,7 @@ export default function EventTimer({ variant = 'navbar' }: EventTimerProps) {
 
   useEffect(() => {
     fetchConfig()
-    // Poll every 5 seconds to sync with server
-    const pollInterval = setInterval(fetchConfig, 5000)
-    return () => clearInterval(pollInterval)
+    // Solo consultar una vez al montar
   }, [])
 
   useEffect(() => {

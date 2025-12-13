@@ -28,8 +28,7 @@ export function useEventStatus() {
 
   useEffect(() => {
     fetchConfig()
-    const pollInterval = setInterval(fetchConfig, 5000)
-    return () => clearInterval(pollInterval)
+    // Solo consultar una vez al montar
   }, [])
 
   return config
