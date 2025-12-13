@@ -10,6 +10,7 @@ dist/
 # Logs
 npm-debug.log*
 pnpm-debug.log*
+playwright-report/*
 
 # Editor/OS cruft
 .vscode/
