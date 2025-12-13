@@ -1,17 +1,3 @@
-# Simple local setup for:
-# - frontend: React app (Vite + React + TypeScript)
-# - backend: FastAPI app (Uvicorn)
-# - db: PostgreSQL (with a persistent volume)
-#
-# Usage:
-#   1) docker compose up --build
-#   2) Frontend: http://localhost:8080
-#   3) Backend:  http://localhost:8000
-#   4) Postgres: localhost:5432
-#
-# Notes:
-# - backend_uploads volume maps to /app/uploads in the backend container.
-# - DATABASE_URL is wired to the db service hostname (internal Docker DNS).
 
 services:
   frontend:
@@ -33,8 +19,6 @@ services:
     container_name: rabbitctf_backend
     environment:
       DATABASE_URL: postgresql+psycopg://rabbitctf:rabbitctf@db:5432/rabbitctf
-    # ports:
-    #   - "8000:8000"
     depends_on:
       - db
     volumes:
@@ -49,8 +33,6 @@ services:
       POSTGRES_DB: rabbitctf
       POSTGRES_USER: rabbitctf
       POSTGRES_PASSWORD: rabbitctf
-    ports:
-      - "5432:5432"  # Exponer puerto para acceso local
     volumes:
       - postgres_data:/var/lib/postgresql/data  # persistent database data
       - ./backend/db/init:/docker-entrypoint-initdb.d:ro  # initialization scripts - read-only
