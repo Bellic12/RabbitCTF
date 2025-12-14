@@ -72,11 +72,6 @@ export default function RegisterPage() {
       <div className="flex flex-1 items-center justify-center px-6 py-16 md:px-10">
         <div className="w-full max-w-xl rounded-[32px] border border-white/10 bg-base-200 px-8 py-12 text-white shadow-[0_35px_80px_-45px_rgba(0,0,0,0.9)] md:px-12">
           <div className="text-center">
-            <div className="mb-8 flex items-center justify-center gap-4 text-3xl font-semibold text-white">
-              <FlagIcon />
-              RabbitCTF
-            </div>
-
             <h1 className="text-4xl font-bold">Register</h1>
             <p className="mt-2 text-sm text-white/60">Create an account to join the competition</p>
           </div>
@@ -167,20 +162,6 @@ export default function RegisterPage() {
       </div>
       <Footer />
     </div>
-  )
-}
-
-function FlagIcon() {
-  return (
-    <svg aria-hidden="true" className="h-11 w-11 text-primary" fill="none" viewBox="0 0 24 24">
-      <path
-        className="stroke-current"
-        d="M6 4v16M6 4h11.2a1 1 0 01.8 1.6L16 9l2 2.4a1 1 0 01-.8 1.6H6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={1.6}
-      />
-    </svg>
   )
 }
 
