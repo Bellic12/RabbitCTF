@@ -150,7 +150,7 @@ export const api = {
       },
       update: async (token: string, id: number, data: any) => {
         const res = await fetch(`${API_URL}/challenges/admin/${id}`, {
-          method: 'PUT',
+          method: 'PATCH',
           headers: getHeaders(token),
           body: JSON.stringify(data),
         })
